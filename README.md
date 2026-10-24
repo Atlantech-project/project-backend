@@ -1,147 +1,145 @@
-<div align="center">
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.png">
+    <img src=".github/assets/logo-light.png" alt="ATLANTECH, Intelligent Port Operations" width="340">
+  </picture>
+</p>
 
-# ⚙️ ATLANTECH — Backend
+<p align="center"><b>Backend</b> &nbsp;|&nbsp; the harbour master behind the screens</p>
+<p align="center"><i>Smarter coordination. Stronger ports.</i></p>
 
-### Port API · Modular Monolith
+<p align="center">
+  <img src="https://img.shields.io/badge/status-in_development-A58D66?style=flat-square&labelColor=083A4F" alt="status">
+  <img src="https://img.shields.io/badge/part_of-ATLANTECH-407E8C?style=flat-square&labelColor=083A4F" alt="part of ATLANTECH">
+</p>
 
-![Status](https://img.shields.io/badge/status-in%20development-A58D66?style=for-the-badge)
-![Part of](https://img.shields.io/badge/part%20of-ATLANTECH-083A4F?style=for-the-badge)
+<p align="center">
+  <img src="https://img.shields.io/badge/Laravel-13-407E8C?style=flat-square&logo=laravel&logoColor=E5E1DD&labelColor=083A4F" alt="Laravel">
+  <img src="https://img.shields.io/badge/PHP-8.3-407E8C?style=flat-square&logo=php&logoColor=E5E1DD&labelColor=083A4F" alt="PHP">
+  <img src="https://img.shields.io/badge/MySQL-8.4-407E8C?style=flat-square&logo=mysql&logoColor=E5E1DD&labelColor=083A4F" alt="MySQL">
+  <img src="https://img.shields.io/badge/Redis-cache_&_queues-407E8C?style=flat-square&logo=redis&logoColor=E5E1DD&labelColor=083A4F" alt="Redis">
+  <img src="https://img.shields.io/badge/Reverb-realtime-407E8C?style=flat-square&logo=laravel&logoColor=E5E1DD&labelColor=083A4F" alt="Reverb">
+  <img src="https://img.shields.io/badge/NGINX-TLS_1.3-407E8C?style=flat-square&logo=nginx&logoColor=E5E1DD&labelColor=083A4F" alt="NGINX">
+  <img src="https://img.shields.io/badge/Docker-compose-407E8C?style=flat-square&logo=docker&logoColor=E5E1DD&labelColor=083A4F" alt="Docker">
+  <img src="https://img.shields.io/badge/Vite-8-407E8C?style=flat-square&logo=vite&logoColor=E5E1DD&labelColor=083A4F" alt="Vite">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4-407E8C?style=flat-square&logo=tailwindcss&logoColor=E5E1DD&labelColor=083A4F" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/PHPUnit-tests-407E8C?style=flat-square&logo=php&logoColor=E5E1DD&labelColor=083A4F" alt="PHPUnit">
+</p>
 
-![Laravel](https://img.shields.io/badge/Laravel%2013-FF2D20?style=flat-square&logo=laravel&logoColor=white)
-![PHP](https://img.shields.io/badge/PHP%208.3-777BB4?style=flat-square&logo=php&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL%208.4-4479A1?style=flat-square&logo=mysql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white)
-![Reverb](https://img.shields.io/badge/Laravel%20Reverb-realtime-FF2D20?style=flat-square&logo=laravel&logoColor=white)
-![NGINX](https://img.shields.io/badge/NGINX-009639?style=flat-square&logo=nginx&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS%204-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-![PHPUnit](https://img.shields.io/badge/PHPUnit-366488?style=flat-square&logo=php&logoColor=white)
+<img src=".github/assets/wave.svg" width="100%" alt="">
 
-</div>
+## What lives here
 
----
+The Port API: one **Laravel modular monolith** that the dashboard and the phones both talk to. It holds the business rules, decides who may do what, keeps the license honest, writes the audit trail and sends work to the Python AI workers through Redis.
 
-## 📖 Overview
+The modules each own one part of the port, and dependencies only point one way:
 
-The backend is a **Laravel modular monolith** that serves the Port API for the web dashboard and the mobile app. It owns business rules, RBAC, licensing, auditing, and orchestrates the Python AI workers through Redis queues.
+`Auth & RBAC` &middot; `License & Mode` &middot; `Check-in Client` &middot; `Users & Devices` &middot; `Port & Resources` &middot; `Berthing Requests` &middot; `BAPLIE` &middot; `Recommendations` &middot; `Plans & Dispatch` &middot; `Container Yard` &middot; `Mobile Sync` &middot; `Tracking & Deviations` &middot; `Notifications` &middot; `Audit`
 
-### Functional areas
-`Auth & RBAC` · `License & Mode` · `Check-in Client` · `Users & Devices` · `Port & Resources` · `Berthing Requests` · `BAPLIE` · `Recommendations` · `Plans & Dispatch` · `Container Yard` · `Mobile Sync` · `Tracking & Deviations` · `Notifications` · `Audit`
-
-Module dependencies are one-way.
-
----
-
-## 🏗️ Architecture
+## Shape of the system
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'primaryColor':'#083A4F','primaryTextColor':'#E5E1DD','primaryBorderColor':'#407E8C','lineColor':'#A58D66','fontFamily':'Montserrat, Inter, sans-serif'}}}%%
 flowchart LR
-    C["Web / Mobile"] --> N["NGINX · TLS 1.3"] --> A["Laravel API"]
-    A --> RT["Reverb<br/>SSE · WebSocket"]
-    A --> R[("Redis<br/>cache · queues")]
+    C["Web and mobile"] --> N["NGINX<br/>TLS 1.3"] --> A["Laravel API"]
+    A --> RT["Reverb<br/>SSE and WebSocket"]
+    A --> R[("Redis<br/>cache and queues")]
     R --> W["Python AI workers"]
-    A ==> P[("MySQL Primary")]
-    A -.-> RP[("MySQL Replica")]
+    A ==> P[("MySQL primary")]
+    A -.-> RP[("MySQL replica")]
     W --> P
     S["Scheduler"] -.-> A
+    classDef gold fill:#A58D66,stroke:#083A4F,color:#083A4F
+    classDef teal fill:#407E8C,stroke:#083A4F,color:#E5E1DD
+    class W gold
+    class R,P,RP teal
 ```
 
-### 🔐 Write chain (every write request)
+### Every write passes the same checkpoints
+
 ```
-auth 401 → role & terminal 403 → app version 426 → license mode 423
-        → record version 409 → business rules 409/422 → plan limits 422 → audit
+auth 401 -> role & terminal 403 -> app version 426 -> license mode 423
+         -> record version 409 -> business rules 409/422 -> plan limits 422 -> audit
 ```
 
-### 🪪 License modes
-| Mode | Meaning |
+If a request fails a checkpoint, it stops there with that status code. If it passes all of them, it is written to the audit log.
+
+### License modes
+
+| Mode | When |
 |---|---|
-| `SETUP` | Port onboarding — only setup writes allowed |
-| `FULL` | Active port, active license, valid token |
-| `READ_ONLY` | Any other case — new writes return `423 LICENSE_READ_ONLY` |
+| `SETUP` | The port is still onboarding. Only setup writes are allowed. |
+| `FULL` | The port is active, the license is active and the token is valid. |
+| `READ_ONLY` | Anything else, always with a reason. New writes get `423 LICENSE_READ_ONLY`. |
 
-### ⏱️ Scheduler
-Weather pulls (6 h) · astronomical tide (daily) · license check-in (daily) · Part 3 evaluation · task re-send (T+10 / T+20 min) and escalation (T+30).
+### The scheduler
 
----
+Weather every 6 hours, the astronomical tide and the license check-in once a day, Part 3 evaluation runs, and reminders for unanswered tasks at T+10 and T+20 minutes before escalating at T+30.
 
-## 🛠️ Tech Stack
+## Stack
 
 | Area | Technology |
 |---|---|
-| Framework | Laravel 13 (PHP 8.3) |
-| Database | MySQL 8.4 — primary + replica, terminal-level row security, AES-256 at rest |
-| Cache & queues | Redis — `queue:part1`, `queue:part2`, `queue:edi` |
-| Realtime | Laravel Reverb — SSE (web), WebSocket (mobile), sent after DB commit |
-| Entry | NGINX — load balancer, TLS 1.3 |
-| Assets | Vite · Tailwind CSS 4 |
-| Quality | PHPUnit · Laravel Pint |
-| Local dev | Docker Compose (MySQL + phpMyAdmin) |
+| Framework | Laravel 13 on PHP 8.3 |
+| Database | MySQL 8.4, primary plus replica, terminal-level row security, AES-256 at rest |
+| Cache and queues | Redis: `queue:part1`, `queue:part2`, `queue:edi` |
+| Realtime | Laravel Reverb: SSE to the web, WebSocket to mobile, sent only after the commit |
+| Entry | NGINX load balancer, TLS 1.3 |
+| Front assets | Vite, Tailwind CSS 4 |
+| Quality | PHPUnit, Laravel Pint |
+| Local development | Docker Compose (MySQL and phpMyAdmin) |
 
----
+## Getting started
 
-## 🚀 Getting Started
-
-**Requirements:** PHP 8.3+, Composer, Node.js, Docker.
+You'll need PHP 8.3+, Composer, Node.js and Docker.
 
 ```bash
 git clone https://github.com/Atlantech-project/project-backend.git
 cd project-backend/ATLANTECH
 
-# Start MySQL + phpMyAdmin
-docker compose up -d
+docker compose up -d            # MySQL + phpMyAdmin
 
-# Install dependencies
 composer install
 npm install
 
-# Environment
 cp .env.example .env
 php artisan key:generate
 php artisan migrate
 
-# Run
 composer run dev
 ```
 
-| Service | URL |
+| Service | Address |
 |---|---|
 | API | http://localhost:8000 |
 | phpMyAdmin | http://localhost:8080 |
 
-### 🧪 Tests & formatting
+Before you open a pull request:
+
 ```bash
 php artisan test
 vendor/bin/pint
 ```
 
----
+## How we work
 
-## 🌿 Workflow
+Each task gets its own `feature/<task>` branch, cut from `develop` and merged through a pull request.
 
-One `feature/<task>` branch per task from `develop`, merged through pull requests.
+## Neighbours
 
----
+[PortHub](https://github.com/Atlantech-project/PortHub) &middot;
+[project-ai](https://github.com/Atlantech-project/project-ai) &middot;
+[project-frontend](https://github.com/Atlantech-project/project-frontend) &middot;
+[project-mobile](https://github.com/Atlantech-project/project-mobile)
 
-## 🔗 Related Repositories
+## Crew
 
-| | Repository |
-|---|---|
-| ⚓ Umbrella | [PortHub](https://github.com/Atlantech-project/PortHub) |
-| 🧠 AI | [project-ai](https://github.com/Atlantech-project/project-ai) |
-| 🖥️ Frontend | [project-frontend](https://github.com/Atlantech-project/project-frontend) |
-| 📱 Mobile | [project-mobile](https://github.com/Atlantech-project/project-mobile) |
+**Marwan Nabil Mohamed Motawea**, Backend Engineer<br>
+**Menna-Allah Mohamed Magdy Abd El-Kader**, Backend Engineer<br>
+**Mariem Mohamed Mansour Abd El-Gelel**, Backend Engineer
 
-## 👥 Backend Team
+<img src=".github/assets/wave.svg" width="100%" alt="">
 
-- **Marwan Nabil Mohamed Motawea** — Backend Engineer
-- **Menna-Allah Mohamed Magdy Abd El-Kader** — Backend Engineer
-- **Mariem Mohamed Mansour Abd El-Gelel** — Backend Engineer
-
----
-
-<div align="center">
-
-⚓ *ATLANTECH — Intelligent Port Operations* · Mansoura University · Graduation Project 2026
-
-</div>
+<p align="center">
+  <sub>ATLANTECH, Intelligent Port Operations &middot; Mansoura University &middot; Graduation Project 2026</sub>
+</p>
