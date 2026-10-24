@@ -1,0 +1,19 @@
+services:
+    mysql:
+        image: mysql:8.4
+        ports: ["3306:3306"]
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+            MYSQL_DATABASE: atlantech
+        volumes: [mysql-data:/var/lib/mysql]
+
+    phpmyadmin:
+        image: phpmyadmin:latest
+        ports: ["8080:80"]
+        environment:
+            PMA_HOST: mysql
+            PMA_USER: root
+        depends_on: [mysql]
+
+volumes:
+    mysql-data:
