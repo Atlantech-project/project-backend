@@ -134,9 +134,9 @@ Each task gets its own `feature/<task>` branch, cut from `develop` and merged th
 
 ## Crew
 
+**Mariem Mohamed Mansour Abd El-Gelel**, Backend Engineer<br>
 **Marwan Nabil Mohamed Motawea**, Backend Engineer<br>
-**Menna-Allah Mohamed Magdy Abd El-Kader**, Backend Engineer<br>
-**Mariem Mohamed Mansour Abd El-Gelel**, Backend Engineer
+**Menna-Allah Mohamed Magdy Abd El-Kader**, Backend Engineer
 
 <img src=".github/assets/wave.svg" width="100%" alt="">
 
