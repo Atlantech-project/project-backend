@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 700-723 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 732-755 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-25 · Uncertainty margin and window confidence
 
 | | |

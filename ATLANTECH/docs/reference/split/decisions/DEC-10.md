@@ -1,14 +1,14 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 309-333 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 341-365 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-10 · Scope of the AI FastAPI service
 
 | | |
 | --- | --- |
 | Source | New decision |
 | Owner | AI Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-10 · Sprint 1 |
 | Affects | AI-F01 · AI-F02 · AI-F03 · CT-16 |
-| Decision | ______ |
+| Decision | Closed (2026-10-27): FastAPI is cancelled. Laravel and Python talk only through Redis and MySQL. Validation moves to `queue:validate` (CT-13); health moves to Redis heartbeat keys `worker:{name}:heartbeat` (CT-16). |
 
 <div dir="rtl">
 

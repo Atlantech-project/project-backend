@@ -29,12 +29,12 @@
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "83f7d6710ce528810ceb013b448d195047d9a2e6"
+      "sha1": "18ba7ab45be9e364651daf0d295f4a9c631cf9e6"
     },
     {
       "path": "decisions/ATLANTECH_Decisions.md",
       "source": "Code Notes/ATLANTECH_Decisions.md",
-      "sha1": "3677def321119282fe57ba424f0301f886e09c6b"
+      "sha1": "4da0a7aa3d02cb6c1520ecb6be5f55e94aeaca86"
     },
     {
       "path": "roadmap/ATLANTECH_Master_Roadmap.pdf",
@@ -226,6 +226,31 @@
       "path": "ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md",
       "source": "Code Notes/ATLANTECH_AI_BACKEND_DEPENDENCIES.md",
       "sha1": "788ffc7250a86d46dfa2d601ce844755510ee646"
+    },
+    {
+      "path": "contracts/ai/c05-validation.schema.json",
+      "source": "Code Notes/contracts/ai/c05-validation.schema.json",
+      "sha1": "b8ef41151c7a0d621382dfbdc656674a25e69d90"
+    },
+    {
+      "path": "contracts/ai/c06-completion.schema.json",
+      "source": "Code Notes/contracts/ai/c06-completion.schema.json",
+      "sha1": "6e2bc4cba5821b5e17cf265a46e0f745735a3fa9"
+    },
+    {
+      "path": "contracts/ai/worker-heartbeat.schema.json",
+      "source": "Code Notes/contracts/ai/worker-heartbeat.schema.json",
+      "sha1": "4f76b34b817bd35754c33cc4f7189d57337e483b"
+    },
+    {
+      "path": "proposals/CT-12_Backend_Proposal.md",
+      "source": "Code Notes/CT-12_Backend_Proposal.md",
+      "sha1": "f8c3a59856551101b7a06beea43298d1c170b093"
+    },
+    {
+      "path": "proposals/CT-13-18_Backend_Proposal.md",
+      "source": "Code Notes/CT-13-18_Backend_Proposal.md",
+      "sha1": "28aa3b1a6748310b1647b35fc93f9142828e7a38"
     }
   ],
   "ignore": [

@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 775-798 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 807-830 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-28 · Definition of moves
 
 | | |

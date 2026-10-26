@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1319-1336 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1351-1368 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-49 · Status and error colours and the icon set
 
 | | |

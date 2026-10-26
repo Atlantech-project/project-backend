@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1136-1160 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1168-1192 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-42 · Staff pages on the tablet and a provisioning screen
 
 | | |

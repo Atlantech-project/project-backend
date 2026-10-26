@@ -1,14 +1,14 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 517-541 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 549-573 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-18 · C-05 · Validation
 
 | | |
 | --- | --- |
 | Source | AI contract v1 · AIBD-008 |
 | Owner | AI Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-18 · Sprint 1 |
 | Affects | AI-F03 · P4-K4 · P6-P3 · CT-13 |
-| Decision | ______ |
+| Decision | Closed (2026-10-27), full text in CT-13 v1.0. Async variant: `VALIDATION` job with `validation_type` (OVERRIDE / YARD_ADJUSTMENT), `subject_id`, `proposed_change`; `run_id = null`, correlation by `job_id`; result `validation_result` returned in C-06. |
 
 <div dir="rtl">
 

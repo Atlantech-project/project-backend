@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1290-1314 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1322-1346 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-48 · Field roles on the web
 
 | | |

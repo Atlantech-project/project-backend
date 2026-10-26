@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 956-980 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 988-1012 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-35 · Sign-in identifier
 
 | | |

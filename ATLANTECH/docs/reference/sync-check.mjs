@@ -108,7 +108,7 @@ for (const dir of manifest.watch || []) {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, e.name);
       if (e.isDirectory()) walk(p);
-      else if (/\.(md|sql|pdf)$/i.test(e.name)) {
+      else if (/\.(md|sql|pdf|json)$/i.test(e.name)) {
         const rel = path.relative(root, p).replace(/\\/g, '/');
         if (!tracked.has(rel)) untracked.push(rel);
       }
