@@ -1,0 +1,5 @@
+<!-- Generated from docs/reference/ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md lines 58-58 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+| AIBD-004 | Backend → Part 2 | Enqueue regeneration on resource-state change (`RESOURCE_CHANGE`), including resources released by cancellation | Required | DOCUMENTED; payload PROPOSED | AI-059 |
+
+<!-- Generated from docs/reference/ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md lines 106-106 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+**AIBD-004 — Resource change.** Backend → Part 2. Purpose: regenerate pending recommendations that use a changed berth, tug or pilot (UML rule 11), including resources released by a cancellation (AD-12 note). Required. Contract C-02 with `trigger_type = RESOURCE_CHANGE`. Prerequisites: Backend detects the change and finds affected pending recommendations (AD-12 A1–A2 are Port Server steps). Failure: previous version stays current. If unavailable: staff may confirm stale recommendations; the booking re-check (AIBD-017) still protects against double booking.

@@ -1,0 +1,5 @@
+<!-- Generated from docs/reference/ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md lines 66-66 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+| AIBD-012 | Backend → Part 1 | `part1_run` row created QUEUED before enqueue | Required | DOCUMENTED (2.10) | AI-048 |
+
+<!-- Generated from docs/reference/ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md lines 122-122 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+**AIBD-012 / AIBD-013 / AIBD-014 / AIBD-015 — Run rows created by the Backend.** Purpose: the run row is the correlation id and lets the UI show QUEUED immediately. AIBD-012 and AIBD-014 and AIBD-015 are DOCUMENTED; AIBD-013 (`solver_run` QUEUED by the Backend, with `trigger_type`, `triggered_by` when MANUAL per `chk_sr_manual`, horizon and `solver_version` placeholder) is PROPOSED — REQUIRES APPROVAL because `solver_version` is NOT NULL and is known only by the worker [PROPOSED: Backend writes the configured solver version string from `port_setting`, worker overwrites if different].

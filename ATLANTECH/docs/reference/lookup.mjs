@@ -34,6 +34,8 @@ for (const raw of args) {
     .filter(k => n[k] !== undefined && n[k] !== '').map(k => `${k}: ${n[k]}`);
   console.log(`${id} · ${n.type} · ${n.title}`);
   if (facts.length) console.log('  ' + facts.join(' · '));
+  if (n.decision_recorded && /open/i.test(n.status || '')) console.log('  ! the Decision row is filled in, but the summary table still says Open: check the source');
+  if (n.split) console.log(`  read: ${n.split}`);
   for (const s of n.src) console.log(`  source: ${s.file}:${s.lines}`);
   if (n.written_by) console.log(`  written by: created ${n.written_by.created_by} · completed ${n.written_by.completed_by} (${n.written_by.source.file}:${n.written_by.source.lines})`);
   for (const [dir, links] of [['→', n.out], ['←', n.in]]) {

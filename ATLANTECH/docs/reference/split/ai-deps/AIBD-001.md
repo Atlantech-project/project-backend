@@ -1,0 +1,5 @@
+<!-- Generated from docs/reference/ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md lines 55-55 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+| AIBD-001 | Backend → Part 1 | Enqueue Part 1 run on Customs Approval, recompute, manual data, reopen | Required | Interaction DOCUMENTED; payload PROPOSED | AI-003, AI-048 |
+
+<!-- Generated from docs/reference/ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md lines 100-100 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+**AIBD-001 — Part 1 run job.** Backend → AI Part 1, async (`queue:part1`). Purpose: start a Part 1 run. Required. Contract C-01 (§3.2). Prerequisites: request `CUSTOMS_APPROVED`, mode `FULL`, AIBD-012, AIBD-035. Owner: Backend (enqueue), AI (consume). Status: interaction DOCUMENTED (2.10, 2.11), payload PROPOSED. Failure: Redis unavailable → Backend must not commit the status change without the job, or must have a re-enqueue mechanism [PROPOSED: transactional outbox or re-enqueue of QUEUED runs older than a threshold]. If unavailable: no entry windows; the call cannot progress past Gate 1.
