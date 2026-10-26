@@ -53,6 +53,8 @@ node docs/reference/lookup.mjs --find "version" # IDs whose title contains the w
 | AI architecture and the earlier phase plan | `ai/ATLANTECH_AI_Architecture.pdf`; older generation (Oct 19, `T<phase>.<n>` IDs): `ai/ATLANTECH_AI_Implementation_Plan.md`, `ai/ATLANTECH_AI_Phase_Deliverables_and_Backend_Map.md` | `T<phase>.<n>`, `BD-n` |
 | Architecture overview, components, deployment | `architecture/ATLANTECH_System_Architecture.md`, `architecture/System_Architecture.pdf` | `AD-n` |
 | Project overview | `project/Master_Context.md` | |
+| JSON Schemas of approved AI contracts | `contracts/ai/*.schema.json` (copies of PortHub `contracts/ai/`) | `CT-xx` |
+| Backend proposals still under negotiation with another team | `proposals/` — **PROPOSED: never a source.** Once approved, the text lands in the Contracts or Decisions file, which wins | |
 | Screens that call the API | `ui/ATLANTECH_Screens.pdf` | `P-nn` page IDs |
 
 ## Known gaps
