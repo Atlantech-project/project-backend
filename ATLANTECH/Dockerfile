@@ -18,7 +18,10 @@ RUN composer install --no-interaction --no-progress --no-scripts --no-autoloader
         $( [ "$INSTALL_DEV" = "true" ] || echo "--no-dev" )
 
 COPY . .
+# Settings come from environment variables (Compose env_file / environment); the empty .env only
+# stops Laravel from warning that the file is missing. .dockerignore keeps real .env files out.
 RUN composer dump-autoload --optimize \
+    && touch .env \
     && chown -R www-data:www-data storage bootstrap/cache
 
 # PHP-FPM listens on 9000; NGINX forwards PHP requests to it.
