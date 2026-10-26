@@ -80,24 +80,26 @@ Weather every 6 hours, the astronomical tide and the license check-in once a day
 
 | Area | Technology |
 |---|---|
-| Framework | Laravel 13 on PHP 8.3 |
+| Framework | Laravel 13 on PHP 8.4 |
 | Database | MySQL 8.4, primary plus replica, terminal-level row security, AES-256 at rest |
 | Cache and queues | Redis: `queue:part1`, `queue:part2`, `queue:edi` |
 | Realtime | Laravel Reverb: SSE to the web, WebSocket to mobile, sent only after the commit |
 | Entry | NGINX load balancer, TLS 1.3 |
 | Front assets | Vite, Tailwind CSS 4 |
-| Quality | PHPUnit, Laravel Pint |
-| Local development | Docker Compose (MySQL and phpMyAdmin) |
+| Quality | Pest (with architecture tests for the module rules), Laravel Pint |
+| Local development | Laravel Herd for PHP; Docker Compose for MySQL and Redis, plus a `server` profile with PHP-FPM and NGINX |
 
 ## Getting started
 
-You'll need PHP 8.3+, Composer, Node.js and Docker.
+### Backend developers (Herd)
+
+You'll need [Laravel Herd](https://herd.laravel.com) (PHP 8.4 with the `pdo_mysql` and `redis` extensions), Composer, Node.js and Docker.
 
 ```bash
 git clone https://github.com/Atlantech-project/project-backend.git
 cd project-backend/ATLANTECH
 
-docker compose up -d            # MySQL + phpMyAdmin
+docker compose up -d            # MySQL + Redis
 
 composer install
 npm install
@@ -106,13 +108,38 @@ cp .env.example .env
 php artisan key:generate
 php artisan migrate
 
-composer run dev
+composer run dev                # app, queue worker, logs
 ```
 
-| Service | Address |
-|---|---|
-| API | http://localhost:8000 |
-| phpMyAdmin | http://localhost:8080 |
+The API is served by Herd at http://atlantech.test.
+
+### Frontend, Mobile and QA (no PHP needed)
+
+Run the whole API in Docker, the same way the port server runs it:
+
+```bash
+cd project-backend/ATLANTECH
+cp .env.example .env
+docker compose --profile server run --rm app php artisan key:generate --show   # paste the key into APP_KEY in .env
+docker compose --profile server up -d --build
+docker compose exec app php artisan migrate
+```
+
+The API answers at http://localhost:8000 (`/up` returns 200 when it is ready). After pulling new code, run the `up -d --build` and `migrate` lines again.
+
+### Services
+
+| Service | Address | Started by |
+|---|---|---|
+| API (Herd) | http://atlantech.test | Herd |
+| API (Docker) | http://localhost:8000 | `docker compose --profile server up -d` |
+| MySQL 8.4 | `127.0.0.1:3306`, database `atlantech`, user `root`, no password | `docker compose up -d` |
+| Redis 7.4 | `127.0.0.1:6379`, no password, AOF persistence | `docker compose up -d` |
+| phpMyAdmin | http://localhost:8080 | `docker compose --profile tools up -d` |
+
+Every port listens on `127.0.0.1` only, so these services are reachable from your own machine and nowhere else. The passwords are empty for local use only; a shared dev server or a deployment sets real ones.
+
+**AI team, running workers locally:** connect to MySQL and Redis at the addresses above. Containers on the Compose network reach them as `mysql:3306` and `redis:6379`.
 
 Before you open a pull request:
 
