@@ -25,7 +25,7 @@ From `backend/atlantech_backend_tasks.md` take the row (title, effort, Depends o
 
 From `roadmap/roadmap-tasks.json` take the same task (sprint, feature, plain "done when" in `desc`, `deps`) and build two lists:
 
-- **Waits for:** every ID in `deps`, any team. For each, find its state: a merged task has its plan file at status Done or its code on `main`; otherwise ask or mark "unknown".
+- **Waits for:** every ID in `deps`, any team. For each, find its state: a merged task has its plan file at status Done or its code on `develop`; otherwise ask or mark "unknown".
 - **Unblocks:** every task of any team whose `deps` contain this ID.
 
 ## 3. Collect what the task must satisfy

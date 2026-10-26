@@ -1,15 +1,75 @@
+# Daily development (PHP runs in Herd):    docker compose up -d                  -> mysql, redis
+# Port-server shape (CI, dev server, deploy): docker compose --profile server up -d --build  -> + app, nginx on http://localhost:8000
+# Database browser when needed:            docker compose --profile tools up -d  -> + phpMyAdmin on http://localhost:8080
+# Published ports listen on 127.0.0.1 only: MySQL (empty root password) and Redis (no password) are for this machine.
+# A shared dev server or deployment (DEC-47, P6-R6) must set real passwords before exposing anything.
 services:
     mysql:
         image: mysql:8.4
-        ports: ["3306:3306"]
+        restart: unless-stopped
+        ports: ["127.0.0.1:3306:3306"]
         environment:
             MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
             MYSQL_DATABASE: atlantech
         volumes: [mysql-data:/var/lib/mysql]
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+
+    redis:
+        image: redis:7.4-alpine
+        restart: unless-stopped
+        ports: ["127.0.0.1:6379:6379"]
+        # AOF persistence, as DEC-11 recommends (development setting until DEC-11 closes).
+        command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+        volumes: [redis-data:/data]
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+
+    app:
+        profiles: [server]
+        build: .
+        restart: unless-stopped
+        env_file:
+            - path: .env
+              required: false
+        environment:
+            DB_HOST: mysql
+            REDIS_HOST: redis
+        depends_on:
+            mysql: { condition: service_healthy }
+            redis: { condition: service_healthy }
+        healthcheck:
+            test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+            interval: 5s
+            timeout: 3s
+            retries: 20
+
+    nginx:
+        profiles: [server]
+        image: nginx:1.27-alpine
+        restart: unless-stopped
+        ports: ["127.0.0.1:8000:80"]
+        volumes:
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+            - ./public:/var/www/html/public:ro
+        depends_on:
+            app: { condition: service_healthy }
+        healthcheck:
+            test: ["CMD", "wget", "-qO-", "http://127.0.0.1/up"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
 
     phpmyadmin:
-        image: phpmyadmin:latest
-        ports: ["8080:80"]
+        profiles: [tools]
+        image: phpmyadmin:5.2
+        ports: ["127.0.0.1:8080:80"]
         environment:
             PMA_HOST: mysql
             PMA_USER: root
@@ -17,3 +77,4 @@ services:
 
 volumes:
     mysql-data:
+    redis-data:
