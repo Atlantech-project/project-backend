@@ -1,0 +1,242 @@
+{
+  "sourceRoot": "E:/collage/GRADUATION PROGECT",
+  "syncedAt": "2026-10-26",
+  "watch": [
+    "Code Notes",
+    "Documentation"
+  ],
+  "files": [
+    {
+      "path": "backend/atlantech_backend_tasks.md",
+      "source": "Documentation/Architecture/atlantech_backend_tasks.md",
+      "sha1": "c7e1915d77456c61cb4fff37146d2c4717bd1b71"
+    },
+    {
+      "path": "backend/AtlanTech_Backend_Plan.pdf",
+      "source": "Documentation/Architecture/AtlanTech_Backend_Plan.pdf",
+      "sha1": "312098e6637815041931e50bfcb94b0ff42e145b"
+    },
+    {
+      "path": "backend/AtlanTech_Backend_Architecture.pdf",
+      "source": "Code Notes/AtlanTech_Backend_Architecture.pdf",
+      "sha1": "74497f642d9c5f4c8a43abee9e73b80af1242ba4"
+    },
+    {
+      "path": "backend/Coding_Notes_and_Mapping.md",
+      "source": "Code Notes/Coding_Notes_and_Mapping.md",
+      "sha1": "204ce23515aea72ceb82805691da2a896eb9b796"
+    },
+    {
+      "path": "contracts/ATLANTECH_Contracts.md",
+      "source": "Code Notes/ATLANTECH_Contracts.md",
+      "sha1": "e696aec68abc3a8b5ff571eb0ffa3400efed287c"
+    },
+    {
+      "path": "decisions/ATLANTECH_Decisions.md",
+      "source": "Code Notes/ATLANTECH_Decisions.md",
+      "sha1": "02ba6784ed6f55a24aa291961adc320fab60a611"
+    },
+    {
+      "path": "roadmap/ATLANTECH_Master_Roadmap.pdf",
+      "source": "Code Notes/ATLANTECH_Master_Roadmap.pdf",
+      "sha1": "c266ba5505e263556e7f1a8b9c62ebc878e16d92"
+    },
+    {
+      "path": "database/PortSync.sql",
+      "source": "PortSync.sql",
+      "sha1": "e5633e4c3bfa8970689ebc74e5afbbb7aa5d284d"
+    },
+    {
+      "path": "database/SaaS.sql",
+      "source": "SaaS.sql",
+      "sha1": "0dac260385e537ec4e661c106b21251c1de77981"
+    },
+    {
+      "path": "database/PortSync.md",
+      "source": "Documentation/Database/PortSync.md",
+      "sha1": "5fa34e52078c3e4913bd772c1c91fb3dc61e23ae"
+    },
+    {
+      "path": "database/SaaS.md",
+      "source": "Documentation/Database/SaaS.md",
+      "sha1": "a65e1514348f16995dd2b4a4a54273f83289f472"
+    },
+    {
+      "path": "database/ATLANTECH_DB_Edit_Sheet.md",
+      "source": "Code Notes/ATLANTECH_DB_Edit_Sheet.md",
+      "sha1": "227d09c946f000f62d507b320efe187f1205ca6e"
+    },
+    {
+      "path": "database/PortSync_base_ddl_fixes.sql",
+      "source": "Code Notes/PortSync_base_ddl_fixes.sql",
+      "sha1": "9f91f0066ee9c44833aa4316c141fe266bd30bee"
+    },
+    {
+      "path": "database/Report_A_Accepted_SQL_Changes.md",
+      "source": "Code Notes/Report_A_Accepted_SQL_Changes.md",
+      "sha1": "ba1f6c64984d7a2308a6239cceec00d67f9f67a4"
+    },
+    {
+      "path": "database/Report_B_Tier3_Naming_Changes.md",
+      "source": "Code Notes/Report_B_Tier3_Naming_Changes.md",
+      "sha1": "d18c34c5c27047a2cf4ca26c1d27f78d09318916"
+    },
+    {
+      "path": "database/FCM_SQL_Changes.md",
+      "source": "Code Notes/FCM_SQL_Changes.md",
+      "sha1": "043e1623ff38f5b8ebdf57cb7b150a78309980aa"
+    },
+    {
+      "path": "database/FCM_Push_Change_Report.md",
+      "source": "Code Notes/FCM_Push_Change_Report.md",
+      "sha1": "93f1512a0fe5721bd118d4b76e36f92e4059ccd7"
+    },
+    {
+      "path": "database/DBML_CHANGE_REPORT.md",
+      "source": "DBML_CHANGE_REPORT.md",
+      "sha1": "aa86eb01cfadab5e99577d376f80f1cc98548732"
+    },
+    {
+      "path": "ai/ATLANTECH_AI_Implementation_Plan.md",
+      "source": "Code Notes/ATLANTECH_AI_Implementation_Plan.md",
+      "sha1": "e046997ac1310f9d6048d936e34775d3139425c0"
+    },
+    {
+      "path": "ai/ATLANTECH_AI_Phase_Deliverables_and_Backend_Map.md",
+      "source": "Code Notes/ATLANTECH_AI_Phase_Deliverables_and_Backend_Map.md",
+      "sha1": "503d25ae4af4646e4af0a2ed24b4104bd6ab3e11"
+    },
+    {
+      "path": "ai/ATLANTECH_AI_Architecture.pdf",
+      "source": "Documentation/Architecture/ATLANTECH_AI_Architecture.pdf",
+      "sha1": "1c473b50bde6eb82ddac4369b45fc7f2055c38db"
+    },
+    {
+      "path": "architecture/ATLANTECH_System_Architecture.md",
+      "source": "Documentation/Architecture/ATLANTECH_System_Architecture.md",
+      "sha1": "742821ddd82c0b4ed0d1b43896f97c5d9412ed5c"
+    },
+    {
+      "path": "architecture/System_Architecture.pdf",
+      "source": "Documentation/Architecture/System_Architecture.pdf",
+      "sha1": "8ca4db7be35326ee33495c8d56c7494298bae5dd"
+    },
+    {
+      "path": "requirements/Functional Requirements.md",
+      "source": "Documentation/Requirements/Functional Requirements.md",
+      "sha1": "b4b637486ccfdfe3895f924057f0f2e9e88f5178"
+    },
+    {
+      "path": "requirements/Non Functional Requirements.md",
+      "source": "Documentation/Requirements/Non Functional Requirements.md",
+      "sha1": "3133c7231437d36e9104c7b2542b0314b2ab3560"
+    },
+    {
+      "path": "requirements/Users & Actors.md",
+      "source": "Documentation/Requirements/Users & Actors.md",
+      "sha1": "16898aa54cfb5739a05a701dc92b2030e10fefe4"
+    },
+    {
+      "path": "uml/UML_Context.md",
+      "source": "Documentation/UML_Diagrams/UML_Context.md",
+      "sha1": "ba876a4d67eb5f0b90b8a1b4f2cf91d14b4fe09a"
+    },
+    {
+      "path": "uml/ATLANTECH_State_Diagrams.md",
+      "source": "Documentation/UML_Diagrams/State_Diagrams/ATLANTECH_State_Diagrams.md",
+      "sha1": "9bd6424cf8e24d83b41e6fd5a1b86d27d2368cd1"
+    },
+    {
+      "path": "uml/ATLANTECH_Sequence_Diagrams.md",
+      "source": "Documentation/UML_Diagrams/Sequence_Diagrams/ATLANTECH_Sequence_Diagrams.md",
+      "sha1": "ab66b15c533def893fe7279621e2b4c672f9463a"
+    },
+    {
+      "path": "uml/ATLANTECH_Activity_Diagrams.md",
+      "source": "Documentation/UML_Diagrams/Activity_Diagrams/ATLANTECH_Activity_Diagrams.md",
+      "sha1": "21aa85ca23d84a3fa519b5214ccf88249a29d129"
+    },
+    {
+      "path": "uml/ATLANTECH_Use_Case_Diagrams.md",
+      "source": "Documentation/UML_Diagrams/Use_Case_Diagrams/ATLANTECH_Use_Case_Diagrams.md",
+      "sha1": "591bc59bd8a66b4efd911c8f2172fdf4f4648311"
+    },
+    {
+      "path": "uml/class/ATLANTECH_ClassDiagrams_Index.md",
+      "source": "Documentation/UML_Diagrams/Class_Diagrams/ATLANTECH_ClassDiagrams_Index.md",
+      "sha1": "7cee12cfed7f3a3c6b9b34c19e332e13ffb96905"
+    },
+    {
+      "path": "uml/class/ClassDiagramContext.md",
+      "source": "Documentation/UML_Diagrams/Class_Diagrams/ClassDiagramContext.md",
+      "sha1": "08806c6fae97958b769bb3801ec4aa1bfbf99ce4"
+    },
+    {
+      "path": "uml/class/ATLANTECH_ClassDiagram_1_SaaS.md",
+      "source": "Documentation/UML_Diagrams/Class_Diagrams/ATLANTECH_ClassDiagram_1_SaaS.md",
+      "sha1": "f4d344802c4f09b6a70c10ec6c606b1cc990d14f"
+    },
+    {
+      "path": "uml/class/ATLANTECH_ClassDiagram_2A_Access_Marine.md",
+      "source": "Documentation/UML_Diagrams/Class_Diagrams/ATLANTECH_ClassDiagram_2A_Access_Marine.md",
+      "sha1": "f34690a717984cf1dab9d59ac293abfe7bef3539"
+    },
+    {
+      "path": "uml/class/ATLANTECH_ClassDiagram_2B_Terminal_Yard.md",
+      "source": "Documentation/UML_Diagrams/Class_Diagrams/ATLANTECH_ClassDiagram_2B_Terminal_Yard.md",
+      "sha1": "297eb36b8d75beb2b2d15dd570eda74794567d68"
+    },
+    {
+      "path": "uml/class/ATLANTECH_ClassDiagram_2C_Request_BAPLIE_Part1.md",
+      "source": "Documentation/UML_Diagrams/Class_Diagrams/ATLANTECH_ClassDiagram_2C_Request_BAPLIE_Part1.md",
+      "sha1": "25e2ad7dd1fe035d3486e8fb95fc9c6793524966"
+    },
+    {
+      "path": "uml/class/ATLANTECH_ClassDiagram_2D_Part2_Plan_Dispatch.md",
+      "source": "Documentation/UML_Diagrams/Class_Diagrams/ATLANTECH_ClassDiagram_2D_Part2_Plan_Dispatch.md",
+      "sha1": "9e6536302d66ca838a4733e9775de3f6a71c5602"
+    },
+    {
+      "path": "uml/class/ATLANTECH_ClassDiagram_3_Execution_Learning.md",
+      "source": "Documentation/UML_Diagrams/Class_Diagrams/ATLANTECH_ClassDiagram_3_Execution_Learning.md",
+      "sha1": "c1718e6c69876804e65b0aa54590acfd9817cd76"
+    },
+    {
+      "path": "project/Master_Context.md",
+      "source": "Documentation/Project_Overview/Master_Context.md",
+      "sha1": "6192947a1f1ac4882b2de19c38d483794abec3eb"
+    },
+    {
+      "path": "ui/ATLANTECH_Screens.pdf",
+      "source": "Documentation/UI_Design/ATLANTECH_Screens.pdf",
+      "sha1": "3a8d79f341d62b922e0dcc8acf44c5d430153b97"
+    },
+    {
+      "path": "roadmap/roadmap-tasks.json",
+      "source": "atlantech-tracker/public/index.html",
+      "extract": "roadmap",
+      "sha1": "8b9e3113b93c7cf8aa486603ad4e996d144ed4ab"
+    },
+    {
+      "path": "ai/ATLANTECH_AI_TASKS.md",
+      "source": "Code Notes/ATLANTECH_AI_TASKS.md",
+      "sha1": "69fee41075ee76bba34f67e3cc62fec1b03d44f2"
+    },
+    {
+      "path": "ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md",
+      "source": "Code Notes/ATLANTECH_AI_BACKEND_DEPENDENCIES.md",
+      "sha1": "788ffc7250a86d46dfa2d601ce844755510ee646"
+    }
+  ],
+  "ignore": [
+    "Code Notes/Visual_Identity.md",
+    "Documentation/Business/Business_Model.pdf",
+    "Documentation/Presentation/ATLANTECH_Presentation.pdf",
+    "Documentation/Project_Overview/ATLANTECH_PROPOSAL_FORMAL.pdf",
+    "Documentation/Requirements/ATLANTECH_Functional_Requirements_MVP.pdf",
+    "Documentation/UML_Diagrams/Activity_Diagrams/ATLANTECH_Activity_Diagrams.pdf",
+    "Documentation/UML_Diagrams/Sequence_Diagrams/ATLANTECH_Sequence_Diagrams.pdf",
+    "Documentation/UML_Diagrams/State_Diagrams/ATLANTECH_State_Diagrams.pdf",
+    "Documentation/UML_Diagrams/Use_Case_Diagrams/ATLANTECH_Use_Case_Diagrams.pdf"
+  ]
+}
