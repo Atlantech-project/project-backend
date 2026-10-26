@@ -30,6 +30,8 @@ Then read only the lines it points to: the task row, the roadmap entry (plain "d
 
 ## 3. Collect what the task must satisfy
 
+Delegate the collection to the `docs-navigator` agent (Haiku, read-only) so the large documents never enter this conversation: ask it for "everything a planner needs about <ID>: the task, what it waits for and what waits for it, requirements, state machine, contracts, decisions, AI dependencies, tables, conflicts and missing documents". Use its table of `file:lines` and quotes as the sources for section 2, and open a line range yourself only where its answer is unclear or a decision depends on exact wording. If the agent is not available in this session, do the collection yourself as below.
+
 Look up every ID the task links to (`→ refs`, `→ depends_on`) and every topic it touches (`lookup.mjs --find "<table or status>"`), and read their split files. Tables: `lookup.mjs <table>` gives `split/tables/<table>.md` with the CREATE TABLE and its notes. Read at least:
 
 | Always | When it applies |
