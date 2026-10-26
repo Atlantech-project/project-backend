@@ -4,6 +4,7 @@
 //   node docs/reference/sync-check.mjs            report only
 //   node docs/reference/sync-check.mjs --apply    copy changed local files into docs/reference, update the manifest
 //                                                 and rebuild the index (index/index.json)
+//   node docs/reference/sync-check.mjs --mirrors  only refresh the skill and AGENTS.md copies for other agents
 //
 // The local folder is read from ATLANTECH_DOCS_ROOT, falling back to manifest.sourceRoot.
 // Exit code: 0 in sync, 1 differences found or index stale (report mode), 2 local folder not available.
@@ -18,6 +19,13 @@ const manifestPath = path.join(here, 'manifest.json');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 const root = process.env.ATLANTECH_DOCS_ROOT || manifest.sourceRoot;
 const apply = process.argv.includes('--apply');
+
+// --mirrors: refresh only the copies for other agents, without touching documents or the index.
+if (process.argv.includes('--mirrors')) {
+  const refreshed = mirrors(true); // function declaration below, hoisted
+  console.log(refreshed.length ? `Refreshed copies for other agents: ${refreshed.join(', ')}` : 'Copies for other agents already match.');
+  process.exit(0);
+}
 const sha1 = f => crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex');
 const sha1Of = buf => crypto.createHash('sha1').update(buf).digest('hex');
 
