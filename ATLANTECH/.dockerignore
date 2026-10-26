@@ -1,0 +1,17 @@
+.env
+.env.backup
+.env.production
+.git
+.idea
+.vscode
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+database/database.sqlite
+.phpunit.cache

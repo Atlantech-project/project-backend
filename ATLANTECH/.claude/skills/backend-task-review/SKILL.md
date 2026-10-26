@@ -1,6 +1,6 @@
 ---
 name: backend-task-review
-description: Review an ATLANTECH backend task's branch against its plan, the team contracts, the decisions, the database schema and the rules in the reference documents, and report what is missing, wrong or in conflict. Use when the user says "review task X", "راجع التاسك", before opening a PR, or when backend-task-execute finishes. Works from docs/tasks/<ID>.md and the branch diff against main.
+description: Review an ATLANTECH backend task's branch against its plan, the team contracts, the decisions, the database schema and the rules in the reference documents, and report what is missing, wrong or in conflict. Use when the user says "review task X", "راجع التاسك", before opening a PR, or when backend-task-execute finishes. Works from docs/tasks/<ID>.md and the branch diff against develop.
 ---
 
 # Backend task review
@@ -11,7 +11,7 @@ Checks that a task's code does what was agreed and nothing the other teams don't
 
 1. Read `docs/tasks/<ID>.md`: done-when list, design, steps, other-team tables, answers in section 8.
 2. Run `node docs/reference/sync-check.mjs`. If a cited source changed after the plan, review against the newer text and say so.
-3. Get the change: `git diff main...HEAD` and `git log main..HEAD`. Read every changed file in full, not only the hunks.
+3. Fetch, then get the change: `git diff origin/develop...HEAD` and `git log origin/develop..HEAD`. Read every changed file in full, not only the hunks.
 4. Activate `laravel-best-practices` and `testing-best-practices` for the code-quality pass.
 5. Run the plan's tests. A failing test is a Blocker.
 
