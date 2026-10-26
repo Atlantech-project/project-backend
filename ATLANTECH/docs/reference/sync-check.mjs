@@ -21,6 +21,40 @@ const apply = process.argv.includes('--apply');
 const sha1 = f => crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex');
 const sha1Of = buf => crypto.createHash('sha1').update(buf).digest('hex');
 
+/**
+ * Our own skills (every skill in .claude/skills that is not one of Laravel Boost's) are mirrored to
+ * .agents/skills and .junie/skills for teammates on other tools, and the "ATLANTECH workflow" section
+ * of CLAUDE.md is mirrored into AGENTS.md. Returns the list of out-of-date copies; refreshes them when fix is true.
+ */
+function mirrors(fix) {
+  const app = path.resolve(here, '..', '..');
+  const boost = JSON.parse(fs.readFileSync(path.join(app, 'boost.json'), 'utf8')).skills || [];
+  const skillsDir = path.join(app, '.claude', 'skills');
+  const ours = fs.readdirSync(skillsDir).filter(s => !boost.includes(s) && fs.statSync(path.join(skillsDir, s)).isDirectory());
+  const files = d => fs.readdirSync(d, { recursive: true }).filter(p => fs.statSync(path.join(d, p)).isFile()).map(p => p.replace(/\\/g, '/'));
+  const stale = [];
+  for (const target of ['.agents/skills', '.junie/skills']) {
+    for (const skill of ours) {
+      const from = path.join(skillsDir, skill), to = path.join(app, target, skill);
+      const differs = !fs.existsSync(to) || files(from).join() !== files(to).join() ||
+        files(from).some(p => fs.readFileSync(path.join(from, p), 'utf8') !== fs.readFileSync(path.join(to, p), 'utf8'));
+      if (!differs) continue;
+      stale.push(`${target}/${skill}`);
+      if (fix) { fs.rmSync(to, { recursive: true, force: true }); fs.cpSync(from, to, { recursive: true }); }
+    }
+  }
+  const marker = '\n# ATLANTECH workflow\n';
+  const claude = fs.readFileSync(path.join(app, 'CLAUDE.md'), 'utf8');
+  const agentsPath = path.join(app, 'AGENTS.md'), agents = fs.readFileSync(agentsPath, 'utf8');
+  const section = claude.includes(marker) ? claude.slice(claude.indexOf(marker)) : '';
+  const agentsSection = agents.includes(marker) ? agents.slice(agents.indexOf(marker)) : '';
+  if (section && section !== agentsSection) {
+    stale.push('AGENTS.md workflow section');
+    if (fix) fs.writeFileSync(agentsPath, (agents.includes(marker) ? agents.slice(0, agents.indexOf(marker)) : agents.replace(/\n*$/, '\n')) + section);
+  }
+  return stale;
+}
+
 /** Runs build-index.mjs (rebuild, or --check) and returns true when it succeeded. */
 function index(check) {
   const r = spawnSync(process.execPath, [path.join(here, 'build-index.mjs'), ...(check ? ['--check'] : [])], { stdio: 'inherit' });
@@ -39,6 +73,8 @@ function readSource(f, src) {
 if (!root || !fs.existsSync(root)) {
   console.log(`Local docs folder not found (${root || 'unset'}). Set ATLANTECH_DOCS_ROOT to check for local changes.`);
   index(true);
+  const staleMirrors = mirrors(apply);
+  if (staleMirrors.length) console.log(`${apply ? 'Refreshed' : 'Out of date (run with --apply)'}: ${staleMirrors.join(', ')}`);
   process.exit(2);
 }
 
@@ -91,8 +127,13 @@ if (apply) {
     console.log(`Copied ${changed.length} file(s) into docs/reference and updated manifest.json.`);
   }
   const built = index(false);
-  console.log('Review the diff (documents and index) and commit it.');
+  const refreshed = mirrors(true);
+  if (refreshed.length) console.log(`Refreshed copies for other agents: ${refreshed.join(', ')}`);
+  console.log('Review the diff (documents, index and copies) and commit it.');
   process.exit(built ? 0 : 1);
 }
 const indexOk = index(true);
-process.exit(changed.length || !indexOk ? 1 : 0);
+const staleMirrors = mirrors(false);
+if (staleMirrors.length) console.log(`Copies for other agents out of date (run with --apply): ${staleMirrors.join(', ')}`);
+else console.log('Copies for other agents (.agents, .junie, AGENTS.md) match.');
+process.exit(changed.length || !indexOk || staleMirrors.length ? 1 : 0);
