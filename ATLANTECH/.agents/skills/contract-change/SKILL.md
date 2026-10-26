@@ -23,7 +23,7 @@ Write, in the plan file of the task that needs the change (section 7), or in a n
 
 ## 3. Decision-log entry
 
-Draft a new `DEC-nn` (next free number: `node docs/reference/lookup.mjs --find "DEC-"` or the last one in the Decisions summary) in the format of the decisions document: Source `CT-xx`, Owner, Status Open, Closing task, Affects, Topic, Options, Recommendation, Decision blank. The lead adds it to the shared Decisions file; then `node docs/reference/sync-check.mjs --apply` brings it into the repository. Use `decision-close` when it is decided.
+Draft a new `DEC-nn` (next free number: one above `grep -oE '"DEC-[0-9]+":' docs/reference/index/index.json | sort | tail -1`) in the format of the decisions document: Source `CT-xx`, Owner, Status Open, Closing task, Affects, Topic, Options, Recommendation, Decision blank. The lead adds it to the shared Decisions file; then `node docs/reference/sync-check.mjs --apply` brings it into the repository. Use `decision-close` when it is decided.
 
 ## 4. Edit the contract (after the lead agrees to propose it)
 
