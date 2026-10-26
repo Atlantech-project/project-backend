@@ -2,13 +2,15 @@
 // Compares docs/reference with the team's local documents folder (the graduation project folder).
 //
 //   node docs/reference/sync-check.mjs            report only
-//   node docs/reference/sync-check.mjs --apply    copy changed local files into docs/reference and update the manifest
+//   node docs/reference/sync-check.mjs --apply    copy changed local files into docs/reference, update the manifest
+//                                                 and rebuild the index (index/index.json)
 //
 // The local folder is read from ATLANTECH_DOCS_ROOT, falling back to manifest.sourceRoot.
-// Exit code: 0 in sync, 1 differences found (report mode), 2 local folder not available.
+// Exit code: 0 in sync, 1 differences found or index stale (report mode), 2 local folder not available.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -18,6 +20,12 @@ const root = process.env.ATLANTECH_DOCS_ROOT || manifest.sourceRoot;
 const apply = process.argv.includes('--apply');
 const sha1 = f => crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex');
 const sha1Of = buf => crypto.createHash('sha1').update(buf).digest('hex');
+
+/** Runs build-index.mjs (rebuild, or --check) and returns true when it succeeded. */
+function index(check) {
+  const r = spawnSync(process.execPath, [path.join(here, 'build-index.mjs'), ...(check ? ['--check'] : [])], { stdio: 'inherit' });
+  return r.status === 0;
+}
 
 // "extract": "roadmap" pulls the task data (const D = {...}) out of the progress tracker page as JSON.
 function readSource(f, src) {
@@ -30,6 +38,7 @@ function readSource(f, src) {
 
 if (!root || !fs.existsSync(root)) {
   console.log(`Local docs folder not found (${root || 'unset'}). Set ATLANTECH_DOCS_ROOT to check for local changes.`);
+  index(true);
   process.exit(2);
 }
 
@@ -69,16 +78,21 @@ for (const f of changed) console.log(`  CHANGED   ${f.path}  <-  ${f.source}  (l
 for (const f of missingLocal) console.log(`  MISSING   ${f.source}  (repo copy kept: ${f.path})`);
 for (const r of untracked) console.log(`  UNTRACKED ${r}  (add it to manifest.json if the backend needs it)`);
 
-if (apply && changed.length) {
-  for (const f of changed) {
-    const dst = path.join(here, f.path);
-    fs.mkdirSync(path.dirname(dst), { recursive: true });
-    fs.writeFileSync(dst, f.content);
-    manifest.files.find(m => m.path === f.path).sha1 = f.localSha;
+if (apply) {
+  if (changed.length) {
+    for (const f of changed) {
+      const dst = path.join(here, f.path);
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      fs.writeFileSync(dst, f.content);
+      manifest.files.find(m => m.path === f.path).sha1 = f.localSha;
+    }
+    manifest.syncedAt = new Date().toISOString().slice(0, 10);
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+    console.log(`Copied ${changed.length} file(s) into docs/reference and updated manifest.json.`);
   }
-  manifest.syncedAt = new Date().toISOString().slice(0, 10);
-  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
-  console.log(`Copied ${changed.length} file(s) into docs/reference and updated manifest.json. Review the diff and commit it.`);
-  process.exit(0);
+  const built = index(false);
+  console.log('Review the diff (documents and index) and commit it.');
+  process.exit(built ? 0 : 1);
 }
-process.exit(changed.length ? 1 : 0);
+const indexOk = index(true);
+process.exit(changed.length || !indexOk ? 1 : 0);
