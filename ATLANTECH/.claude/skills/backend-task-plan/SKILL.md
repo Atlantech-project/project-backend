@@ -7,7 +7,7 @@ description: Plan an ATLANTECH backend task before any code is written. Use when
 
 Turns one task ID into an agreed plan file, `docs/tasks/<ID>.md`, built from `docs/tasks/_TEMPLATE.md`. No application code is written in this skill.
 
-The documents are in `docs/reference/`; its `README.md` says which file answers which question and how IDs look in each. Paths below are relative to the Laravel app root (`ATLANTECH/`).
+The documents are in `docs/reference/`; its `README.md` says which file answers which question and how IDs look in each. Paths below are relative to the Laravel app root (`ATLANTECH/`). Follow the `context-rules` skill for every read: index lookup first, then only the split file or line range it points to.
 
 ## 1. Check the documents are current
 
@@ -21,16 +21,16 @@ If `docs/tasks/<ID>.md` already exists, read it and continue from where it stopp
 
 ## 2. Read the task
 
-From `backend/atlantech_backend_tasks.md` take the row (title, effort, Depends on, AI link), its phase goal and exit check, and any integration decision (`D-nn`) that names it in the Blocks column.
+Run `node docs/reference/lookup.mjs <ID>`. It gives the task's title, phase and package, sprint and feature, its source lines in `backend/atlantech_backend_tasks.md` and `roadmap/roadmap-tasks.json`, and two lists with titles:
 
-From `roadmap/roadmap-tasks.json` take the same task (sprint, feature, plain "done when" in `desc`, `deps`) and build two lists:
+- **Waits for** (`→ depends_on`, any team). For each, find its state: a merged task has its plan file at status Done or its code on `develop`; otherwise ask or mark "unknown".
+- **Unblocks** (`← unblocks`): every task of any team that waits for this one.
 
-- **Waits for:** every ID in `deps`, any team. For each, find its state: a merged task has its plan file at status Done or its code on `develop`; otherwise ask or mark "unknown".
-- **Unblocks:** every task of any team whose `deps` contain this ID.
+Then read only the lines it points to: the task row, the roadmap entry (plain "done when" in `desc`), the phase goal and exit check (`grep -n "^## Phase"`), and any integration decision `D-nn` listed under `← blocked_by`.
 
 ## 3. Collect what the task must satisfy
 
-Search the reference folder for the task ID, the tables, the endpoints, the status names and the feature. Read at least:
+Look up every ID the task links to (`→ refs`, `→ depends_on`) and every topic it touches (`lookup.mjs --find "<table or status>"`), and read their split files. Tables: `lookup.mjs <table>` gives `split/tables/<table>.md` with the CREATE TABLE and its notes. Read at least:
 
 | Always | When it applies |
 | --- | --- |
@@ -41,9 +41,9 @@ Search the reference folder for the task ID, the tables, the endpoints, the stat
 | Tables in `database/PortSync.sql` or `SaaS.sql`, plus the edit sheet, DDL fixes and reports A/B | For every `AIBD-nnn` link: its entry in `ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md` (§2.2 details, §4 table ownership, §5 workflow duties, §7 checklist); for every `AI-nnn`: its row in `ai/ATLANTECH_AI_TASKS.md` |
 | `backend/Coding_Notes_and_Mapping.md` sections 2–6 | Screens PDF for the pages that call the endpoint |
 
-Then look at the code that exists today (`app/`, `routes/`, `database/migrations/`, `tests/`) so the plan reuses what is there.
+Then look at the code that exists today (`app/`, `routes/`, `database/migrations/`, `tests/`) so the plan reuses what is there; prefer Boost's `database-schema` and `php artisan route:list` over reading files.
 
-Record every source in section 2 of the plan, with the section or ID, so the review can check against the same text.
+Record every source in section 2 of the plan as `file:lines` (from the lookup), so the review reads exactly the same text.
 
 Follow the **Source of truth** rules in `docs/reference/README.md`. When a source points to a document that is not in `docs/reference/` (or only an older version is), use the Master Roadmap for that point and add a row to section 2 saying which document was missing and what the roadmap says instead. When two present documents disagree, apply the same rules and still list the disagreement in section 7.
 

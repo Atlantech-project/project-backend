@@ -13,7 +13,7 @@ Implements a planned task without spending the user's attention on routine work,
 2. Run `node docs/reference/sync-check.mjs`. If a source the plan cites changed since the plan was written, tell the user which and re-check the affected steps before coding.
 3. Check that every "Waits for" item is still satisfied.
 4. Make sure the working tree is clean, fetch, then create the branch from the plan (`feature/<task-id>-<slug>`) from `origin/develop`. Never work on `develop`, `release` or `main` directly; the task's PR targets `develop` (team flow: develop → release → main).
-5. Activate `laravel-best-practices` and `testing-best-practices`, and follow `CLAUDE.md` (Boost tools, `php artisan make:` commands, Pint, Pest).
+5. Activate `laravel-best-practices` and `testing-best-practices`, and follow `CLAUDE.md` (Boost tools, `php artisan make:` commands, Pint, Pest) and `context-rules` (look facts up through `docs/reference/lookup.mjs`, read only the cited lines, keep command output small).
 
 ## 2. Agree the modes
 
@@ -26,7 +26,7 @@ Show the steps table from the plan with each step's mode, then ask the user whet
 | **C** | Claude drafts | **Stop.** Show the diff summary and the reason; wait for approval before the next step | Migrations, or anything touching a table the AI writes (CT-15/CT-17); any contract artefact (OpenAPI shape, SSE events, status vocabulary, AI payloads, mock behaviour); status transitions, transactions, locks and row versions; the write chain, policies, scopes, licence mode and other security; audit; the first instance of a new pattern; anything resolving a conflict or an Open decision |
 | **D** | User | — | Things the user chose to write; decisions or agreements with other teams; anything needing accounts, secrets or servers Claude cannot reach. Claude prepares a checklist and the context, then waits |
 
-When a step needs a fact the plan does not give, look it up following the **Source of truth** rules in `docs/reference/README.md` (missing document → Master Roadmap) and record in the progress log which source was used.
+When a step needs a fact the plan does not give, look it up with `node docs/reference/lookup.mjs` and the split file it names, following the **Source of truth** rules in `docs/reference/README.md` (missing document → Master Roadmap) and record in the progress log which source was used.
 
 Escalation: if during an A or B step something is unexpected (a source disagrees, a new table or column seems needed, a test fails for a reason outside the step, the change spreads to files outside the plan), stop and treat the step as C. Never lower a mode without the user saying so.
 
