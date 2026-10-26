@@ -12,7 +12,7 @@ Implements a planned task without spending the user's attention on routine work,
 1. Read `docs/tasks/<ID>.md`. If it is missing or not **Ready**, run `backend-task-plan` first (or finish its open questions).
 2. Run `node docs/reference/sync-check.mjs`. If a source the plan cites changed since the plan was written, tell the user which and re-check the affected steps before coding.
 3. Check that every "Waits for" item is still satisfied.
-4. Make sure the working tree is clean, then create the branch from the plan (`feature/<task-id>-<slug>`) from `main`. Never work on `main`.
+4. Make sure the working tree is clean, fetch, then create the branch from the plan (`feature/<task-id>-<slug>`) from `origin/develop`. Never work on `develop`, `release` or `main` directly; the task's PR targets `develop` (team flow: develop → release → main).
 5. Activate `laravel-best-practices` and `testing-best-practices`, and follow `CLAUDE.md` (Boost tools, `php artisan make:` commands, Pint, Pest).
 
 ## 2. Agree the modes
