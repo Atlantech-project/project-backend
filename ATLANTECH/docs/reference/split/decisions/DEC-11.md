@@ -1,0 +1,27 @@
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 367-392 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+### DEC-11 · Redis persistence
+
+| | |
+| --- | --- |
+| Source | AIBD-029 |
+| Owner | Backend Team |
+| Status | Open |
+| Closing task | DEC-11 · Sprint 3 |
+| Affects | P3-I2 · P6-R6 |
+| Decision | ______ |
+
+<div dir="rtl">
+
+**القصة.** السيرفر عمل restart، والـ Redis كان فيه 5 jobs لسه ماتنفذتش. من غير persistence الـ jobs دي هتضيع، والطلبات هتفضل "مستنية" على الشاشة ومحدش هيحسبها.
+
+</div>
+
+**Topic.** If Redis goes down, queued jobs may be lost. Persistence is not documented.
+
+**Options:**
+
+1. AOF enabled (`appendfsync everysec`).
+2. RDB snapshots only.
+3. No persistence; rely on the sweeper that re-queues QUEUED runs.
+
+**Recommendation.** Option 1, with the sweeper (P3-I2) as a safety net.

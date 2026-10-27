@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/docs/reference/sync-check.mjs\" 2>&1 || true",
+            "timeout": 60,
+            "statusMessage": "Checking ATLANTECH reference documents"
+          }
+        ]
+      }
+    ]
+  }
+}

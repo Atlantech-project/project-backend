@@ -148,3 +148,15 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - After the feature tests pass, ask the user to run the complete suite with `php artisan test --compact`.
 
 </laravel-boost-guidelines>
+
+# ATLANTECH workflow
+
+This section is maintained by the Backend Team, outside the Boost block (Boost regenerates only between its markers).
+
+- **Every task follows** `backend-task-plan` → `backend-task-execute` → `backend-task-review`, in that order. No code without `docs/tasks/<ID>.md` at status Ready; open questions are asked before coding; steps run in modes A/B/C/D and stop at C for the lead's approval.
+- **Task memory:** `docs/tasks/<ID>.md` holds the plan, answers, progress log and review. A new session reads it first and continues; plan files are part of the workflow (the "only create documentation when asked" rule above does not apply to them).
+- **Sources:** the project documents are in `docs/reference/` (copies; run `node docs/reference/sync-check.mjs` first). Follow its Source of truth rules: approved CT or Closed DEC first, then the Master Roadmap, then team documents; PROPOSED never wins; a missing document means the Master Roadmap, said explicitly; nothing covers it means ask.
+- **Reading:** follow the `context-rules` skill: `node docs/reference/lookup.mjs <ID>` first, then only the split file or line range it names; cite `file:lines` for every claim.
+- **Code layout:** domain code goes in `app/Modules/<Module>/`; the module dependency order is enforced by `tests/Unit/Modules/ModuleArchitectureTest.php`. SQL names for statuses (PHP enums), audit in the same transaction, events and jobs after commit.
+- **Git:** branch `feature/<task-id>-<slug>` from `origin/develop`; PRs target `develop`; commit per step; never push, open a PR or merge without the lead's OK.
+- **Language:** explain to the lead in Egyptian Arabic, keeping English technical terms.

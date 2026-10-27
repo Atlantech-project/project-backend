@@ -12,12 +12,12 @@ Checks that a task's code does what was agreed and nothing the other teams don't
 1. Read `docs/tasks/<ID>.md`: done-when list, design, steps, other-team tables, answers in section 8.
 2. Run `node docs/reference/sync-check.mjs`. If a cited source changed after the plan, review against the newer text and say so.
 3. Fetch, then get the change: `git diff origin/develop...HEAD` and `git log origin/develop..HEAD`. Read every changed file in full, not only the hunks.
-4. Activate `laravel-best-practices` and `testing-best-practices` for the code-quality pass.
+4. Activate `laravel-best-practices` and `testing-best-practices` for the code-quality pass, and follow `context-rules`: check each rule against the plan's cited `file:lines` and the split files from `docs/reference/lookup.mjs`, not against whole documents.
 5. Run the plan's tests. A failing test is a Blocker.
 
 ## 2. Check
 
-Go through every area below. For each finding, note the file and line and the source it breaks (document and section or ID). Judge against the **Source of truth** rules in `docs/reference/README.md`: where a document is missing, the Master Roadmap decides; where present documents disagree, contracts and Closed decisions first, then the roadmap, then team documents; PROPOSED text never wins.
+Go through every area below. For each finding, note the code file and line and quote the source it breaks with its `file:lines` (from the lookup), never a title or summary. Judge against the **Source of truth** rules in `docs/reference/README.md`: where a document is missing, the Master Roadmap decides; where present documents disagree, contracts and Closed decisions first, then the roadmap, then team documents; PROPOSED text never wins.
 
 **Plan**
 - Every done-when line is met and proven by a test or demo; every step in the log; nothing outside the scope without a recorded reason.

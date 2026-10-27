@@ -1,0 +1,5 @@
+<!-- Generated from docs/reference/ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md lines 75-75 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+| AIBD-021 | Backend → AI | `port_setting` keys for AI configuration | Required | PROPOSED — REQUIRES APPROVAL | AI-012 |
+
+<!-- Generated from docs/reference/ai/ATLANTECH_AI_BACKEND_DEPENDENCIES.md lines 132-132 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+**AIBD-021 — Configuration keys.** Backend seeds and exposes `port_setting` keys [PROPOSED — REQUIRES APPROVAL]: `weather_pull_hours` (example key in PortSync), `tide_horizon_days`, `part1_stored_data_max_age_hours` (48, documented value), `part1_assessment_horizon_hours`, `part1_time_step_minutes`, `part1_min_window_minutes`, `demand_slot_minutes`, `solver_time_limit_seconds` (10, NFR-ENG-1), `solver_options_per_request`, `part1_max_retries` (3, documented), `run_stale_after_seconds`, `part3_evaluation_cron`, `retrain_interval_days` (example key in PortSync), `drift_psi_threshold`, `drift_mae_threshold`. Values other than the documented ones are decided in AI-007/AI-008.
