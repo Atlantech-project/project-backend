@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | In progress |
+| Status | In review |
 | Owner | Marwan (requested 2026-10-26) |
 | Branch | `feature/workflow-tooling`, on top of `feature/P1-A1-modules-docker` (P1-A1 touches the same skill files and is not merged yet); its PR into `develop` opens after P1-A1 merges |
 | Resumes afterwards | CT-01 execution (plan Ready on `feature/CT-01-plan`) |
@@ -32,13 +32,13 @@ Later, not now: try Graphify or a code-graph MCP once the code is large (researc
 
 ## Done when
 
-- [ ] `index.json` and split files generate from sync-check; every backend-task ID resolves; a stale index fails the check.
-- [ ] The three backend skills use the index and `context-rules`.
-- [ ] `CLAUDE.md` section added outside the Boost markers; skill copies in `.agents` and `.junie`.
-- [ ] Four agents exist and `docs-navigator` answers a test query (P3-G2) from the index only.
-- [ ] Six new skills committed.
-- [ ] Marwan has the Project instruction text and the upload list.
-- [ ] A short before/after token note.
+- [x] `index.json` and split files generate from sync-check; every backend-task ID resolves; a stale index fails the check.
+- [x] The three backend skills use the index and `context-rules`.
+- [x] `CLAUDE.md` section added outside the Boost markers; skill copies in `.agents` and `.junie`.
+- [x] Four agents exist and `docs-navigator` answers a test query (P3-G2) from the index only.
+- [x] Six new skills committed.
+- [x] Marwan has the Project instruction text and the upload list.
+- [x] A short before/after token note.
 
 ## Progress log
 
@@ -56,3 +56,12 @@ Later, not now: try Graphify or a code-graph MCP once the code is large (researc
 - 2026-10-26 · `sync-check --mirrors` added (refreshes agent copies only; fixes the gap noted above). Step 4.1 done: `backend-pr-prepare` (readiness checks, description from plan + review via `reference/pr-template.md`, push and PR into develop only after the lead's OK, Done after merge). Step 4.2 done: `api-readiness-pack` (CT-23 shape; scope via the index's `feature` field; everything from develop or a contract, rest under Known gaps; covers roadmap BE-PK1…BE-PK7; template + checklist in `reference/pack-template.md`). Step 4.3 written: `contract-change` (approved contracts only; impact on both sides, semver rule, new DEC draft, PortHub branch with `Proposed vX.Y`, approval as for CT-01, `team-handoff`; checklist in `reference/change-checklist.md`), waiting for approval. Own fix: the next-DEC-number instruction used `lookup --find`, which caps at 40 results; replaced by a grep that returns the highest number (DEC-56 today).
 - 2026-10-27 · Resync after Marwan's commits (PortHub PR #7–#8 added `contracts/` with Contracts and Decisions; backend PR #2 merged P1-A1). `Code Notes` and PortHub `contracts/` are identical, so the sync source stays `Code Notes`. Applied (4e428ad): Contracts and Decisions (CT-10…CT-16 Approved v1.0; DEC-01, 02, 03, 08, 10, 14–19 Closed; FastAPI cancelled by DEC-10, CT-16 = worker heartbeat over Redis, CT-13 = `queue:validate`), 3 AI schemas into `contracts/ai/`, the two backend proposals into `proposals/` (tracked, never a source; README says so), and `sync-check` now also watches `.json`. 49 documents in sync, index current, every backend-task ID resolves, copies match. CT-01 text unchanged, so its plan stays valid. Gaps found, reported to Marwan: backend tasks file still says D-03 "synchronous in Laravel" and lists P3-H6, P4-K4, P6-P3 as "Blocked: D-03" (DEC-03 Closed: async on `queue:validate`); no backend task reads the CT-16 heartbeats; CT-09 has no Status row although DEC-14 approved it; DEC-04 (envelope, CT-08) still Open while CT-10…CT-14 reference the envelope; P1-A1 merged into `main` not `develop`, so `develop` is 16 commits behind `main`.
 - 2026-10-27 · Marwan approved 4.3 (by moving on) and asked to fast-forward `develop`. Finding: `develop` had been **deleted on GitHub** (the repository deletes head branches after merge; PR #3 develop → main removed it; the P1-A1 branch was removed the same way). Recreated `develop` at `main` (8448d86, includes P1-A1). Recommended to Marwan: disable "Automatically delete head branches" or protect `develop`. Step 4.4 done: `openapi-sync` (CT-02 file lives in PortHub, so a paired PortHub PR linked from the backend PR; DEC-13 still Open; mapping in `reference/mapping.md`; no OpenAPI file exists yet, so P1-A4 creates it). Step 4.5 written: `decision-close` (gather, options table with sources, decide with the right owner, record in all three places of the decisions document, PortHub and Code Notes kept identical, follow-ups), waiting for approval.
+- 2026-10-27 · Step 4.5 approved. Step 4.6 done: `team-handoff` (e5c6fc7): one message per team from section 5 of the plan, the contract-change / decision-close impact list or the readiness pack; what changed, why, where, what to do by when, affected tasks from `lookup.mjs`, open points; drafts only, the lead sends; template and checklist in `reference/message-template.md`.
+- 2026-10-27 · Step 5 done, before/after note. Method: bytes read by `backend-task-plan` to gather its sources, tokens ≈ bytes / 4. *Before* = the whole documents its step 3 named (backend tasks, roadmap JSON, FR, Users & Actors, Contracts, Decisions, PortSync.sql, DB edit sheet, coding notes, plus the ones that apply to the task). *After* = `lookup.mjs` on the task and on every linked ID, the task's own lines, and each linked ID's split file or line range.
+
+  | Task | Linked IDs | Before | After | Saving |
+  |---|---|---|---|---|
+  | P3-G2 (+ state, sequence, AI dependencies) | 6 | 639 KB ≈ 164K tokens | 8.7 KB ≈ 2.2K tokens | ~74× |
+  | P1-A2 (+ NFR) | 4 | 546 KB ≈ 140K tokens | 6.2 KB ≈ 1.6K tokens | ~88× |
+
+  Caveats: "before" is the worst case (a careful reader would skim, not read every byte); "after" excludes the plan's own questions and any code read. Meaning is kept because the split files and line ranges are the original text. Agrees with the earlier `docs-navigator` test (7.6 KB vs 317 KB). All done-when items met; status In review; branch not pushed, waiting for Marwan.
