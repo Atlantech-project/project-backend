@@ -31,6 +31,7 @@ return new class extends Migration
             $table->enum('status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE'])->default('ACTIVE')->comment('Administrative only; fullness comes from the capacity numbers');
             $table->decimal('latitude', 9, 6)->nullable();
             $table->decimal('longitude', 9, 6)->nullable();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['storage_type_id', 'detail_kind'], 'fk_sf_storage_type');
             $table->index(['terminal_id', 'terminal_type'], 'fk_sf_terminal');
             $table->index(['terminal_id', 'status'], 'idx_sf_terminal_status');

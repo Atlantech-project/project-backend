@@ -21,7 +21,7 @@ return new class extends Migration
             $table->decimal('speed_limit_knots', 4, 1)->comment('Max permitted transit speed, entered by admin; worst-case input to squat');
             $table->boolean('is_active')->default(true);
             $table->dateTime('created_at')->useCurrent();
-            $table->dateTime('updated_at')->useCurrent();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
         });
 
         DB::statement('ALTER TABLE `navigation_channels` ADD CONSTRAINT `chk_channel_dimensions` CHECK (((depth > 0) and (width > 0) and (speed_limit_knots > 0)))');

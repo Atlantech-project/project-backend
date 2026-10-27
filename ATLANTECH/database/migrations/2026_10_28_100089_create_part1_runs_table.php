@@ -22,6 +22,7 @@ return new class extends Migration
             $table->dateTime('queued_at')->useCurrent();
             $table->dateTime('started_at')->nullable();
             $table->dateTime('finished_at')->nullable();
+            $table->dateTime('result_handled_at')->nullable()->comment('Set by the Backend when it has handled the C-06 result (Backend only)');
 
             $table->foreign('berthing_request_id')->references('id')->on('berthing_requests');
             $table->foreign('entry_window_proposal_id')->references('id')->on('entry_window_proposals');

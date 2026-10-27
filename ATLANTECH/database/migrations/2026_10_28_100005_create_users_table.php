@@ -21,6 +21,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true)->comment('Active users count against license max_users');
             $table->boolean('must_change_password')->default(false)->comment('1 = one-time password in use; must change before any other action');
             $table->dateTime('created_at')->useCurrent();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
         });
 
         DB::statement('ALTER TABLE `users` ADD CONSTRAINT `chk_user_username_lower` CHECK ((CAST(username AS BINARY) = CAST(lower(username) AS BINARY)) and (char_length(username) >= 3))');

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->enum('related_entity_type', ['PLAN_COMPONENT', 'BERTHING_REQUEST', 'RECOMMENDATION', 'ENTRY_WINDOW_PROPOSAL', 'TUGBOAT', 'RETRAINING_RUN', 'LICENSE']);
             $table->unsignedBigInteger('related_entity_id');
             $table->enum('type', ['PLAN_ASSIGNMENT', 'PRE_EXECUTION_REMINDER', 'TUG_STILL_BUSY', 'ENTRY_WINDOW_READY', 'RECOMMENDATION_READY', 'PLAN_CANCELLED', 'RETRAINING_REVIEW_NEEDED', 'LICENSE_EXPIRY_WARNING', 'ACK_ESCALATION', 'YARD_RECOMMENDATION_READY', 'YARD_RECOMMENDATION_FAILED', 'DRIFT_ALERT']);
-            $table->enum('channel', ['WEB', 'MOBILE']);
+            $table->enum('channel', ['WEB', 'MOBILE', 'PUSH']);
             $table->enum('status', ['SENT', 'FAILED', 'ACKNOWLEDGED']);
             $table->string('failure_reason', 255)->nullable();
             $table->dateTime('sent_at')->useCurrent();
@@ -27,10 +27,13 @@ return new class extends Migration
             $table->index(['user_id', 'status'], 'idx_nl_user_status');
 
             $table->foreign('user_id', 'fk_nl_user')->references('id')->on('users');
+
+            $table->comment('Each retry, escalation and push attempt is its own row.');
         });
 
         DB::statement('ALTER TABLE `notification_logs` ADD CONSTRAINT `chk_nl_ack` CHECK (((status = \'ACKNOWLEDGED\') = (acknowledged_at is not null)))');
         DB::statement('ALTER TABLE `notification_logs` ADD CONSTRAINT `chk_nl_failed` CHECK (((status = \'FAILED\') = (failure_reason is not null)))');
+        DB::statement('ALTER TABLE `notification_logs` ADD CONSTRAINT `chk_nl_push_no_ack` CHECK ((channel <> \'PUSH\') or (status <> \'ACKNOWLEDGED\'))');
     }
 
     /**

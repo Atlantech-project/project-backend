@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('terminal_type', ['CONTAINER', 'NON_CONTAINER']);
             $table->json('boundary_coordinates')->nullable()->comment('GeoJSON Polygon [lon, lat]; inside port boundary (app rule)');
             $table->boolean('is_active')->default(true)->comment('All registered terminals (active or not) count against license max_terminals');
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->unique(['id', 'terminal_type'], 'uq_terminal_id_type');
         });
     }

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('maintenance_quantity')->default(0);
             $table->integer('blocked_quantity')->default(0);
             $table->integer('available_quantity')->nullable()->storedAs('`quantity` - `maintenance_quantity` - `blocked_quantity`')->comment('GENERATED (stored): ((quantity - maintenance_quantity) - blocked_quantity) | Usable units; units busy in a plan are derived from plans (Module 18)');
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['equipment_category_id'], 'idx_eq_category');
             $table->unique(['id', 'terminal_id'], 'uq_eq_id_terminal');
             $table->unique(['terminal_id', 'equipment_category_id'], 'uq_eq_terminal_category');

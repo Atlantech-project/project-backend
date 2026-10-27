@@ -23,6 +23,7 @@ return new class extends Migration
             $table->enum('status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE'])->default('ACTIVE')->comment('Administrative only. Reserved/occupied is derived from plan_component and actual status');
             $table->decimal('latitude', 9, 6)->nullable();
             $table->decimal('longitude', 9, 6)->nullable();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['status'], 'idx_berth_status');
         });
 

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->time('start_time')->comment('Port local time (port_profile.timezone)');
             $table->time('end_time')->comment('If end_time < start_time the shift ends the next day');
             $table->boolean('is_active')->default(true);
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
 
             $table->comment('Fixed port shifts, defined on the settings screen. App rule: active shifts must not overlap.');
         });

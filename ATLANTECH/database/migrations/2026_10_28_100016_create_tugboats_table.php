@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('tug_power_unit', ['BOLLARD_PULL_TONNES', 'HP', 'KW'])->comment('Chosen by the Tug Manager');
             $table->decimal('capacity', 8, 2)->nullable()->comment('Kept as in source (P4-03 rejected)');
             $table->enum('status', ['AVAILABLE', 'BUSY', 'MAINTENANCE', 'INACTIVE'])->default('AVAILABLE')->comment('BUSY for the plan duration; Tug Master sets it back to AVAILABLE from the tablet; Tug Officer notified if still BUSY after planned_end');
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
 
             $table->comment('Port tug fleet (shared Marine Services resource).');
         });

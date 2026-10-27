@@ -27,6 +27,7 @@ return new class extends Migration
             $table->decimal('delay_risk', 4, 3)->nullable();
             $table->decimal('objective_score', 14, 4)->nullable();
             $table->unsignedBigInteger('rationale_template_id')->nullable();
+            $table->json('rationale_params')->nullable()->comment('Placeholder values for the rationale template, written by the worker');
             $table->index(['berth_id', 'terminal_id'], 'fk_ro_berth');
             $table->index(['pilot_user_id'], 'fk_ro_pilot');
             $table->index(['recommendation_id', 'terminal_id'], 'fk_ro_rec');

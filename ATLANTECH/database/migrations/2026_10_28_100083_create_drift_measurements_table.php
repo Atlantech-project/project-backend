@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('threshold', 14, 5);
             $table->boolean('is_drifted')->nullable()->storedAs('`metric_value` > `threshold`')->comment('GENERATED (stored): (metric_value > threshold)');
             $table->dateTime('measured_at');
+            $table->dateTime('notified_at')->nullable()->comment('Set by the Backend when the drift alert is sent (Backend only)');
             $table->index(['model_version_id'], 'fk_dm_version');
 
             $table->foreign('model_version_id', 'fk_dm_version')->references('id')->on('ml_model_versions');

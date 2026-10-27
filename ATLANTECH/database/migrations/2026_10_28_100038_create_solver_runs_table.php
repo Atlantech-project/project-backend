@@ -26,6 +26,7 @@ return new class extends Migration
             $table->dateTime('queued_at');
             $table->dateTime('started_at')->nullable();
             $table->dateTime('finished_at')->nullable();
+            $table->dateTime('result_handled_at')->nullable()->comment('Set by the Backend when it has handled the C-06 result (Backend only)');
             $table->index(['triggered_by'], 'fk_sr_user');
 
             $table->foreign('triggered_by', 'fk_sr_user')->references('id')->on('users');

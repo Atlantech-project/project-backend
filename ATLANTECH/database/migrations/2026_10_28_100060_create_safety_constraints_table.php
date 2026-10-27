@@ -24,6 +24,7 @@ return new class extends Migration
             $table->unsignedBigInteger('created_by');
             $table->dateTime('active_from')->comment('UTC');
             $table->dateTime('active_to')->nullable()->comment('UTC; NULL = open-ended');
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['berth_id', 'terminal_id'], 'fk_sc_berth_terminal');
             $table->index(['equipment_category_id'], 'fk_sc_eqcat');
             $table->index(['imdg_class'], 'fk_sc_imdg');

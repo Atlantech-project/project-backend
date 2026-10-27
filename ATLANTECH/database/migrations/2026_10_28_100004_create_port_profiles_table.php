@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('timezone', 64)->comment('IANA, e.g. Africa/Cairo');
             $table->json('boundary_coordinates')->nullable()->comment('GeoJSON Polygon, [lon, lat]');
             $table->dateTime('created_at')->useCurrent();
-            $table->dateTime('updated_at')->useCurrent();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
 
             $table->comment('Singleton per deployment. GM is a user_role_assignment, not a column here.');
         });

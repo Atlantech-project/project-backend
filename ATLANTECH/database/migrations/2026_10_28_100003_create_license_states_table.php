@@ -31,7 +31,7 @@ return new class extends Migration
             $table->dateTime('max_seen_time')->nullable()->comment('Clock-rollback guard');
             $table->enum('mode', ['SETUP', 'FULL', 'READ_ONLY'])->default('READ_ONLY');
             $table->enum('read_only_reason', ['NONE', 'NO_LICENSE', 'TOKEN_EXPIRED', 'SUSPENDED', 'REVOKED', 'INVALID_SIGNATURE', 'CLOCK_ROLLBACK', 'PORT_SUSPENDED', 'PORT_OFFBOARDED', 'LICENSE_NOT_YET_IN_EFFECT'])->default('NO_LICENSE');
-            $table->dateTime('updated_at')->useCurrent();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
 
             $table->comment('Local copy of the SaaS licence (hybrid signed token). Public key and API credential live in config, not here.');
         });

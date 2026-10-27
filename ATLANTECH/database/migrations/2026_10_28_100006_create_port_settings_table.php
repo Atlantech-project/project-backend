@@ -18,7 +18,7 @@ return new class extends Migration
             $table->enum('value_type', ['INT', 'DECIMAL', 'BOOL', 'STRING', 'JSON']);
             $table->string('description', 255)->nullable();
             $table->unsignedBigInteger('updated_by')->nullable();
-            $table->dateTime('updated_at')->useCurrent();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['updated_by'], 'fk_port_setting_updated_by');
 
             $table->foreign('updated_by', 'fk_port_setting_updated_by')->references('id')->on('users');

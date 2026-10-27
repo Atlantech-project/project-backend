@@ -23,7 +23,7 @@ return new class extends Migration
             $table->tinyInteger('active_assignment_key')->nullable()->storedAs('IF(`active_to` IS NULL, 1, NULL)')->comment('GENERATED (stored): IF(active_to IS NULL, 1, NULL)');
             $table->index(['organization_unit_id', 'unit_type'], 'fk_ura_unit');
             $table->index(['organization_unit_id'], 'idx_ura_unit');
-            $table->unique(['user_id', 'role', 'organization_unit_id', 'active_assignment_key'], 'uq_ura_active');
+            $table->unique(['user_id', 'active_assignment_key'], 'uq_ura_active');
 
             $table->foreign(['organization_unit_id', 'unit_type'], 'fk_ura_unit')->references(['id', 'unit_type'])->on('organization_units');
             $table->foreign('user_id', 'fk_ura_user')->references('id')->on('users');
