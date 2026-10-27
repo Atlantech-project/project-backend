@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /*
@@ -47,4 +49,25 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Point the default connection at the MySQL schema-test database (docker-compose.yml) and
+ * build it from the migrations once per run. SQLite cannot run the CHECK constraints,
+ * generated columns and ENUMs the port schema relies on (CT-17).
+ */
+function useSchemaDatabase(): void
+{
+    static $migrated = false;
+
+    config([
+        'database.default' => 'mysql',
+        'database.connections.mysql.database' => env('DB_SCHEMA_TEST_DATABASE', 'atlantech_testing'),
+    ]);
+    DB::purge('mysql');
+
+    if (! $migrated) {
+        Artisan::call('migrate:fresh', ['--database' => 'mysql', '--force' => true]);
+        $migrated = true;
+    }
 }
