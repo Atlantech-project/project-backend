@@ -21,6 +21,6 @@
 **Options:**
 
 1. Show the flag only, no note.
-2. A note field on `actual_status_update`.
+2. A note field on `actual_status_updates`.
 
 **Recommendation.** Option 1 for the MVP.

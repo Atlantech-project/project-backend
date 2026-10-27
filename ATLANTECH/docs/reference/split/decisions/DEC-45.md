@@ -20,7 +20,7 @@
 
 **Options:**
 
-1. Display in port time from `port_profile.timezone`.
+1. Display in port time from `port_profiles.timezone`.
 2. User device time.
 
 **Recommendation.** Option 1 on web and mobile.

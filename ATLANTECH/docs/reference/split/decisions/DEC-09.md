@@ -20,7 +20,7 @@
 
 **Options:**
 
-1. `port_setting` keys per component type.
+1. `port_settings` keys per component type.
 2. A new table.
 
 **Recommendation.** Option 1 (agreed). Edited from P-62.
