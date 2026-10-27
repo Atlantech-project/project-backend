@@ -39,8 +39,16 @@ class GenerateContractsSchema extends Command
         $scratch = (string) $this->option('database');
         $original = config('database.connections.mysql.database');
 
+        // The scratch database is wiped and dropped: never touch one that already exists.
+        $exists = DB::connection('mysql')->table('information_schema.SCHEMATA')->where('SCHEMA_NAME', $scratch)->exists();
+        if ($scratch === $original || $exists) {
+            $this->error("Database {$scratch} already exists; the scratch database must be new because it is dropped afterwards. Drop it yourself or pass another --database.");
+
+            return self::FAILURE;
+        }
+
         try {
-            DB::connection('mysql')->statement("CREATE DATABASE IF NOT EXISTS `{$scratch}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
+            DB::connection('mysql')->statement("CREATE DATABASE `{$scratch}` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci");
             $this->useDatabase($scratch);
             Artisan::call('migrate:fresh', ['--database' => 'mysql', '--force' => true]);
             $lastMigration = (string) DB::connection('mysql')->table('migrations')->orderByDesc('id')->value('migration');

@@ -42,6 +42,14 @@ test('schema.sql carries the header, the full structure and the worker roles, an
     }
 })->group('schema');
 
+test('the generator never wipes a database that already exists', function () {
+    $this->artisan('atlantech:contracts-schema', ['--output' => tempnam(sys_get_temp_dir(), 'schema'), '--database' => 'atlantech_testing'])
+        ->expectsOutputToContain('already exists')
+        ->assertFailed();
+
+    expect(DB::table('information_schema.TABLES')->where('TABLE_SCHEMA', 'atlantech_testing')->count())->toBe(100);
+})->group('schema');
+
 test('the generator stops when the output folder does not exist', function () {
     $this->artisan('atlantech:contracts-schema', ['--output' => sys_get_temp_dir().'/no-such-folder/schema.sql'])
         ->expectsOutputToContain('Folder not found')
