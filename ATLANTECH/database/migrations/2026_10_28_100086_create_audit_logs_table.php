@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -28,6 +29,8 @@ return new class extends Migration
 
             $table->comment('Append-only: the application DB user gets INSERT + SELECT only on this table (P21-03).');
         });
+
+        DB::statement('ALTER TABLE `audit_logs` ADD CONSTRAINT `chk_al_states` CHECK ((((action <> \'CREATE\') or (before_state is null)) and ((action <> \'DELETE\') or (after_state is null))))');
     }
 
     /**

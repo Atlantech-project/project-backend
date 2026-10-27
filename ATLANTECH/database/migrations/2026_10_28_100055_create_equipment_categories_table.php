@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('equipment_categories', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 40)->unique();
+            $table->string('code', 40)->unique('code');
             $table->string('name', 100);
             $table->enum('equipment_role', ['VESSEL_HANDLING', 'CARGO_TRANSPORT', 'TRANSFER_SYSTEM']);
         });

@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('tide_constituent_sets', function (Blueprint $table) {
             $table->id();
-            $table->string('version_label', 40)->unique();
+            $table->string('version_label', 40)->unique('version_label');
             $table->string('datum_reference', 40)->comment('Must equal navigation_channel / berth depth_datum (backend check on activation)');
             $table->date('valid_from');
             $table->boolean('is_active')->default(false);
-            $table->tinyInteger('active_key')->nullable()->unique()->comment('GENERATED (stored): if(is_active,1,NULL)');
+            $table->tinyInteger('active_key')->nullable()->storedAs('IF(`is_active`, 1, NULL)')->unique('active_key')->comment('GENERATED (stored): if(is_active,1,NULL)');
         });
     }
 

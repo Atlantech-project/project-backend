@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -19,7 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('bias_correction_version_id')->nullable();
             $table->decimal('peak_congestion_score', 4, 3)->nullable();
             $table->enum('status', ['PROPOSED', 'CONFIRMED', 'REPLACED', 'REJECTED'])->default('PROPOSED');
-            $table->unsignedBigInteger('confirmed_key')->nullable()->unique()->comment('GENERATED (stored): if((status = \'CONFIRMED\'),berthing_request_id,NULL)');
+            $table->unsignedBigInteger('confirmed_key')->nullable()->storedAs('IF(`status` = \'CONFIRMED\', `berthing_request_id`, NULL)')->unique('confirmed_key')->comment('GENERATED (stored): if((status = \'CONFIRMED\'),berthing_request_id,NULL)');
             $table->dateTime('generated_at');
             $table->unsignedBigInteger('confirmed_window_id')->nullable();
             $table->unsignedBigInteger('confirmed_by')->nullable();
@@ -45,6 +46,11 @@ return new class extends Migration
 
             $table->comment('Part 1 output (D2). Confirmed window feeds Part 2 (D3). data_versions = the three run FKs.');
         });
+
+        DB::statement('ALTER TABLE `entry_window_proposals` ADD CONSTRAINT `chk_ewp_confirm_set` CHECK ((((confirmed_window_id is null) = (confirmed_by is null)) and ((confirmed_by is null) = (confirmed_at is null))))');
+        DB::statement('ALTER TABLE `entry_window_proposals` ADD CONSTRAINT `chk_ewp_confirmed` CHECK (((status <> \'CONFIRMED\') or (confirmed_window_id is not null)))');
+        DB::statement('ALTER TABLE `entry_window_proposals` ADD CONSTRAINT `chk_ewp_score` CHECK (((peak_congestion_score is null) or (peak_congestion_score between 0 and 1)))');
+        DB::statement('ALTER TABLE `entry_window_proposals` ADD CONSTRAINT `chk_ewp_reject_set` CHECK (((`rejected_by` IS NULL) = (`rejected_at` IS NULL)) AND ((`status` = \'REJECTED\') = (`rejection_reason` IS NOT NULL)))');
     }
 
     /**

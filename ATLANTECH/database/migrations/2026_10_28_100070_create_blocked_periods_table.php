@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -23,6 +24,8 @@ return new class extends Migration
             $table->foreign('limiting_constraint_type_id', 'fk_bp_constraint')->references('id')->on('constraint_types');
             $table->foreign('proposal_id', 'fk_bp_proposal')->references('id')->on('entry_window_proposals');
         });
+
+        DB::statement('ALTER TABLE `blocked_periods` ADD CONSTRAINT `chk_bp_period` CHECK ((period_end > period_start))');
     }
 
     /**

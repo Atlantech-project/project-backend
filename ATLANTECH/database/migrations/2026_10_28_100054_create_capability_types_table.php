@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('capability_types', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 60)->unique();
+            $table->string('code', 60)->unique('code');
             $table->string('name', 100);
             $table->enum('unit', ['TONNES', 'METRES', 'TONNES_PER_HOUR', 'CUBIC_METRES_PER_HOUR', 'MOVES_PER_HOUR', 'COUNT', 'BAR']);
         });

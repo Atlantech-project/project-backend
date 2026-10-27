@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('vessel_types', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 30)->unique();
+            $table->string('code', 30)->unique('code');
             $table->string('name', 80);
         });
     }

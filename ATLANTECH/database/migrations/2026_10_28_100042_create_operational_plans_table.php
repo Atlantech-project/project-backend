@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('recommendation_id')->comment('Enforces option <-> recommendation <-> request consistency');
             $table->unsignedBigInteger('recommendation_option_id')->comment('The confirmed (selected) option');
             $table->enum('status', ['CONFIRMED', 'CANCELLED', 'COMPLETED'])->default('CONFIRMED');
-            $table->unsignedBigInteger('active_key')->nullable()->unique()->comment('GENERATED (stored): IF(status = CONFIRMED, berthing_request_id, NULL)');
+            $table->unsignedBigInteger('active_key')->nullable()->storedAs('IF(`status` = \'CONFIRMED\', `berthing_request_id`, NULL)')->unique('active_key')->comment('GENERATED (stored): IF(status = CONFIRMED, berthing_request_id, NULL)');
             $table->unsignedBigInteger('confirmed_by');
             $table->dateTime('confirmed_at')->useCurrent();
             $table->index(['recommendation_option_id', 'recommendation_id'], 'fk_op_option');

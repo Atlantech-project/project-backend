@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -17,6 +18,8 @@ return new class extends Migration
 
             $table->comment('Settings screen: one row per rank.');
         });
+
+        DB::statement('ALTER TABLE `pilot_rank_limits` ADD CONSTRAINT `chk_pilot_rank_limit_loa` CHECK (((max_vessel_loa is null) or (max_vessel_loa > 0)))');
     }
 
     /**

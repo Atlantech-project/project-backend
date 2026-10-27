@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -28,6 +29,8 @@ return new class extends Migration
 
             $table->comment('Capacity/occupancy are derived from yard_slot.');
         });
+
+        DB::statement('ALTER TABLE `yard_zones` ADD CONSTRAINT `chk_yz_kind` CHECK ((detail_kind = \'CONTAINER_YARD\'))');
     }
 
     /**

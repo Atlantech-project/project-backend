@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -20,7 +21,7 @@ return new class extends Migration
             $table->dateTime('finished_at')->nullable();
             $table->enum('decision', ['PROMOTED', 'KEPT_CHAMPION', 'FAILED']);
             $table->string('decision_reason', 500)->nullable();
-            $table->boolean('review_pending')->nullable()->comment('GENERATED (stored): ((decision in (_latin1\'KEPT_CHAMPION\',_latin1\'FAILED\')) and (reviewed_at is null)) | TRUE until someone reviews a kept-champion or failed run (D12, P20-02)');
+            $table->boolean('review_pending')->nullable()->storedAs('`decision` IN (\'KEPT_CHAMPION\', \'FAILED\') AND `reviewed_at` IS NULL')->comment('GENERATED (stored): ((decision in (_latin1\'KEPT_CHAMPION\',_latin1\'FAILED\')) and (reviewed_at is null)) | TRUE until someone reviews a kept-champion or failed run (D12, P20-02)');
             $table->unsignedBigInteger('reviewed_by')->nullable();
             $table->dateTime('reviewed_at')->nullable();
             $table->string('review_note', 500)->nullable();
@@ -36,6 +37,10 @@ return new class extends Migration
 
             $table->comment('Champion vs Challenger history. Hard safety limits are never changed by retraining (D12).');
         });
+
+        DB::statement('ALTER TABLE `retraining_runs` ADD CONSTRAINT `chk_rr_review` CHECK (((reviewed_by is null) = (reviewed_at is null)))');
+        DB::statement('ALTER TABLE `retraining_runs` ADD CONSTRAINT `chk_rr_time` CHECK (((finished_at is null) or (finished_at >= started_at)))');
+        DB::statement('ALTER TABLE `retraining_runs` ADD CONSTRAINT `chk_rr_versions` CHECK (((champion_version_id is null) or (champion_version_id <> challenger_version_id)))');
     }
 
     /**

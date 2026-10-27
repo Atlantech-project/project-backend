@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -29,6 +30,8 @@ return new class extends Migration
             $table->foreign(['yard_slot_id', 'yard_block_id'], 'fk_ypi_slot')->references(['id', 'yard_block_id'])->on('yard_slots');
             $table->foreign(['terminal_recommendation_id', 'rec_type'], 'fk_ypi_tr')->references(['id', 'rec_type'])->on('terminal_recommendations');
         });
+
+        DB::statement('ALTER TABLE `yard_placement_items` ADD CONSTRAINT `chk_ypi_type` CHECK ((rec_type = \'YARD_PLACEMENT\'))');
     }
 
     /**

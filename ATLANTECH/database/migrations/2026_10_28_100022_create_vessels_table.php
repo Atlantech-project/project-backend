@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('vessels', function (Blueprint $table) {
             $table->id();
-            $table->char('imo_number', 7)->unique()->comment('7 digits, no "IMO" prefix; backend validates the check digit');
+            $table->char('imo_number', 7)->unique('imo_number')->comment('7 digits, no "IMO" prefix; backend validates the check digit');
             $table->string('name', 120);
             $table->unsignedBigInteger('vessel_type_id');
             $table->decimal('loa', 7, 2)->comment('Length overall, m');
@@ -28,6 +29,10 @@ return new class extends Migration
 
             $table->comment('Block coefficient (Cb), GT and DWT are per call: they live on berthing_request.');
         });
+
+        DB::statement('ALTER TABLE `vessels` ADD CONSTRAINT `chk_vessel_dims` CHECK ((loa > 0) and (beam > 0) and (beam < loa) and (max_draft > 0))');
+        DB::statement('ALTER TABLE `vessels` ADD CONSTRAINT `chk_vessel_imo` CHECK (regexp_like(imo_number, \'^[0-9]{7}$\'))');
+        DB::statement('ALTER TABLE `vessels` ADD CONSTRAINT `chk_vessel_tonnage` CHECK ((net_tonnage IS NULL OR net_tonnage > 0) and (moulded_depth IS NULL OR moulded_depth > 0))');
     }
 
     /**

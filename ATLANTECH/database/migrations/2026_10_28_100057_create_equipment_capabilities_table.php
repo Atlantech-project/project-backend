@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -22,6 +23,8 @@ return new class extends Migration
             $table->foreign('equipment_id', 'fk_ecap_equipment')->references('id')->on('equipment');
             $table->foreign('capability_type_id', 'fk_ecap_type')->references('id')->on('capability_types');
         });
+
+        DB::statement('ALTER TABLE `equipment_capabilities` ADD CONSTRAINT `chk_ecap_value` CHECK ((capability_value >= 0))');
     }
 
     /**

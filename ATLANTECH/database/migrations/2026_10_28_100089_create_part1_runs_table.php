@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -25,6 +26,8 @@ return new class extends Migration
             $table->foreign('berthing_request_id')->references('id')->on('berthing_requests');
             $table->foreign('entry_window_proposal_id')->references('id')->on('entry_window_proposals');
         });
+
+        DB::statement('ALTER TABLE `part1_runs` ADD CONSTRAINT `chk_p1r_retry` CHECK (`retry_count` BETWEEN 0 AND 3)');
     }
 
     /**

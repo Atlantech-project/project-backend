@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -17,11 +18,13 @@ return new class extends Migration
             $table->integer('version');
             $table->text('template_text');
             $table->boolean('is_active')->default(true);
-            $table->string('active_code', 60)->nullable()->unique()->comment('GENERATED (stored): if(is_active,code,NULL)');
+            $table->string('active_code', 60)->nullable()->storedAs('IF(`is_active`, `code`, NULL)')->unique('active_code')->comment('GENERATED (stored): if(is_active,code,NULL)');
             $table->unique(['code', 'version'], 'uq_rt_code_version');
 
             $table->comment('Fixed, versioned templates; never LLM (D11).');
         });
+
+        DB::statement('ALTER TABLE `rationale_templates` ADD CONSTRAINT `chk_rt_version` CHECK ((version > 0))');
     }
 
     /**

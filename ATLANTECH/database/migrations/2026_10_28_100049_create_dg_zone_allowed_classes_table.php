@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -22,6 +23,8 @@ return new class extends Migration
             $table->foreign('imdg_class', 'fk_dzac_imdg')->references('code')->on('imdg_classes');
             $table->foreign(['yard_zone_id', 'zone_detail'], 'fk_dzac_zone')->references(['id', 'zone_detail'])->on('yard_zones');
         });
+
+        DB::statement('ALTER TABLE `dg_zone_allowed_classes` ADD CONSTRAINT `chk_dzac_type` CHECK ((zone_detail = \'DANGEROUS_GOODS\'))');
     }
 
     /**

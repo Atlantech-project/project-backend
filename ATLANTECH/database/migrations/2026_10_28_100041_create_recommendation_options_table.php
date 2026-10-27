@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -41,6 +42,9 @@ return new class extends Migration
 
             $table->comment('No is_selected column: the selected option is the one operational_plan references (backend reads it, P15-03).');
         });
+
+        DB::statement('ALTER TABLE `recommendation_options` ADD CONSTRAINT `chk_ro_p90` CHECK ((((service_time_method = \'ML\') = (service_time_p90_hours is not null)) and ((service_time_p90_hours is null) or (service_time_p90_hours >= service_time_p50_hours))))');
+        DB::statement('ALTER TABLE `recommendation_options` ADD CONSTRAINT `chk_ro_values` CHECK (((option_rank > 0) and (planned_end > planned_start) and (service_time_p50_hours > 0) and ((delay_risk is null) or (delay_risk between 0 and 1))))');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -35,6 +36,10 @@ return new class extends Migration
 
             $table->comment('Location = port_profile lat/lon (single port).');
         });
+
+        DB::statement('ALTER TABLE `forecast_runs` ADD CONSTRAINT `chk_fr_horizon` CHECK (((horizon_start is null) or (horizon_end is null) or (horizon_end > horizon_start)))');
+        DB::statement('ALTER TABLE `forecast_runs` ADD CONSTRAINT `chk_fr_on_demand` CHECK ((`pull_type` = \'SCHEDULED\') = (`berthing_request_id` IS NULL))');
+        DB::statement('ALTER TABLE `forecast_runs` ADD CONSTRAINT `chk_fr_manual` CHECK ((`pull_type` = \'MANUAL\') = (`submitted_by` IS NOT NULL))');
     }
 
     /**

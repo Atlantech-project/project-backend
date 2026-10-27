@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -23,6 +24,8 @@ return new class extends Migration
 
             $table->comment('Daily in-house harmonic computation (D7, D10).');
         });
+
+        DB::statement('ALTER TABLE `tide_prediction_runs` ADD CONSTRAINT `chk_tpr_horizon` CHECK ((horizon_end > horizon_start))');
     }
 
     /**

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('constraint_types', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 60)->unique();
+            $table->string('code', 60)->unique('code');
             $table->enum('category', ['ENVIRONMENTAL', 'UKC', 'VESSEL_SAFETY']);
             $table->enum('unit', ['KNOTS', 'METRES_PER_SECOND', 'METRES', 'NAUTICAL_MILES', 'PERCENT', 'DEGREES', 'MINUTES', 'TONNES']);
             $table->enum('comparator', ['MAX_ALLOWED', 'MIN_REQUIRED']);

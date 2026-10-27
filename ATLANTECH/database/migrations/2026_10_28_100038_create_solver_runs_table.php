@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -31,6 +32,11 @@ return new class extends Migration
 
             $table->comment('Port-wide joint solve (FR-1.4.1). INFEASIBLE is final; FIFO fallback only on technical failure (recommendation.source = FIFO).');
         });
+
+        DB::statement('ALTER TABLE `solver_runs` ADD CONSTRAINT `chk_sr_finished` CHECK (((status in (\'QUEUED\',\'RUNNING\')) or (finished_at is not null)))');
+        DB::statement('ALTER TABLE `solver_runs` ADD CONSTRAINT `chk_sr_horizon` CHECK ((horizon_end > horizon_start))');
+        DB::statement('ALTER TABLE `solver_runs` ADD CONSTRAINT `chk_sr_manual` CHECK (((trigger_type <> \'MANUAL\') or (triggered_by is not null)))');
+        DB::statement('ALTER TABLE `solver_runs` ADD CONSTRAINT `chk_sr_time` CHECK (((solve_time_ms is null) or (solve_time_ms >= 0)))');
     }
 
     /**

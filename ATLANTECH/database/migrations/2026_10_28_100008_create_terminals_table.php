@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('terminals', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 20)->unique();
-            $table->string('name', 120)->unique();
+            $table->string('code', 20)->unique('code');
+            $table->string('name', 120)->unique('name');
             $table->enum('terminal_type', ['CONTAINER', 'NON_CONTAINER']);
             $table->json('boundary_coordinates')->nullable()->comment('GeoJSON Polygon [lon, lat]; inside port boundary (app rule)');
             $table->boolean('is_active')->default(true)->comment('All registered terminals (active or not) count against license max_terminals');

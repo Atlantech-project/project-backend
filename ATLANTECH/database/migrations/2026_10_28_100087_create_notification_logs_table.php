@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -27,6 +28,9 @@ return new class extends Migration
 
             $table->foreign('user_id', 'fk_nl_user')->references('id')->on('users');
         });
+
+        DB::statement('ALTER TABLE `notification_logs` ADD CONSTRAINT `chk_nl_ack` CHECK (((status = \'ACKNOWLEDGED\') = (acknowledged_at is not null)))');
+        DB::statement('ALTER TABLE `notification_logs` ADD CONSTRAINT `chk_nl_failed` CHECK (((status = \'FAILED\') = (failure_reason is not null)))');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -20,6 +21,9 @@ return new class extends Migration
 
             $table->foreign(['yard_zone_id', 'zone_detail'], 'fk_rzd_zone')->references(['id', 'zone_detail'])->on('yard_zones');
         });
+
+        DB::statement('ALTER TABLE `reefer_zone_details` ADD CONSTRAINT `chk_rzd_plugs` CHECK ((total_power_plugs > 0))');
+        DB::statement('ALTER TABLE `reefer_zone_details` ADD CONSTRAINT `chk_rzd_type` CHECK ((zone_detail = \'REEFER\'))');
     }
 
     /**

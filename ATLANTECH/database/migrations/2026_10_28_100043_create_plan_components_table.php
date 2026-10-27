@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -41,6 +42,10 @@ return new class extends Migration
 
             $table->comment('One row per dispatched unit (one per tug). Berth/tug occupancy = RESERVED rows overlapping a window (D-20).');
         });
+
+        DB::statement('ALTER TABLE `plan_components` ADD CONSTRAINT `chk_pc_assigned` CHECK (((assigned_user_id is null) or (assigned_at is not null)))');
+        DB::statement('ALTER TABLE `plan_components` ADD CONSTRAINT `chk_pc_resource` CHECK ((((component_type = \'BERTH\') and (berth_id is not null) and (tugboat_id is null) and (terminal_id is null)) or ((component_type = \'TUG\') and (berth_id is null) and (tugboat_id is not null) and (terminal_id is null)) or ((component_type = \'TERMINAL_OPS\') and (berth_id is null) and (tugboat_id is null) and (terminal_id is not null)) or ((component_type = \'PILOT\') and (berth_id is null) and (tugboat_id is null) and (terminal_id is null))))');
+        DB::statement('ALTER TABLE `plan_components` ADD CONSTRAINT `chk_pc_time` CHECK ((planned_end > planned_start))');
     }
 
     /**

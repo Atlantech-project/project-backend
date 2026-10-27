@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -46,6 +47,12 @@ return new class extends Migration
 
             $table->comment('Common terminal output contract (FR-3.2.2). Visible to that terminal only (§42).');
         });
+
+        DB::statement('ALTER TABLE `terminal_recommendations` ADD CONSTRAINT `chk_tr_decision` CHECK ((((decision = \'PENDING\') = (decided_by is null)) and ((decided_by is null) = (decided_at is null))))');
+        DB::statement('ALTER TABLE `terminal_recommendations` ADD CONSTRAINT `chk_tr_type_terminal` CHECK ((((rec_type <> \'YARD_PLACEMENT\') or (terminal_type = \'CONTAINER\')) and ((rec_type <> \'STORAGE_ALLOCATION\') or (terminal_type = \'NON_CONTAINER\'))))');
+        DB::statement('ALTER TABLE `terminal_recommendations` ADD CONSTRAINT `chk_tr_window` CHECK ((((rec_type = \'TIMING\') = ((window_start is not null) and (window_end is not null))) and ((window_start is null) or (window_end > window_start))))');
+        DB::statement('ALTER TABLE `terminal_recommendations` ADD CONSTRAINT `chk_tr_lifecycle_yard` CHECK (`lifecycle_status` IS NULL OR `rec_type` = \'YARD_PLACEMENT\')');
+        DB::statement('ALTER TABLE `terminal_recommendations` ADD CONSTRAINT `chk_tr_confidence` CHECK (`confidence` IS NULL OR `confidence` BETWEEN 0 AND 1)');
     }
 
     /**

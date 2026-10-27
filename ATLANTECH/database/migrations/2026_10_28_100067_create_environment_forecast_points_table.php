@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -30,6 +31,9 @@ return new class extends Migration
 
             $table->comment('Raw provider values; unit conversion and derived values (e.g. surge) are AI-side (P12-02).');
         });
+
+        DB::statement('ALTER TABLE `environment_forecast_points` ADD CONSTRAINT `chk_efp_direction` CHECK ((((wind_direction_deg is null) or ((wind_direction_deg >= 0) and (wind_direction_deg < 360))) and ((wave_direction_deg is null) or ((wave_direction_deg >= 0) and (wave_direction_deg < 360)))))');
+        DB::statement('ALTER TABLE `environment_forecast_points` ADD CONSTRAINT `chk_efp_values` CHECK ((((wind_speed is null) or (wind_speed >= 0)) and ((wind_gust is null) or (wind_gust >= 0)) and ((visibility is null) or (visibility >= 0)) and ((wave_height is null) or (wave_height >= 0)) and ((wave_period is null) or (wave_period >= 0)) and ((current_speed is null) or (current_speed >= 0))))');
     }
 
     /**

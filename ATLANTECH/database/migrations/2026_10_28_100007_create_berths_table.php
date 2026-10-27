@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('berths', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 30)->unique();
+            $table->string('code', 30)->unique('code');
             $table->string('name', 80)->nullable();
             $table->decimal('length', 7, 2)->comment('metres');
             $table->decimal('water_depth', 6, 2)->comment('Water depth alongside the berth (m) below depth_datum');
@@ -24,6 +25,11 @@ return new class extends Migration
             $table->decimal('longitude', 9, 6)->nullable();
             $table->index(['status'], 'idx_berth_status');
         });
+
+        DB::statement('ALTER TABLE `berths` ADD CONSTRAINT `chk_berth_dimensions` CHECK (((length > 0) and (water_depth > 0) and (max_vessel_loa > 0)))');
+        DB::statement('ALTER TABLE `berths` ADD CONSTRAINT `chk_berth_lat` CHECK (((latitude is null) or (latitude between -(90) and 90)))');
+        DB::statement('ALTER TABLE `berths` ADD CONSTRAINT `chk_berth_loa_fits` CHECK ((max_vessel_loa <= length))');
+        DB::statement('ALTER TABLE `berths` ADD CONSTRAINT `chk_berth_lon` CHECK (((longitude is null) or (longitude between -(180) and 180)))');
     }
 
     /**

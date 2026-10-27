@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -29,6 +30,8 @@ return new class extends Migration
 
             $table->comment('Constraints/objective terms that actually drove the solve (FR-1.4.10).');
         });
+
+        DB::statement('ALTER TABLE `recommendation_rationale_factors` ADD CONSTRAINT `chk_rrf_kind` CHECK ((((factor_type = \'CONSTRAINT\') and (constraint_type_id is not null) and (objective_term_id is null)) or ((factor_type = \'OBJECTIVE_TERM\') and (objective_term_id is not null) and (constraint_type_id is null))))');
     }
 
     /**

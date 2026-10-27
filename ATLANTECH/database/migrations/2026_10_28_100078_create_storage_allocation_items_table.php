@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -30,6 +31,9 @@ return new class extends Migration
 
             $table->comment('On ACCEPTED, backend adds quantity to storage_facility.reserved_capacity (D-46).');
         });
+
+        DB::statement('ALTER TABLE `storage_allocation_items` ADD CONSTRAINT `chk_sai_quantity` CHECK ((quantity > 0))');
+        DB::statement('ALTER TABLE `storage_allocation_items` ADD CONSTRAINT `chk_sai_type` CHECK ((rec_type = \'STORAGE_ALLOCATION\'))');
     }
 
     /**

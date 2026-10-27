@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('actual_status_updates', function (Blueprint $table) {
             $table->id();
-            $table->char('client_event_id', 36)->unique()->comment('UUID generated on the device; duplicates from offline re-sends are ignored');
+            $table->char('client_event_id', 36)->unique('client_event_id')->comment('UUID generated on the device; duplicates from offline re-sends are ignored');
             $table->unsignedBigInteger('plan_component_id');
             $table->enum('component_type', ['BERTH', 'PILOT', 'TUG', 'TERMINAL_OPS'])->comment('Copy of the component type, enforced by composite FK');
             $table->unsignedBigInteger('reported_by');

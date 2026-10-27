@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -14,13 +15,15 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name', 120);
-            $table->string('username', 50)->unique()->comment('Login name, stored lowercase');
+            $table->string('username', 50)->unique('username')->comment('Login name, stored lowercase');
             $table->string('password_hash', 255);
             $table->string('phone', 30)->nullable()->comment('Contact only, not used for login');
             $table->boolean('is_active')->default(true)->comment('Active users count against license max_users');
             $table->boolean('must_change_password')->default(false)->comment('1 = one-time password in use; must change before any other action');
             $table->dateTime('created_at')->useCurrent();
         });
+
+        DB::statement('ALTER TABLE `users` ADD CONSTRAINT `chk_user_username_lower` CHECK ((CAST(username AS BINARY) = CAST(lower(username) AS BINARY)) and (char_length(username) >= 3))');
     }
 
     /**

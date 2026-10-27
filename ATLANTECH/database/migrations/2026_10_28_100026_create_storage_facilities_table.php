@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -26,7 +27,7 @@ return new class extends Migration
             $table->decimal('current_occupancy', 14, 2)->default(0);
             $table->decimal('reserved_capacity', 14, 2)->default(0);
             $table->decimal('blocked_capacity', 14, 2)->default(0);
-            $table->decimal('available_capacity', 14, 2)->nullable()->comment('GENERATED (stored): (((capacity - current_occupancy) - reserved_capacity) - blocked_capacity)');
+            $table->decimal('available_capacity', 14, 2)->nullable()->storedAs('`capacity` - `current_occupancy` - `reserved_capacity` - `blocked_capacity`')->comment('GENERATED (stored): (((capacity - current_occupancy) - reserved_capacity) - blocked_capacity)');
             $table->enum('status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE'])->default('ACTIVE')->comment('Administrative only; fullness comes from the capacity numbers');
             $table->decimal('latitude', 9, 6)->nullable();
             $table->decimal('longitude', 9, 6)->nullable();
@@ -41,6 +42,14 @@ return new class extends Migration
             $table->foreign(['storage_type_id', 'detail_kind'], 'fk_sf_storage_type')->references(['id', 'detail_kind'])->on('storage_types');
             $table->foreign(['terminal_id', 'terminal_type'], 'fk_sf_terminal')->references(['id', 'terminal_type'])->on('terminals');
         });
+
+        DB::statement('ALTER TABLE `storage_facilities` ADD CONSTRAINT `chk_sf_area` CHECK (((area is null) or (area > 0)))');
+        DB::statement('ALTER TABLE `storage_facilities` ADD CONSTRAINT `chk_sf_capacity` CHECK ((((capacity is null) or (capacity > 0)) and (current_occupancy >= 0) and (reserved_capacity >= 0) and (blocked_capacity >= 0)))');
+        DB::statement('ALTER TABLE `storage_facilities` ADD CONSTRAINT `chk_sf_capacity_sum` CHECK (((capacity is null) or (((current_occupancy + reserved_capacity) + blocked_capacity) <= capacity)))');
+        DB::statement('ALTER TABLE `storage_facilities` ADD CONSTRAINT `chk_sf_floor_load` CHECK (((max_floor_load is null) or (max_floor_load > 0)))');
+        DB::statement('ALTER TABLE `storage_facilities` ADD CONSTRAINT `chk_sf_lat` CHECK (((latitude is null) or (latitude between -(90) and 90)))');
+        DB::statement('ALTER TABLE `storage_facilities` ADD CONSTRAINT `chk_sf_lon` CHECK (((longitude is null) or (longitude between -(180) and 180)))');
+        DB::statement('ALTER TABLE `storage_facilities` ADD CONSTRAINT `chk_sf_yard_rules` CHECK ((((detail_kind = \'CONTAINER_YARD\') and (terminal_type = \'CONTAINER\') and (capacity is null) and (capacity_unit is null) and (current_occupancy = 0) and (reserved_capacity = 0) and (blocked_capacity = 0)) or ((detail_kind <> \'CONTAINER_YARD\') and (capacity is not null) and (capacity_unit is not null))))');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('tugboats', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100)->unique();
+            $table->string('name', 100)->unique('name');
             $table->decimal('tug_power', 8, 2);
             $table->enum('tug_power_unit', ['BOLLARD_PULL_TONNES', 'HP', 'KW'])->comment('Chosen by the Tug Manager');
             $table->decimal('capacity', 8, 2)->nullable()->comment('Kept as in source (P4-03 rejected)');
@@ -21,6 +22,8 @@ return new class extends Migration
 
             $table->comment('Port tug fleet (shared Marine Services resource).');
         });
+
+        DB::statement('ALTER TABLE `tugboats` ADD CONSTRAINT `chk_tugboat_power` CHECK ((tug_power > 0))');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -42,6 +43,8 @@ return new class extends Migration
 
             $table->comment('Overlap of the same type + scope is rejected by the backend. Several scopes apply to one case: the STRICTEST value wins (Moustafa, OQ-P9-2).');
         });
+
+        DB::statement('ALTER TABLE `safety_constraints` ADD CONSTRAINT `chk_sc_period` CHECK (((active_to is null) or (active_to > active_from)))');
     }
 
     /**

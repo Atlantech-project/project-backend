@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('ml_models', function (Blueprint $table) {
             $table->id();
-            $table->enum('model_key', ['M2_SERVICE_TIME', 'M3_DEMAND_FORECAST', 'M4_DELAY_RISK', 'FORECAST_BIAS_CORRECTION'])->unique();
+            $table->enum('model_key', ['M2_SERVICE_TIME', 'M3_DEMAND_FORECAST', 'M4_DELAY_RISK', 'FORECAST_BIAS_CORRECTION'])->unique('model_key');
             $table->string('algorithm_family', 40);
             $table->string('description', 255)->nullable();
         });

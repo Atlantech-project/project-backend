@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -39,6 +40,13 @@ return new class extends Migration
 
             $table->comment('Per-call container data from BAPLIE. Container identity in container (Module 5).');
         });
+
+        DB::statement('ALTER TABLE `container_manifest_entries` ADD CONSTRAINT `chk_cme_oog` CHECK ((((oog_over_front_cm is null) or (oog_over_front_cm > 0)) and ((oog_over_back_cm is null) or (oog_over_back_cm > 0)) and ((oog_over_right_cm is null) or (oog_over_right_cm > 0)) and ((oog_over_left_cm is null) or (oog_over_left_cm > 0)) and ((oog_over_height_cm is null) or (oog_over_height_cm > 0))))');
+        DB::statement('ALTER TABLE `container_manifest_entries` ADD CONSTRAINT `chk_cme_pod` CHECK (((port_of_discharge is null) or regexp_like(port_of_discharge,\'^[A-Z]{2}[A-Z2-9]{3}$\',\'c\')))');
+        DB::statement('ALTER TABLE `container_manifest_entries` ADD CONSTRAINT `chk_cme_pol` CHECK (((port_of_load is null) or regexp_like(port_of_load,\'^[A-Z]{2}[A-Z2-9]{3}$\',\'c\')))');
+        DB::statement('ALTER TABLE `container_manifest_entries` ADD CONSTRAINT `chk_cme_reefer` CHECK (((reefer_set_temperature is null) or (reefer_set_temperature between -(40) and 40)))');
+        DB::statement('ALTER TABLE `container_manifest_entries` ADD CONSTRAINT `chk_cme_stowage` CHECK ((((stowage_bay is null) or (stowage_bay > 0)) and ((stowage_row is null) or (stowage_row >= 0)) and ((stowage_tier is null) or (stowage_tier > 0))))');
+        DB::statement('ALTER TABLE `container_manifest_entries` ADD CONSTRAINT `chk_cme_weight` CHECK (((weight_kg is null) or (weight_kg > 0)))');
     }
 
     /**

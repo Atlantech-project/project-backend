@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -48,6 +49,12 @@ return new class extends Migration
 
             $table->comment('status = current state; history in berthing_request_status_history (same transaction). Return for revision only from SUBMITTED; ENTRY_WINDOW_CONFIRMED may be reopened to CUSTOMS_APPROVED while no plan is confirmed. Cancel only before Preliminary Approval.');
         });
+
+        DB::statement('ALTER TABLE `berthing_requests` ADD CONSTRAINT `chk_br_cb` CHECK ((block_coefficient > 0.3) and (block_coefficient < 1.0))');
+        DB::statement('ALTER TABLE `berthing_requests` ADD CONSTRAINT `chk_br_tonnage` CHECK ((gross_tonnage > 0) and (deadweight_tonnes > 0))');
+        DB::statement('ALTER TABLE `berthing_requests` ADD CONSTRAINT `chk_br_source` CHECK ((source = \'EXTERNAL\' AND external_system_id IS NOT NULL AND external_reference IS NOT NULL) OR (source = \'MANUAL\' AND submitted_by IS NOT NULL AND (external_system_id IS NULL) = (external_reference IS NULL)))');
+        DB::statement('ALTER TABLE `berthing_requests` ADD CONSTRAINT `chk_br_departure_draft` CHECK (departure_draft IS NULL OR departure_draft > 0)');
+        DB::statement('ALTER TABLE `berthing_requests` ADD CONSTRAINT `chk_br_ports` CHECK ((previous_port IS NULL OR regexp_like(previous_port, \'^[A-Z]{2}[A-Z2-9]{3}$\', \'c\')) AND (next_port IS NULL OR regexp_like(next_port, \'^[A-Z]{2}[A-Z2-9]{3}$\', \'c\')))');
     }
 
     /**

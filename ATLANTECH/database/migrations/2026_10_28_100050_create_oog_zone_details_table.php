@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -22,6 +23,9 @@ return new class extends Migration
 
             $table->foreign(['yard_zone_id', 'zone_detail'], 'fk_ozd_zone')->references(['id', 'zone_detail'])->on('yard_zones');
         });
+
+        DB::statement('ALTER TABLE `oog_zone_details` ADD CONSTRAINT `chk_ozd_positive` CHECK ((((max_length is null) or (max_length > 0)) and ((max_width is null) or (max_width > 0)) and ((max_height is null) or (max_height > 0)) and ((max_weight is null) or (max_weight > 0))))');
+        DB::statement('ALTER TABLE `oog_zone_details` ADD CONSTRAINT `chk_ozd_type` CHECK ((zone_detail = \'OOG\'))');
     }
 
     /**

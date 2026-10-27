@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -16,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('ml_model_id');
             $table->integer('version_no');
             $table->enum('status', ['CHALLENGER', 'CHAMPION', 'ARCHIVED', 'REJECTED'])->default('CHALLENGER');
-            $table->unsignedBigInteger('champion_key')->nullable()->unique()->comment('GENERATED (stored): if((status = _latin1\'CHAMPION\'),ml_model_id,NULL)');
+            $table->unsignedBigInteger('champion_key')->nullable()->storedAs('IF(`status` = \'CHAMPION\', `ml_model_id`, NULL)')->unique('champion_key')->comment('GENERATED (stored): if((status = _latin1\'CHAMPION\'),ml_model_id,NULL)');
             $table->json('hyperparameters')->nullable();
             $table->dateTime('training_window_start')->nullable();
             $table->dateTime('training_window_end')->nullable();
@@ -30,6 +31,10 @@ return new class extends Migration
 
             $table->foreign('ml_model_id', 'fk_mlv_model')->references('id')->on('ml_models');
         });
+
+        DB::statement('ALTER TABLE `ml_model_versions` ADD CONSTRAINT `chk_mlv_champion_deployed` CHECK (((status <> \'CHAMPION\') or (deployed_at is not null)))');
+        DB::statement('ALTER TABLE `ml_model_versions` ADD CONSTRAINT `chk_mlv_version` CHECK (((version_no > 0) and ((training_row_count is null) or (training_row_count >= 0))))');
+        DB::statement('ALTER TABLE `ml_model_versions` ADD CONSTRAINT `chk_mlv_window` CHECK (((training_window_start is null) or (training_window_end is null) or (training_window_end > training_window_start)))');
     }
 
     /**

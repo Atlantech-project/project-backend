@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('external_systems', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 30)->unique();
+            $table->string('code', 30)->unique('code');
             $table->string('name', 100);
 
             $table->comment('External adapters that send berthing requests (P10-03).');

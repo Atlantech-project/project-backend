@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('cargo_types', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 30)->unique();
+            $table->string('code', 30)->unique('code');
             $table->string('name', 100);
             $table->enum('category', ['GENERAL_CARGO', 'BREAK_BULK', 'DRY_BULK', 'LIQUID_BULK', 'GAS', 'RO_RO', 'CONTAINERIZED']);
             $table->string('imdg_class', 3)->nullable()->comment('NULL = not dangerous');
@@ -23,6 +24,8 @@ return new class extends Migration
 
             $table->foreign('imdg_class', 'fk_ct_imdg')->references('code')->on('imdg_classes');
         });
+
+        DB::statement('ALTER TABLE `cargo_types` ADD CONSTRAINT `chk_ct_temp` CHECK (((min_temperature is null) or (max_temperature is null) or (min_temperature <= max_temperature)))');
     }
 
     /**

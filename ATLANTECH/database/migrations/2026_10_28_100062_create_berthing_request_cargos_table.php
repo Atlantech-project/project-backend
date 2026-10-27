@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -27,6 +28,8 @@ return new class extends Migration
 
             $table->comment('Cargo of non-container calls (container calls use the BAPLIE manifest).');
         });
+
+        DB::statement('ALTER TABLE `berthing_request_cargos` ADD CONSTRAINT `chk_brc_quantity` CHECK ((quantity > 0))');
     }
 
     /**

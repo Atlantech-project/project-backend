@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('objective_terms', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 40)->unique();
+            $table->string('code', 40)->unique('code');
             $table->string('name', 100);
 
             $table->comment('CP-SAT objective terms (P16-02). Codes agreed with the AI team.');

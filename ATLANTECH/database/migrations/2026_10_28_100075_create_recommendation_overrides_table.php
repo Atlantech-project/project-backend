@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -46,6 +47,11 @@ return new class extends Migration
 
             $table->comment('Typed override of a recommendation option (FR-1.4.7). Signal for Part 3, not an automatic retrain trigger (D12).');
         });
+
+        DB::statement('ALTER TABLE `recommendation_overrides` ADD CONSTRAINT `chk_rov_berth` CHECK ((((component_type = \'BERTH\') = (override_berth_id is not null)) and ((component_type = \'BERTH\') = (original_berth_id is not null))))');
+        DB::statement('ALTER TABLE `recommendation_overrides` ADD CONSTRAINT `chk_rov_pilot` CHECK (((component_type = \'PILOT\') = ((original_pilot_user_id is not null) or (override_pilot_user_id is not null))))');
+        DB::statement('ALTER TABLE `recommendation_overrides` ADD CONSTRAINT `chk_rov_time` CHECK ((((component_type = \'START_TIME\') = (override_start is not null)) and ((component_type = \'START_TIME\') = (original_start is not null))))');
+        DB::statement('ALTER TABLE `recommendation_overrides` ADD CONSTRAINT `chk_rov_tug` CHECK (((component_type = \'TUG\') = ((original_tugboat_id is not null) or (override_tugboat_id is not null))))');
     }
 
     /**

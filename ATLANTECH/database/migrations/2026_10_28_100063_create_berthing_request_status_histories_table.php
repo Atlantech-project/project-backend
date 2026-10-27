@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -27,6 +28,8 @@ return new class extends Migration
 
             $table->comment('CUSTOMS_APPROVED row = who/when Customs Approval was recorded (D1, D4).');
         });
+
+        DB::statement('ALTER TABLE `berthing_request_status_histories` ADD CONSTRAINT `chk_brsh_change` CHECK (((from_status is null) or (from_status <> to_status)))');
     }
 
     /**

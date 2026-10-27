@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -23,6 +24,10 @@ return new class extends Migration
 
             $table->foreign('channel_id', 'fk_channel_waypoint_channel')->references('id')->on('navigation_channels');
         });
+
+        DB::statement('ALTER TABLE `channel_waypoints` ADD CONSTRAINT `chk_waypoint_lat` CHECK ((latitude between -(90) and 90))');
+        DB::statement('ALTER TABLE `channel_waypoints` ADD CONSTRAINT `chk_waypoint_lon` CHECK ((longitude between -(180) and 180))');
+        DB::statement('ALTER TABLE `channel_waypoints` ADD CONSTRAINT `chk_waypoint_order` CHECK ((sequence_order > 0))');
     }
 
     /**

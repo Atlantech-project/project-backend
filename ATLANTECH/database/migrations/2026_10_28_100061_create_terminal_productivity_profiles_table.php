@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -30,6 +31,10 @@ return new class extends Migration
 
             $table->comment('Inputs for the AI service-time calculation (Module 15). Overlapping periods rejected by the backend.');
         });
+
+        DB::statement('ALTER TABLE `terminal_productivity_profiles` ADD CONSTRAINT `chk_tpp_period` CHECK (((valid_to is null) or (valid_to >= valid_from)))');
+        DB::statement('ALTER TABLE `terminal_productivity_profiles` ADD CONSTRAINT `chk_tpp_unit` CHECK (((terminal_type = \'CONTAINER\') = (rate_unit = \'MOVES_PER_HOUR\')))');
+        DB::statement('ALTER TABLE `terminal_productivity_profiles` ADD CONSTRAINT `chk_tpp_values` CHECK (((productivity_rate > 0) and (fixed_overhead_minutes >= 0)))');
     }
 
     /**

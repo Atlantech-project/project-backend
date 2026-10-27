@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -21,6 +22,9 @@ return new class extends Migration
 
             $table->foreign(['storage_facility_id', 'detail_kind'], 'fk_wd_facility')->references(['id', 'detail_kind'])->on('storage_facilities');
         });
+
+        DB::statement('ALTER TABLE `warehouse_details` ADD CONSTRAINT `chk_wd_kind` CHECK ((detail_kind = \'WAREHOUSE\'))');
+        DB::statement('ALTER TABLE `warehouse_details` ADD CONSTRAINT `chk_wd_temp` CHECK (((min_temperature is null) or (max_temperature is null) or (min_temperature <= max_temperature)))');
     }
 
     /**

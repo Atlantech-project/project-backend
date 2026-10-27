@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('storage_types', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 30)->unique();
+            $table->string('code', 30)->unique('code');
             $table->string('name', 80);
             $table->enum('detail_kind', ['NONE', 'WAREHOUSE', 'CONTAINER_YARD', 'TANK'])->default('NONE')->comment('Which detail table facilities of this type may use');
             $table->unique(['id', 'detail_kind'], 'uq_storage_type_id_kind');

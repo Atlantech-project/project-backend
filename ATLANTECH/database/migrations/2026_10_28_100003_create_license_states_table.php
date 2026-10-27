@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -34,6 +35,9 @@ return new class extends Migration
 
             $table->comment('Local copy of the SaaS licence (hybrid signed token). Public key and API credential live in config, not here.');
         });
+
+        DB::statement('ALTER TABLE `license_states` ADD CONSTRAINT `chk_license_state_singleton` CHECK ((id = 1))');
+        DB::statement('ALTER TABLE `license_states` ADD CONSTRAINT `chk_license_state_reason` CHECK ((`mode` IN (\'FULL\',\'SETUP\')) = (`read_only_reason` = \'NONE\'))');
     }
 
     /**

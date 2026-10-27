@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('port_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('setting_key', 80)->unique()->comment('reminder_lead_minutes, weather_pull_hours, retrain_interval_days ...');
+            $table->string('setting_key', 80)->unique('setting_key')->comment('reminder_lead_minutes, weather_pull_hours, retrain_interval_days ...');
             $table->string('setting_value', 255);
             $table->enum('value_type', ['INT', 'DECIMAL', 'BOOL', 'STRING', 'JSON']);
             $table->string('description', 255)->nullable();

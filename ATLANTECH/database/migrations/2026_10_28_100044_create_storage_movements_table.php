@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -30,6 +31,9 @@ return new class extends Migration
             $table->foreign('plan_component_id', 'fk_sm_plan_component')->references('id')->on('plan_components');
             $table->foreign('recorded_by', 'fk_sm_user')->references('id')->on('users');
         });
+
+        DB::statement('ALTER TABLE `storage_movements` ADD CONSTRAINT `chk_sm_quantity` CHECK ((quantity > 0))');
+        DB::statement('ALTER TABLE `storage_movements` ADD CONSTRAINT `chk_sm_source_direction` CHECK ((((source = \'VESSEL_DISCHARGE\') and (direction = \'IN\')) or ((source = \'VESSEL_LOADING\') and (direction = \'OUT\')) or (source = \'MANUAL\')))');
     }
 
     /**
