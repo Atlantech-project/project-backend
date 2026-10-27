@@ -35,4 +35,18 @@ return [
         ],
     ],
 
+    /*
+    | AI worker MySQL accounts (DEC-08), created by `php artisan atlantech:worker-accounts`.
+    */
+    'ai_workers' => [
+        'db_passwords' => [
+            'w_part1' => env('WORKER_PART1_PASSWORD'),
+            'w_part2' => env('WORKER_PART2_PASSWORD'),
+            'w_yard' => env('WORKER_YARD_PASSWORD'),
+            'w_edi' => env('WORKER_EDI_PASSWORD'),
+            'w_validate' => env('WORKER_VALIDATE_PASSWORD'),
+            'w_part3' => env('WORKER_PART3_PASSWORD'),
+        ],
+    ],
+
 ];
