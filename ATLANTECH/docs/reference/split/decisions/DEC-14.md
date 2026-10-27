@@ -22,4 +22,4 @@
 
 1. Payload: `berthing_request_id`, `reason` (CUSTOMS_APPROVAL / RECOMPUTE / MANUAL_DATA / REOPEN), `manual_forecast_run_id` when MANUAL_DATA.
 
-**Recommendation.** Approve the proposed payload. The timeout is not documented: proposed `part1_run_timeout_seconds = 120` in `port_setting`.
+**Recommendation.** Approve the proposed payload. The timeout is not documented: proposed `part1_run_timeout_seconds = 120` in `port_settings`.

@@ -1,14 +1,14 @@
 <!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 394-418 by build-index.mjs. Do not edit: edit the source and rebuild. -->
-### DEC-12 · AI `port_setting` keys
+### DEC-12 · AI `port_settings` keys
 
 | | |
 | --- | --- |
 | Source | AIBD-021 · PS-02 |
 | Owner | AI Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-12 · Sprint 1 |
 | Affects | AI-012 · P2-F9 |
-| Decision | ______ |
+| Decision | Closed (2026-10-27): Option 1. AI settings live in `port_settings`, edited only by `PORT_GM` with audit and min / max plus cross-field validation on save; workers read them per job without cache. Key list and defaults in CT-18 v1.0. |
 
 <div dir="rtl">
 

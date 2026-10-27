@@ -21,6 +21,6 @@
 **Options:**
 
 1. The same task statuses: In progress and Executed.
-2. Terminal-specific statuses from `status_type`.
+2. Terminal-specific statuses from `status_types`.
 
 **Recommendation.** Option 1 for the MVP: In progress and Executed on the terminal component.

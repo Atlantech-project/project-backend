@@ -5,10 +5,10 @@
 | --- | --- |
 | Source | D-07 · OD-08 |
 | Owner | AI Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-06 · Sprint 1 |
 | Affects | AI-050 · AI-055 · P4-K1 · P4-K5 |
-| Decision | ______ |
+| Decision | Closed (2026-10-27): **Option 2** (changed from the earlier Option 1 note). Only the requests listed in the PART2_SOLVE message are variable; every confirmed plan and every other pending recommendation is fixed capacity. Only the previous PENDING_REVIEW version of a solved request becomes REPLACED (by the Backend on C-06). Full rules in CT-10. |
 
 <div dir="rtl">
 

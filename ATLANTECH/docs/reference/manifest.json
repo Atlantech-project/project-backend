@@ -1,6 +1,6 @@
 {
   "sourceRoot": "E:/collage/GRADUATION PROGECT",
-  "syncedAt": "2026-10-26",
+  "syncedAt": "2026-10-27",
   "watch": [
     "Code Notes",
     "Documentation"
@@ -29,12 +29,12 @@
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "18ba7ab45be9e364651daf0d295f4a9c631cf9e6"
+      "sha1": "b2f2411fae630f4e7f599a5f9810548e333de617"
     },
     {
       "path": "decisions/ATLANTECH_Decisions.md",
       "source": "Code Notes/ATLANTECH_Decisions.md",
-      "sha1": "4da0a7aa3d02cb6c1520ecb6be5f55e94aeaca86"
+      "sha1": "678e0a9de82dc1443b6bd321e1fdc6d717316ed5"
     },
     {
       "path": "roadmap/ATLANTECH_Master_Roadmap.pdf",
@@ -228,14 +228,19 @@
       "sha1": "788ffc7250a86d46dfa2d601ce844755510ee646"
     },
     {
+      "path": "contracts/db/table-names.md",
+      "source": "Code Notes/contracts/db/table-names.md",
+      "sha1": "e0471a742b06af837cd77002bac97ae04b95e391"
+    },
+    {
       "path": "contracts/ai/c05-validation.schema.json",
       "source": "Code Notes/contracts/ai/c05-validation.schema.json",
-      "sha1": "b8ef41151c7a0d621382dfbdc656674a25e69d90"
+      "sha1": "9fae350dbe8f62b3da273580fc7d27af1a3acefa"
     },
     {
       "path": "contracts/ai/c06-completion.schema.json",
       "source": "Code Notes/contracts/ai/c06-completion.schema.json",
-      "sha1": "6e2bc4cba5821b5e17cf265a46e0f745735a3fa9"
+      "sha1": "6c3a7543e58b0aa5866917bd110f0999bb9eb6e4"
     },
     {
       "path": "contracts/ai/worker-heartbeat.schema.json",
