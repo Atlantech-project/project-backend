@@ -9,8 +9,7 @@ use Illuminate\Support\Facades\Redis;
  */
 
 test('the configured MySQL server answers a query', function () {
-    // phpunit.xml sets DB_DATABASE=:memory: for SQLite, which also reaches this connection;
-    // point it back at the database docker-compose.yml creates.
+    // phpunit.xml points tests at atlantech_testing; check the database docker-compose.yml creates.
     config(['database.connections.mysql.database' => 'atlantech']);
 
     expect(DB::connection('mysql')->scalar('select 1'))->toEqual(1);
