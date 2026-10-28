@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('license_states', function (Blueprint $table) {
-            $table->tinyInteger('id')->primary()->default(1);
+            $table->unsignedBigInteger('id')->primary()->default(1);
             $table->text('token')->nullable()->comment('Current signed licence token');
             $table->unsignedBigInteger('license_ref')->nullable()->comment('SaaS license.id (no FK, other DB)');
             $table->string('plan_name', 80)->nullable();
