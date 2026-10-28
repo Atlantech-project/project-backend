@@ -98,6 +98,23 @@ test('the user_devices foreign key keeps its Report A name', function () {
     expect($names)->toBe(['fk_device_user']);
 })->group('schema');
 
+test('no foreign key is left with a Laravel default name where the design names it (P1-B3)', function () {
+    $laravelNamed = DB::table('information_schema.REFERENTIAL_CONSTRAINTS')
+        ->where('CONSTRAINT_SCHEMA', DB::raw('DATABASE()'))
+        ->where('CONSTRAINT_NAME', 'like', '%\_foreign')
+        ->pluck('CONSTRAINT_NAME')
+        ->all();
+    $reportANamed = DB::table('information_schema.REFERENTIAL_CONSTRAINTS')
+        ->where('CONSTRAINT_SCHEMA', DB::raw('DATABASE()'))
+        ->whereIn('TABLE_NAME', ['part1_runs', 'recommendation_reviews'])
+        ->orderBy('CONSTRAINT_NAME')
+        ->pluck('CONSTRAINT_NAME')
+        ->all();
+
+    expect($laravelNamed)->toBe([])
+        ->and($reportANamed)->toBe(['fk_p1r_proposal', 'fk_p1r_request', 'fk_rrv_rec', 'fk_rrv_user']);
+})->group('schema');
+
 test('CHECK constraints and generated columns are real', function () {
     $checks = DB::table('information_schema.CHECK_CONSTRAINTS')
         ->where('CONSTRAINT_SCHEMA', DB::raw('DATABASE()'))
@@ -144,11 +161,13 @@ test('users sign in with a username and have no email column (DEC-35)', function
     expect($columns)->toContain('username')->not->toContain('email');
 })->group('schema');
 
-test('the version token updated_at is DATETIME(6) and moves on every update on the master-data tables', function () {
+test('the version token updated_at is DATETIME(6) and moves on every update on the screen-edited tables', function () {
     $tables = [
         'navigation_channels', 'port_profiles', 'port_settings', 'license_states', 'users', 'terminals',
         'berths', 'tugboats', 'safety_constraints', 'port_shifts', 'equipment', 'storage_facilities',
         'pilot_profiles', 'tug_master_profiles', 'pilot_rank_limits', 'yard_slots',
+        'berthing_requests', 'vessels', 'baplie_files', 'entry_window_proposals', 'recommendations',
+        'terminal_recommendations', 'operational_plans', 'plan_components',
     ];
 
     $tokens = DB::table('information_schema.COLUMNS')
