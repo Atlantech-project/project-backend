@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\DB;
 
 /*
- * The port schema as built by the migrations matches CT-17 (P1-B1).
+ * The port schema as built by the migrations matches CT-17 (P1-B1, reviewed in P1-B2).
  * Runs against MySQL from docker-compose.yml; run only these with `--group=schema`.
  */
 
@@ -76,6 +76,28 @@ test('every id and foreign key column is BIGINT UNSIGNED', function () {
     expect($signed)->toBe([]);
 })->group('schema');
 
+test('every id column is BIGINT UNSIGNED, the singletons included (CT-17)', function () {
+    $otherTypes = DB::table('information_schema.COLUMNS')
+        ->where('TABLE_SCHEMA', DB::raw('DATABASE()'))
+        ->whereIn('TABLE_NAME', contractTableNames())
+        ->where('COLUMN_NAME', 'id')
+        ->where('COLUMN_TYPE', '!=', 'bigint unsigned')
+        ->pluck('COLUMN_TYPE', 'TABLE_NAME')
+        ->all();
+
+    expect($otherTypes)->toBe([]);
+})->group('schema');
+
+test('the user_devices foreign key keeps its Report A name', function () {
+    $names = DB::table('information_schema.REFERENTIAL_CONSTRAINTS')
+        ->where('CONSTRAINT_SCHEMA', DB::raw('DATABASE()'))
+        ->where('TABLE_NAME', 'user_devices')
+        ->pluck('CONSTRAINT_NAME')
+        ->all();
+
+    expect($names)->toBe(['fk_device_user']);
+})->group('schema');
+
 test('CHECK constraints and generated columns are real', function () {
     $checks = DB::table('information_schema.CHECK_CONSTRAINTS')
         ->where('CONSTRAINT_SCHEMA', DB::raw('DATABASE()'))
@@ -126,6 +148,7 @@ test('the version token updated_at is DATETIME(6) on the master-data tables', fu
     $tables = [
         'navigation_channels', 'port_profiles', 'port_settings', 'license_states', 'users', 'terminals',
         'berths', 'tugboats', 'safety_constraints', 'port_shifts', 'equipment', 'storage_facilities',
+        'pilot_profiles', 'tug_master_profiles', 'pilot_rank_limits', 'yard_slots',
     ];
 
     $types = DB::table('information_schema.COLUMNS')
