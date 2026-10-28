@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Port-wide joint solve (FR-1.4.1). INFEASIBLE is final; FIFO fallback only on technical failure (recommendation.source = FIFO).
  * Columns written by an AI worker are not fillable (CT-15): `status`, `objective_value`, `solve_time_ms`, `solver_version`, `result_detail`, `started_at`, `finished_at`.
+ * The Backend sets `status` (QUEUED) and `solver_version` (from `port_settings`) when it creates the run, explicitly with `forceFill()`.
  */
 #[Table(name: 'solver_runs', timestamps: false)]
 #[Fillable(['trigger_type', 'triggered_by', 'horizon_start', 'horizon_end', 'queued_at', 'result_handled_at'])]

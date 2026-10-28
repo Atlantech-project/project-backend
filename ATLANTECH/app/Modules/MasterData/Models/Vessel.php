@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Block coefficient (Cb), GT and DWT are per call: they live on berthing_request.
  * Columns written by an AI worker are not fillable (CT-15): `call_sign`, `flag_state`.
+ * The Backend may still set them only while NULL (CT-15): it writes them explicitly with `forceFill()`.
  * `updated_at` is the version token for the 409 check.
  */
 #[Table(name: 'vessels')]
