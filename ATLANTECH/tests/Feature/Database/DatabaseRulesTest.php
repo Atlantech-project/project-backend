@@ -186,6 +186,19 @@ test('a generated unique key refuses a second active row and allows it once the 
     ->map(fn (array $case, string $label) => [...$case, substr($label, strrpos($label, ' ') + 1)])
     ->all())->group('schema');
 
+test('the app connection runs in strict mode, so a bad ENUM value is refused, not stored as empty', function () {
+    expect(DB::scalar('SELECT @@session.sql_mode'))->toContain('STRICT_TRANS_TABLES');
+})->group('schema');
+
+test('an ENUM column refuses a value outside its list', function (string $table, string $column) {
+    expect(fn () => DB::table($table)->insert(array_merge(validRow($table), [$column => 'NOT_IN_THE_LIST'])))
+        ->toThrow(QueryException::class, "Data truncated for column '{$column}'");
+})->with([
+    'notification_logs.channel' => ['notification_logs', 'channel'],
+    'yard_runs.status' => ['yard_runs', 'status'],
+    'user_role_assignments.role' => ['user_role_assignments', 'role'],
+])->group('schema');
+
 test('all 129 CHECK constraints of the design are in place by name', function () {
     $names = DB::table('information_schema.CHECK_CONSTRAINTS')
         ->where('CONSTRAINT_SCHEMA', DB::raw('DATABASE()'))
