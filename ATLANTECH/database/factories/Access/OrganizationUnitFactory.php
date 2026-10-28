@@ -4,6 +4,7 @@ namespace Database\Factories\Access;
 
 use App\Modules\Access\Enums\UnitType;
 use App\Modules\Access\Models\OrganizationUnit;
+use App\Modules\MasterData\Models\Terminal;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,7 +22,7 @@ class OrganizationUnitFactory extends Factory
     {
         return [
             'unit_type' => UnitType::Terminal,
-            'terminal_id' => fake()->unique()->numberBetween(1, 1_000_000),
+            'terminal_id' => Terminal::factory(),
         ];
     }
 

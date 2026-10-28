@@ -2,6 +2,7 @@
 
 namespace App\Modules\Access\Models;
 
+use App\Modules\Shared\Models\AuditLog;
 use Database\Factories\Access\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\DateFormat;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -80,5 +81,15 @@ class User extends Authenticatable
     public function activeRoleAssignment(): HasOne
     {
         return $this->hasOne(UserRoleAssignment::class)->whereNull('active_to');
+    }
+
+    /**
+     * Audit entries this user caused (`actor_id`; NULL there means a system or AI worker).
+     *
+     * @return HasMany<AuditLog, $this>
+     */
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class, 'actor_id');
     }
 }
