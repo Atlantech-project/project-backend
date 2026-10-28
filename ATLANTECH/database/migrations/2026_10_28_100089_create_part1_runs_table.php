@@ -24,8 +24,8 @@ return new class extends Migration
             $table->dateTime('finished_at')->nullable();
             $table->dateTime('result_handled_at')->nullable()->comment('Set by the Backend when it has handled the C-06 result (Backend only)');
 
-            $table->foreign('berthing_request_id')->references('id')->on('berthing_requests');
-            $table->foreign('entry_window_proposal_id')->references('id')->on('entry_window_proposals');
+            $table->foreign('berthing_request_id', 'fk_p1r_request')->references('id')->on('berthing_requests');
+            $table->foreign('entry_window_proposal_id', 'fk_p1r_proposal')->references('id')->on('entry_window_proposals');
         });
 
         DB::statement('ALTER TABLE `part1_runs` ADD CONSTRAINT `chk_p1r_retry` CHECK (`retry_count` BETWEEN 0 AND 3)');

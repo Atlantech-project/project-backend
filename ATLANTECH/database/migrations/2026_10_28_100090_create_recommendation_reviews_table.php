@@ -17,8 +17,8 @@ return new class extends Migration
             $table->dateTime('viewed_at')->useCurrent();
             $table->primary(['recommendation_id', 'user_id', 'viewed_at']);
 
-            $table->foreign('recommendation_id')->references('id')->on('recommendations');
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreign('recommendation_id', 'fk_rrv_rec')->references('id')->on('recommendations');
+            $table->foreign('user_id', 'fk_rrv_user')->references('id')->on('users');
         });
     }
 
