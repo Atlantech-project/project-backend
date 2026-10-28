@@ -25,7 +25,7 @@ afterEach(function () {
  *
  * @return array<string, mixed>
  */
-function validRow(string $table): array
+function rulesValidRow(string $table): array
 {
     return match ($table) {
         'port_profiles' => [
@@ -83,6 +83,12 @@ function validRow(string $table): array
         'baplie_parse_runs' => ['baplie_file_id' => 1, 'status' => 'QUEUED'],
         'yard_runs' => ['terminal_recommendation_id' => 1, 'status' => 'QUEUED'],
         'rationale_templates' => ['code' => 'P2_DEFAULT', 'version' => 1, 'template_text' => 'Berth {berth}', 'is_active' => 1],
+        'plan_components' => [
+            'operational_plan_id' => 1, 'component_type' => 'BERTH', 'berth_id' => 1,
+            'planned_start' => '2026-10-01 08:00:00', 'planned_end' => '2026-10-01 20:00:00',
+        ],
+        'audit_logs' => ['entity_type' => 'berths', 'action' => 'UPDATE', 'before_state' => '{}', 'after_state' => '{}'],
+        'tide_constituent_sets' => ['version_label' => 'v1', 'datum_reference' => 'CD', 'valid_from' => '2026-01-01', 'is_active' => 1],
     };
 }
 
@@ -91,7 +97,7 @@ function validRow(string $table): array
  *
  * @return array<string, array{0: string, 1: array<string, mixed>}>
  */
-function brokenRows(): array
+function rulesBrokenRows(): array
 {
     return [
         'range: chk_port_profile_lat' => ['port_profiles', ['latitude' => 91]],
@@ -111,22 +117,24 @@ function brokenRows(): array
         'conditional: chk_ro_p90' => ['recommendation_options', ['service_time_method' => 'ML', 'service_time_p90_hours' => null]],
         'state consistency: chk_ys_blocked_empty' => ['yard_slots', ['status' => 'BLOCKED', 'container_id' => 5]],
         'range: chk_efp_direction' => ['environment_forecast_points', ['wind_direction_deg' => 360]],
+        'cross-column order: chk_pc_time' => ['plan_components', ['planned_end' => '2026-10-01 07:00:00']],
+        'state consistency: chk_al_states' => ['audit_logs', ['action' => 'CREATE', 'before_state' => '{}']],
     ];
 }
 
 test('a valid row of each sampled table is accepted', function (string $table) {
-    expect(DB::table($table)->insert(validRow($table)))->toBeTrue();
-})->with(fn () => array_values(array_unique(array_column(brokenRows(), 0))))->group('schema');
+    expect(DB::table($table)->insert(rulesValidRow($table)))->toBeTrue();
+})->with(fn () => array_values(array_unique(array_column(rulesBrokenRows(), 0))))->group('schema');
 
 test('the database refuses a row that breaks the rule', function (string $table, array $broken, string $constraint) {
-    expect(fn () => DB::table($table)->insert(array_merge(validRow($table), $broken)))
+    expect(fn () => DB::table($table)->insert(array_merge(rulesValidRow($table), $broken)))
         ->toThrow(QueryException::class, "Check constraint '{$constraint}' is violated");
-})->with(fn () => collect(brokenRows())
+})->with(fn () => collect(rulesBrokenRows())
     ->map(fn (array $case, string $label) => [$case[0], $case[1], substr($label, strrpos($label, ' ') + 1)])
     ->all())->group('schema');
 
 test('a generated column computes the value the design states', function (string $table, array $row, string $column, mixed $expected) {
-    $id = DB::table($table)->insertGetId(array_merge(validRow($table), $row));
+    $id = DB::table($table)->insertGetId(array_merge(rulesValidRow($table), $row));
 
     expect(DB::table($table)->where('id', $id)->value($column))->toBe($expected);
 })->with([
@@ -134,7 +142,7 @@ test('a generated column computes the value the design states', function (string
         'storage_facilities', ['current_occupancy' => 30, 'reserved_capacity' => 20, 'blocked_capacity' => 10], 'available_capacity', '40.00',
     ],
     'is_drifted when the metric is above the threshold' => ['drift_measurements', ['metric_value' => 1.5], 'is_drifted', 1],
-    'is_drifted is 0 at or below the threshold' => ['drift_measurements', ['metric_value' => 1], 'is_drifted', 0],
+    'is_drifted is 0 at the threshold' => ['drift_measurements', ['metric_value' => 1], 'is_drifted', 0],
     'yard_runs.active_key while QUEUED or RUNNING' => ['yard_runs', ['terminal_recommendation_id' => 9, 'status' => 'RUNNING'], 'active_key', 9],
     'yard_runs.active_key is NULL once REPLACED' => ['yard_runs', ['status' => 'REPLACED'], 'active_key', null],
     'baplie_parse_runs.active_key while QUEUED' => ['baplie_parse_runs', ['baplie_file_id' => 9], 'active_key', 9],
@@ -142,6 +150,7 @@ test('a generated column computes the value the design states', function (string
     'operational_plans.active_key is NULL once CANCELLED' => ['operational_plans', ['status' => 'CANCELLED'], 'active_key', null],
     'recommendations.active_key for a live INITIAL recommendation' => ['recommendations', ['berthing_request_id' => 9], 'active_key', 9],
     'recommendations.active_key is NULL for a DELAY_REPLAN' => ['recommendations', ['purpose' => 'DELAY_REPLAN'], 'active_key', null],
+    'tide_constituent_sets.active_key while the set is active' => ['tide_constituent_sets', [], 'active_key', 1],
 ])->group('schema');
 
 /**
@@ -149,7 +158,7 @@ test('a generated column computes the value the design states', function (string
  *
  * @return array<string, array{0: string, 1: array<string, mixed>, 2: array<string, mixed>, 3: array<string, mixed>}>
  */
-function activeKeys(): array
+function rulesActiveKeys(): array
 {
     return [
         'one confirmed plan per request: active_key' => ['operational_plans', [], ['status' => 'CANCELLED'], []],
@@ -162,27 +171,28 @@ function activeKeys(): array
         ], ['status' => 'ARCHIVED'], ['version_no' => 2]],
         'one open BAPLIE parse per file: uq_bpr_active' => ['baplie_parse_runs', [], ['status' => 'REPLACED'], []],
         'one open yard run per terminal recommendation: uq_yr_active' => ['yard_runs', [], ['status' => 'REPLACED'], []],
+        'one active tide constituent set: active_key' => ['tide_constituent_sets', [], ['is_active' => 0], ['version_label' => 'v2']],
         'one active template per code: active_code' => ['rationale_templates', [], ['is_active' => 0], ['version' => 2]],
         'one ACTIVE BAPLIE file per request: active_request_key' => ['baplie_files', ['status' => 'ACTIVE'], ['status' => 'REPLACED'], [
             'file_hash_sha256' => str_repeat('b2', 32),
         ]],
         'the same file once per request unless withdrawn: uq_bf_request_live_hash' => ['baplie_files', [], ['status' => 'WITHDRAWN'], []],
-        'one harbour authority unit: uq_org_unit_type_key' => ['organization_units', [], ['unit_type' => 'TERMINAL', 'terminal_id' => 7], []],
+        'one unit per type and terminal (no active state; the pair is unique): uq_org_unit_type_key' => ['organization_units', [], ['unit_type' => 'TERMINAL', 'terminal_id' => 7], []],
     ];
 }
 
 test('a generated unique key refuses a second active row and allows it once the first is inactive', function (
     string $table, array $active, array $inactive, array $second, string $index,
 ) {
-    $firstId = DB::table($table)->insertGetId(array_merge(validRow($table), $active));
-    $insertSecond = fn () => DB::table($table)->insert(array_merge(validRow($table), $active, $second));
+    $firstId = DB::table($table)->insertGetId(array_merge(rulesValidRow($table), $active));
+    $insertSecond = fn () => DB::table($table)->insert(array_merge(rulesValidRow($table), $active, $second));
 
     expect($insertSecond)->toThrow(QueryException::class, "for key '{$table}.{$index}'");
 
     DB::table($table)->where('id', $firstId)->update($inactive);
 
     expect($insertSecond())->toBeTrue();
-})->with(fn () => collect(activeKeys())
+})->with(fn () => collect(rulesActiveKeys())
     ->map(fn (array $case, string $label) => [...$case, substr($label, strrpos($label, ' ') + 1)])
     ->all())->group('schema');
 
@@ -191,7 +201,7 @@ test('the app connection runs in strict mode, so a bad ENUM value is refused, no
 })->group('schema');
 
 test('an ENUM column refuses a value outside its list', function (string $table, string $column) {
-    expect(fn () => DB::table($table)->insert(array_merge(validRow($table), [$column => 'NOT_IN_THE_LIST'])))
+    expect(fn () => DB::table($table)->insert(array_merge(rulesValidRow($table), [$column => 'NOT_IN_THE_LIST'])))
         ->toThrow(QueryException::class, "Data truncated for column '{$column}'");
 })->with([
     'notification_logs.channel' => ['notification_logs', 'channel'],
@@ -202,8 +212,9 @@ test('an ENUM column refuses a value outside its list', function (string $table,
 test('all 129 CHECK constraints of the design are in place by name', function () {
     $names = DB::table('information_schema.CHECK_CONSTRAINTS')
         ->where('CONSTRAINT_SCHEMA', DB::raw('DATABASE()'))
-        ->orderBy('CONSTRAINT_NAME')
         ->pluck('CONSTRAINT_NAME')
+        ->sort()
+        ->values()
         ->all();
 
     expect($names)->toBe([
