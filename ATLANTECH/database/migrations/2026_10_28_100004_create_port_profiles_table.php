@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('port_profiles', function (Blueprint $table) {
-            $table->tinyInteger('id')->primary()->default(1);
+            $table->unsignedBigInteger('id')->primary()->default(1);
             $table->char('public_id', 36)->unique('public_id')->comment('Same value as SaaS platform_port_registry.public_id (read-only)');
             $table->string('port_code', 10)->nullable()->comment('UN/LOCODE, from SaaS');
             $table->string('governorate_code', 6)->comment('ISO 3166-2:EG, same codes as SaaS governorate');

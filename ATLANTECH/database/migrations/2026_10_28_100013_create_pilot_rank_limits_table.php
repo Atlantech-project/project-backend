@@ -15,6 +15,7 @@ return new class extends Migration
         Schema::create('pilot_rank_limits', function (Blueprint $table) {
             $table->enum('pilot_rank', ['FIRST', 'SECOND', 'THIRD'])->primary();
             $table->decimal('max_vessel_loa', 7, 2)->nullable()->comment('Largest vessel LOA (m) this rank may pilot; NULL = no limit');
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
 
             $table->comment('Settings screen: one row per rank.');
         });
