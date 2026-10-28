@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use LogicException;
 
 /**
  * The `actual_status_updates` table.
@@ -52,14 +53,23 @@ class ActualStatusUpdate extends Model
 
     /**
      * The status type for this component (`fk_asu_status` is on (`component_type`, `status`)): matched on the code
-     * and constrained to this row's component type, so it lazy-loads the one right row. Not for eager loading.
+     * and constrained to this row's current component type, so it lazy-loads the one right row.
+     * Eager loading cannot carry the per-row component type, so it is refused instead of returning nothing.
      *
      * @return BelongsTo<StatusType, $this>
+     *
+     * @throws LogicException when called without a component type (eager loading)
      */
     public function statusType(): BelongsTo
     {
+        $componentType = $this->getAttributes()['component_type'] ?? null;
+
+        if ($componentType === null) {
+            throw new LogicException('statusType() needs the row\'s component_type: load it per row, not with with() or load().');
+        }
+
         return $this->belongsTo(StatusType::class, 'status', 'code')
-            ->where('status_types.component_type', $this->getRawOriginal('component_type') ?? $this->getAttributes()['component_type'] ?? null);
+            ->where('status_types.component_type', $componentType);
     }
 
     /**

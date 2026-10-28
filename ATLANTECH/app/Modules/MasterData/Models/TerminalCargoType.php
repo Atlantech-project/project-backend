@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 /**
@@ -36,21 +35,5 @@ class TerminalCargoType extends Pivot
     public function terminal(): BelongsTo
     {
         return $this->belongsTo(Terminal::class, 'terminal_id');
-    }
-
-    /**
-     * @return HasMany<StorageFacilityCargoCompatibility, $this>
-     */
-    public function storageFacilityCargoCompatibilitiesByTerminal(): HasMany
-    {
-        return $this->hasMany(StorageFacilityCargoCompatibility::class, 'terminal_id', 'terminal_id');
-    }
-
-    /**
-     * @return HasMany<EquipmentCargoCompatibility, $this>
-     */
-    public function equipmentCargoCompatibilitiesByTerminal(): HasMany
-    {
-        return $this->hasMany(EquipmentCargoCompatibility::class, 'terminal_id', 'terminal_id');
     }
 }

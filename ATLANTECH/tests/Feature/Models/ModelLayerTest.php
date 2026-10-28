@@ -186,12 +186,19 @@ test('a belongsTo relation returns its own parent, not a neighbour', function (s
 ])->group('schema');
 
 test('a status update finds its status type by code within its own component type', function () {
+    StatusType::factory()->create(['component_type' => 'BERTH', 'code' => 'ALONGSIDE']);
     StatusType::factory()->create(['component_type' => 'TUG', 'code' => 'ARRIVED']);
     StatusType::factory()->create(['component_type' => 'BERTH', 'code' => 'ARRIVED']);
     $update = ActualStatusUpdate::factory()->create(['component_type' => 'BERTH', 'status' => 'ARRIVED']);
 
     expect($update->statusType?->component_type?->value)->toBe('BERTH')
         ->and($update->statusType?->code)->toBe('ARRIVED');
+})->group('schema');
+
+test('eager loading the status type is refused instead of returning nothing', function () {
+    ActualStatusUpdate::factory()->create();
+
+    expect(fn () => ActualStatusUpdate::query()->with('statusType')->get())->toThrow(LogicException::class);
 })->group('schema');
 
 test('a belongsToMany through a pivot returns exactly the linked rows', function (string $owner, string $relation, string $pivot, array $keys, string $related) {
@@ -218,7 +225,8 @@ test('tables only an AI worker inserts give the Backend nothing to fill beyond w
     preg_match_all('/^\| `([a-z_]+)` \| AI[^|]*\| INSERT: [^|]+\| ([^|]+) \|/m', file_get_contents(base_path('docs/reference/contracts/ai/table-ownership.md')), $rows, PREG_SET_ORDER);
     $models = collect(domainModels())->keyBy(fn (string $class) => (new $class)->getTable());
 
-    expect($rows)->not->toBeEmpty();
+    expect($rows)->toHaveCount(19)
+        ->and(collect($rows)->filter(fn (array $row) => str_starts_with(trim($row[2]), 'Nothing')))->toHaveCount(13);
 
     foreach ($rows as [, $table, $backendMay]) {
         if (str_starts_with(trim($backendMay), 'Nothing')) {

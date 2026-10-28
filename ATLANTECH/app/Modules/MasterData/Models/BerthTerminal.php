@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 /**
@@ -36,13 +35,5 @@ class BerthTerminal extends Pivot
     public function terminal(): BelongsTo
     {
         return $this->belongsTo(Terminal::class, 'terminal_id');
-    }
-
-    /**
-     * @return HasMany<SafetyConstraint, $this>
-     */
-    public function safetyConstraintsByBerth(): HasMany
-    {
-        return $this->hasMany(SafetyConstraint::class, 'berth_id', 'berth_id');
     }
 }
