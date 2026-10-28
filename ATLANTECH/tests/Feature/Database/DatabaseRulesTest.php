@@ -38,6 +38,34 @@ function validRow(string $table): array
             'user_id' => 1, 'role' => 'PORT_STAFF', 'organization_unit_id' => 1, 'unit_type' => 'HARBOUR_AUTHORITY',
             'active_from' => '2026-10-01 08:00:00', 'active_to' => null,
         ],
+        'vessels' => [
+            'imo_number' => '9074729', 'name' => 'MSC Probe', 'vessel_type_id' => 1, 'loa' => 300, 'beam' => 48, 'max_draft' => 14,
+        ],
+        'berths' => ['code' => 'B-01', 'length' => 350, 'water_depth' => 15, 'depth_datum' => 'Chart Datum', 'max_vessel_loa' => 300],
+        'storage_facilities' => [
+            'terminal_id' => 1, 'terminal_type' => 'NON_CONTAINER', 'storage_type_id' => 1, 'detail_kind' => 'WAREHOUSE',
+            'name' => 'Warehouse 1', 'code' => 'WH-01', 'capacity' => 100, 'capacity_unit' => 'TONNES',
+        ],
+        'baplie_files' => [
+            'vessel_id' => 1, 'berthing_request_id' => 1, 'uploaded_by' => 1,
+            'file_hash_sha256' => str_repeat('a1', 32), 'storage_path' => 'baplie/1.edi',
+        ],
+        'notification_logs' => [
+            'user_id' => 1, 'related_entity_type' => 'PLAN_COMPONENT', 'related_entity_id' => 1,
+            'type' => 'PLAN_ASSIGNMENT', 'channel' => 'MOBILE', 'status' => 'SENT',
+        ],
+        'part1_runs' => ['berthing_request_id' => 1, 'retry_count' => 0],
+        'drift_measurements' => [
+            'model_version_id' => 1, 'metric_type' => 'ROLLING_MAE', 'feature_name' => null,
+            'metric_value' => 0.5, 'threshold' => 1, 'measured_at' => '2026-10-01 08:00:00',
+        ],
+        'recommendation_options' => [
+            'recommendation_id' => 1, 'terminal_id' => 1, 'option_rank' => 1, 'berth_id' => 1,
+            'planned_start' => '2026-10-01 08:00:00', 'planned_end' => '2026-10-01 20:00:00',
+            'service_time_method' => 'FORMULA', 'service_time_p50_hours' => 12, 'service_time_p90_hours' => null,
+        ],
+        'yard_slots' => ['yard_block_id' => 1, 'bay' => 1, 'row_no' => 1, 'tier' => 1, 'status' => 'ACTIVE', 'container_id' => null],
+        'environment_forecast_points' => ['forecast_run_id' => 1, 'valid_at' => '2026-10-01 08:00:00', 'wind_direction_deg' => 270],
     };
 }
 
@@ -54,6 +82,18 @@ function brokenRows(): array
         'state consistency: chk_license_state_reason' => ['license_states', ['mode' => 'FULL', 'read_only_reason' => 'NO_LICENSE']],
         'mutually exclusive: chk_org_unit_terminal' => ['organization_units', ['unit_type' => 'HARBOUR_AUTHORITY', 'terminal_id' => 7]],
         'cross-column order: chk_ura_period' => ['user_role_assignments', ['active_to' => '2026-09-30 08:00:00']],
+        'format: chk_vessel_imo' => ['vessels', ['imo_number' => '907472A']],
+        'cross-column limit: chk_berth_loa_fits' => ['berths', ['max_vessel_loa' => 360]],
+        'sum within capacity: chk_sf_capacity_sum' => ['storage_facilities', ['current_occupancy' => 90, 'reserved_capacity' => 20]],
+        'case-sensitive format: chk_bf_hash' => ['baplie_files', ['file_hash_sha256' => str_repeat('A1', 32)]],
+        'mutually exclusive: chk_nl_push_no_ack' => ['notification_logs', [
+            'channel' => 'PUSH', 'status' => 'ACKNOWLEDGED', 'acknowledged_at' => '2026-10-01 08:05:00',
+        ]],
+        'range: chk_p1r_retry' => ['part1_runs', ['retry_count' => 4]],
+        'state consistency: chk_dm_feature' => ['drift_measurements', ['metric_type' => 'PSI', 'feature_name' => null]],
+        'conditional: chk_ro_p90' => ['recommendation_options', ['service_time_method' => 'ML', 'service_time_p90_hours' => null]],
+        'state consistency: chk_ys_blocked_empty' => ['yard_slots', ['status' => 'BLOCKED', 'container_id' => 5]],
+        'range: chk_efp_direction' => ['environment_forecast_points', ['wind_direction_deg' => 360]],
     ];
 }
 
