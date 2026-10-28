@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 934-957 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 936-959 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-33 · Manual-planning baseline
 
 | | |

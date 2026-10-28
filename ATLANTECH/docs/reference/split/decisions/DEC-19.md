@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 575-598 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 577-600 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-19 · C-06 · Completion message
 
 | | |

@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 524-547 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 526-549 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-17 · C-04 · BAPLIE parse
 
 | | |

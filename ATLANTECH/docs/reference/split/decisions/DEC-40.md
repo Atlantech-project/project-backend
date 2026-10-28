@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1117-1140 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1119-1142 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-40 · Mobile Acknowledge event type and payload
 
 | | |

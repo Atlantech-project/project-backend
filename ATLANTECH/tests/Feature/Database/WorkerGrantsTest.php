@@ -67,6 +67,14 @@ test('the yard worker writes only its own results', function () {
     });
 })->group('schema');
 
+test('the BAPLIE worker counts its own retries (CT-15)', function () {
+    asTestWorker('r_edi', function ($worker) {
+        expect($worker->table('baplie_parse_runs')->where('id', 0)->update(['retry_count' => 1]))->toBe(0)
+            ->and(fn () => $worker->table('baplie_parse_runs')->where('id', 0)->update(['triggered_by' => null]))
+            ->toThrow(QueryException::class, 'denied');
+    });
+})->group('schema');
+
 test('the validation worker has no write rights at all', function () {
     asTestWorker('r_validate', function ($worker) {
         expect(fn () => $worker->table('part1_runs')->where('id', 0)->update(['status' => 'RUNNING']))
