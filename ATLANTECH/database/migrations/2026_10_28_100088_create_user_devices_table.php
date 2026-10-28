@@ -25,7 +25,7 @@ return new class extends Migration
             $table->unique(['user_id', 'device_id'], 'uq_user_device');
             $table->unique(['push_token'], 'uq_user_device_push_token');
 
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreign('user_id', 'fk_device_user')->references('id')->on('users');
 
             $table->comment('Never deleted: revoked_at is set instead.');
         });
