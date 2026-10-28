@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | In review |
+| Status | Done |
 | Phase / package | Follow-up of P1-B1 · B Database and models |
 | Sprint · feature | Sprint 1 · FT-01 Platform foundation and contracts |
 | Effort (plan) | 0.1 day |
@@ -60,6 +60,8 @@ One column added to the `r_edi` UPDATE grant in `database/grants/workers.sql`. A
 ## 9. Progress log
 
 - 2026-10-28 · Step 1 (C, approved in advance) · Grant changed at `workers.sql:404`; test added. Grants tests 5 passed; full suite 48 passed; Pint clean.
+- 2026-10-28 · PR · Merged to `develop` at 07:19 (PR #7, `1f5399d`) with `ai-impact`. The matrix and the dated DEC-08 note merged in PortHub PR #12.
+- 2026-10-28 · PortHub · `contracts/db/schema.sql` regenerated with the new grant (one line) and the `project-backend` pointer moved to `1f5399d`, on PortHub `feature/contracts-schema-sql-retry-count`.
 
 ## 10. Review
 
