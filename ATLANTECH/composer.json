@@ -53,6 +53,9 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
+        "lint": [
+            "pint --test"
+        ],
         "contracts:schema": [
             "@php artisan atlantech:contracts-schema"
         ],
