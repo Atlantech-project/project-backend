@@ -75,6 +75,33 @@ test('the BAPLIE worker counts its own retries (CT-15)', function () {
     });
 })->group('schema');
 
+test('the yard worker counts its own retries (CT-08, P1-B3)', function () {
+    asTestWorker('r_yard', function ($worker) {
+        expect($worker->table('yard_runs')->where('id', 0)->update(['retry_count' => 1]))->toBe(0);
+    });
+})->group('schema');
+
+test('a worker with column grants still updates a table that carries the version token', function () {
+    DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+    $vesselId = DB::table('vessels')->insertGetId([
+        'imo_number' => '9999999', 'name' => 'Token Probe', 'vessel_type_id' => 0,
+        'loa' => 100, 'beam' => 20, 'max_draft' => 8,
+        'updated_at' => '2000-01-01 00:00:00.000000',
+    ]);
+    DB::statement('SET FOREIGN_KEY_CHECKS = 1');
+
+    try {
+        asTestWorker('r_edi', function ($worker) use ($vesselId) {
+            expect($worker->table('vessels')->where('id', $vesselId)->update(['call_sign' => 'SUXX']))->toBe(1);
+        });
+
+        expect(DB::table('vessels')->where('id', $vesselId)->value('updated_at'))
+            ->not->toBe('2000-01-01 00:00:00.000000');
+    } finally {
+        DB::table('vessels')->where('id', $vesselId)->delete();
+    }
+})->group('schema');
+
 test('the validation worker has no write rights at all', function () {
     asTestWorker('r_validate', function ($worker) {
         expect(fn () => $worker->table('part1_runs')->where('id', 0)->update(['status' => 'RUNNING']))
