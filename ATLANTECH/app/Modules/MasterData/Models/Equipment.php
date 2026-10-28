@@ -77,12 +77,12 @@ class Equipment extends Model
     }
 
     /**
-     * Through `equipment_cargo_compatibilities` (EquipmentCargoCompatibility).
+     * Through `equipment_cargo_compatibilities` (EquipmentCargoCompatibility). Attach with the owner's `terminal_id` (NOT NULL, part of the composite FK).
      *
      * @return BelongsToMany<CargoType, $this, EquipmentCargoCompatibility>
      */
     public function cargoTypes(): BelongsToMany
     {
-        return $this->belongsToMany(CargoType::class, 'equipment_cargo_compatibilities', 'equipment_id', 'cargo_type_id')->using(EquipmentCargoCompatibility::class);
+        return $this->belongsToMany(CargoType::class, 'equipment_cargo_compatibilities', 'equipment_id', 'cargo_type_id')->using(EquipmentCargoCompatibility::class)->withPivot('terminal_id');
     }
 }

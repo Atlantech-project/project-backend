@@ -2,7 +2,7 @@
 
 namespace App\Modules\Recommendation\Models;
 
-use App\Modules\MasterData\Models\BerthTerminal;
+use App\Modules\MasterData\Models\Berth;
 use App\Modules\MasterData\Models\PilotProfile;
 use App\Modules\MasterData\Models\Tugboat;
 use App\Modules\Recommendation\Enums\RecommendationOptionServiceTimeMethod;
@@ -46,11 +46,11 @@ class RecommendationOption extends Model
     }
 
     /**
-     * @return BelongsTo<BerthTerminal, $this>
+     * @return BelongsTo<Berth, $this>
      */
     public function berth(): BelongsTo
     {
-        return $this->belongsTo(BerthTerminal::class, 'berth_id', 'berth_id');
+        return $this->belongsTo(Berth::class, 'berth_id');
     }
 
     /**

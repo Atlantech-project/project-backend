@@ -3,7 +3,7 @@
 namespace App\Modules\Yard\Models;
 
 use App\Modules\Access\Models\User;
-use App\Modules\MasterData\Models\StorageFacilityCargoCompatibility;
+use App\Modules\MasterData\Models\StorageFacility;
 use App\Modules\Plan\Models\PlanComponent;
 use App\Modules\Yard\Enums\StorageMovementDirection;
 use App\Modules\Yard\Enums\StorageMovementSource;
@@ -40,11 +40,11 @@ class StorageMovement extends Model
     }
 
     /**
-     * @return BelongsTo<StorageFacilityCargoCompatibility, $this>
+     * @return BelongsTo<StorageFacility, $this>
      */
     public function storageFacility(): BelongsTo
     {
-        return $this->belongsTo(StorageFacilityCargoCompatibility::class, 'storage_facility_id', 'storage_facility_id');
+        return $this->belongsTo(StorageFacility::class, 'storage_facility_id');
     }
 
     /**
@@ -58,7 +58,7 @@ class StorageMovement extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user(): BelongsTo
+    public function recordedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
     }

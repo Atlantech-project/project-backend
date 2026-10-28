@@ -64,7 +64,7 @@ class TerminalRecommendation extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user(): BelongsTo
+    public function exportedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'exported_by');
     }
@@ -96,7 +96,7 @@ class TerminalRecommendation extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user2(): BelongsTo
+    public function decidedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'decided_by');
     }

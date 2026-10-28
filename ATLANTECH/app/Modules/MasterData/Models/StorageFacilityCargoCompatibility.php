@@ -30,10 +30,10 @@ class StorageFacilityCargoCompatibility extends Pivot
     }
 
     /**
-     * @return BelongsTo<TerminalCargoType, $this>
+     * @return BelongsTo<Terminal, $this>
      */
     public function terminal(): BelongsTo
     {
-        return $this->belongsTo(TerminalCargoType::class, 'terminal_id', 'terminal_id');
+        return $this->belongsTo(Terminal::class, 'terminal_id');
     }
 }

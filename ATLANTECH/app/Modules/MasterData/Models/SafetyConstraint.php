@@ -54,14 +54,6 @@ class SafetyConstraint extends Model
     }
 
     /**
-     * @return BelongsTo<BerthTerminal, $this>
-     */
-    public function berth2(): BelongsTo
-    {
-        return $this->belongsTo(BerthTerminal::class, 'berth_id', 'berth_id');
-    }
-
-    /**
      * @return BelongsTo<EquipmentCategory, $this>
      */
     public function equipmentCategory(): BelongsTo
@@ -96,7 +88,7 @@ class SafetyConstraint extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user(): BelongsTo
+    public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

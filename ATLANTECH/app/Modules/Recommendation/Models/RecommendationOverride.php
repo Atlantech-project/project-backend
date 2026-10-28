@@ -98,7 +98,7 @@ class RecommendationOverride extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user(): BelongsTo
+    public function overriddenBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'overridden_by');
     }
