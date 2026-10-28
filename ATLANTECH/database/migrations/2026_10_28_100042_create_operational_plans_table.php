@@ -20,6 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('active_key')->nullable()->storedAs('IF(`status` = \'CONFIRMED\', `berthing_request_id`, NULL)')->unique('active_key')->comment('GENERATED (stored): IF(status = CONFIRMED, berthing_request_id, NULL)');
             $table->unsignedBigInteger('confirmed_by');
             $table->dateTime('confirmed_at')->useCurrent();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['recommendation_option_id', 'recommendation_id'], 'fk_op_option');
             $table->index(['recommendation_id', 'berthing_request_id'], 'fk_op_rec');
             $table->index(['confirmed_by'], 'fk_op_user');

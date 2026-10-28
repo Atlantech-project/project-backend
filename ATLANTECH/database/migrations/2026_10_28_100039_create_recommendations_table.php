@@ -22,6 +22,7 @@ return new class extends Migration
             $table->enum('purpose', ['INITIAL', 'DELAY_REPLAN'])->default('INITIAL');
             $table->unsignedBigInteger('active_key')->nullable()->storedAs('IF(`status` IN (\'PENDING_REVIEW\', \'MODIFIED_BY_STAFF\', \'CONFIRMED\') AND `purpose` = \'INITIAL\', `berthing_request_id`, NULL)')->comment('GENERATED (stored): IF(status IN (PENDING_REVIEW, MODIFIED_BY_STAFF, CONFIRMED) AND purpose = INITIAL, berthing_request_id, NULL)');
             $table->dateTime('generated_at');
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['entry_window_proposal_id', 'berthing_request_id'], 'fk_rec_proposal');
             $table->index(['berthing_request_id', 'terminal_id'], 'fk_rec_request');
             $table->index(['solver_run_id'], 'fk_rec_run');

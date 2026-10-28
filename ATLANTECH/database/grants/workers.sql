@@ -305,7 +305,7 @@ GRANT SELECT ON `yard_zones` TO 'r_yard';
 GRANT SELECT (`id`, `name`, `is_active`) ON `users` TO 'r_yard';
 GRANT SELECT (`mode`, `read_only_reason`) ON `license_states` TO 'r_yard';
 GRANT INSERT ON `yard_placement_items` TO 'r_yard';
-GRANT UPDATE (`status`, `outcome`, `error_category`, `result_detail`, `worker_version`, `started_at`, `finished_at`) ON `yard_runs` TO 'r_yard';
+GRANT UPDATE (`status`, `outcome`, `error_category`, `retry_count`, `result_detail`, `worker_version`, `started_at`, `finished_at`) ON `yard_runs` TO 'r_yard';
 GRANT UPDATE (`lifecycle_status`, `confidence`, `rationale_template_id`, `rationale_params`, `failure_reason`) ON `terminal_recommendations` TO 'r_yard';
 
 -- ---------------------------------------------------------------- r_edi

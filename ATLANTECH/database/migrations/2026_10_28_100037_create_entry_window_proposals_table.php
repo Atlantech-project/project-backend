@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('rejection_reason', 500)->nullable()->comment('Required when REJECTED (all windows rejected)');
             $table->unsignedBigInteger('rejected_by')->nullable();
             $table->dateTime('rejected_at')->nullable();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['bias_correction_version_id'], 'fk_ewp_bias');
             $table->index(['forecast_run_id'], 'fk_ewp_forecast');
             $table->index(['berthing_request_id'], 'fk_ewp_request');

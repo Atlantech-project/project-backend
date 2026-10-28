@@ -31,6 +31,7 @@ return new class extends Migration
             $table->unsignedBigInteger('rationale_template_id')->nullable();
             $table->decimal('confidence', 4, 3)->nullable();
             $table->json('rationale_params')->nullable()->comment('Placeholder values for the rationale template, written by the worker');
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['recommendation_id', 'terminal_id'], 'fk_tr_rec');
             $table->index(['terminal_id', 'terminal_type'], 'fk_tr_terminal');
             $table->index(['decided_by'], 'fk_tr_user');

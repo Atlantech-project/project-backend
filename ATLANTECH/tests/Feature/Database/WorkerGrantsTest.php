@@ -75,6 +75,39 @@ test('the BAPLIE worker counts its own retries (CT-15)', function () {
     });
 })->group('schema');
 
+test('the yard worker counts its own retries (CT-08, P1-B3)', function () {
+    asTestWorker('r_yard', function ($worker) {
+        expect($worker->table('yard_runs')->where('id', 0)->update(['retry_count' => 1]))->toBe(0);
+    });
+})->group('schema');
+
+/**
+ * The rows are committed, not rolled back: the worker signs in on its own connection and
+ * cannot see an open transaction. They are deleted in `finally`, and a killed run is wiped
+ * by the next schema rebuild.
+ */
+test('a worker with column grants still updates a table that carries the version token', function () {
+    $typeId = DB::table('vessel_types')->insertGetId(['code' => 'T_TOKEN_'.Str::random(8), 'name' => 'Token probe']);
+    $vesselId = DB::table('vessels')->insertGetId([
+        'imo_number' => (string) random_int(1000000, 9999999), 'name' => 'Token Probe', 'vessel_type_id' => $typeId,
+        'loa' => 100, 'beam' => 20, 'max_draft' => 8,
+        'updated_at' => '2000-01-01 00:00:00.000000',
+    ]);
+
+    try {
+        $before = DB::table('vessels')->where('id', $vesselId)->value('updated_at');
+
+        asTestWorker('r_edi', function ($worker) use ($vesselId) {
+            expect($worker->table('vessels')->where('id', $vesselId)->update(['call_sign' => 'SUXX']))->toBe(1);
+        });
+
+        expect(DB::table('vessels')->where('id', $vesselId)->value('updated_at'))->toBeGreaterThan($before);
+    } finally {
+        DB::table('vessels')->where('id', $vesselId)->delete();
+        DB::table('vessel_types')->where('id', $typeId)->delete();
+    }
+})->group('schema');
+
 test('the validation worker has no write rights at all', function () {
     asTestWorker('r_validate', function ($worker) {
         expect(fn () => $worker->table('part1_runs')->where('id', 0)->update(['status' => 'RUNNING']))

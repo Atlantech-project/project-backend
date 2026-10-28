@@ -28,6 +28,7 @@ return new class extends Migration
             $table->unsignedBigInteger('corrected_by')->nullable();
             $table->dateTime('corrected_at')->nullable();
             $table->dateTime('uploaded_at')->useCurrent();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['berthing_request_id', 'vessel_id'], 'fk_bf_request');
             $table->index(['uploaded_by'], 'fk_bf_user');
             $table->index(['vessel_id'], 'fk_bf_vessel');
