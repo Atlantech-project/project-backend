@@ -22,6 +22,7 @@ beforeEach(function () {
 afterEach(function () {
     DB::rollBack();
     DB::statement('SET FOREIGN_KEY_CHECKS = 1');
+    DB::disconnect();
 });
 
 /**
@@ -76,9 +77,30 @@ test('every model points at its own table and no two models share one', function
         ->and($tables->duplicates()->values()->all())->toBe([]);
 })->group('schema');
 
+test('every contract table has a model', function () {
+    preg_match_all(
+        '/^\|\s*\d+\s*\|\s*`[a-z0-9_]+`\s*\|[^|]+\|\s*`([a-z0-9_]+)`\s*\|/m',
+        file_get_contents(base_path('docs/reference/contracts/db/table-names.md')),
+        $matches,
+    );
+    $modelled = collect(domainModels())->map(fn (string $class) => (new $class)->getTable());
+
+    expect($matches[1])->toHaveCount(92)
+        ->and(array_values(array_diff($matches[1], $modelled->all())))->toBe([])
+        ->and($modelled)->toHaveCount(92);
+})->group('schema');
+
 test('a row is written and read back through its model', function (string $class) {
     $written = $class::factory()->create();
-    $read = $class::query()->whereKey($written->getKey())->first();
+    $primary = DB::table('information_schema.STATISTICS')
+        ->where('TABLE_SCHEMA', DB::raw('DATABASE()'))
+        ->where('TABLE_NAME', $written->getTable())
+        ->where('INDEX_NAME', 'PRIMARY')
+        ->orderBy('SEQ_IN_INDEX')
+        ->pluck('COLUMN_NAME');
+    $read = $class::query()
+        ->where(fn ($query) => $primary->each(fn (string $column) => $query->where($column, $written->getAttributes()[$column])))
+        ->first();
 
     expect($read)->toBeInstanceOf($class)
         ->and(collect($read->getFillable())->diff(array_keys($read->getAttributes()))->values()->all())->toBe([]);
@@ -120,6 +142,25 @@ test('every declared relation loads', function (string $class) {
     }
 })->with(fn () => collect(domainModels())->filter(fn (string $class) => declaredRelations($class) !== [])->values()->all())
     ->group('schema');
+
+test('columns a worker updates are not fillable, and generated columns never are (CT-15)', function () {
+    preg_match_all('/^GRANT UPDATE \(([^)]+)\) ON `([a-z_]+)`/m', file_get_contents(database_path('grants/workers.sql')), $grants, PREG_SET_ORDER);
+    $models = collect(domainModels())->keyBy(fn (string $class) => (new $class)->getTable());
+    $generated = DB::table('information_schema.COLUMNS')
+        ->where('TABLE_SCHEMA', DB::raw('DATABASE()'))
+        ->where('EXTRA', 'like', '%STORED GENERATED%')
+        ->get(['TABLE_NAME', 'COLUMN_NAME']);
+
+    foreach ($grants as [, $columns, $table]) {
+        $aiColumns = array_map(fn (string $column) => trim($column, ' `'), explode(',', $columns));
+
+        expect(array_values(array_intersect($aiColumns, (new $models[$table])->getFillable())))->toBe([], $table);
+    }
+
+    foreach ($generated as $column) {
+        expect((new $models[$column->TABLE_NAME])->getFillable())->not->toContain($column->COLUMN_NAME);
+    }
+})->group('schema');
 
 test('a user signs in with username and a hashed password_hash, never shown (DEC-35)', function () {
     $user = User::factory()->create(['username' => 'staff.'.Str::lower(Str::random(6)), 'password_hash' => 'secret-pass']);
