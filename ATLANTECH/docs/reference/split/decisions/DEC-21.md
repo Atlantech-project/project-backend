@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 629-653 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 631-655 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-21 · Phase 1 delay-risk rule
 
 | | |

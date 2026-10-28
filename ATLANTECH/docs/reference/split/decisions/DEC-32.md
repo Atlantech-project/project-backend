@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 909-932 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 911-934 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-32 · Availability semantics for pilots and tug masters
 
 | | |

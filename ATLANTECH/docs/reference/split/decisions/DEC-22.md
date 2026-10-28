@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 655-679 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 657-681 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-22 · Financial-impact data in ranking
 
 | | |
