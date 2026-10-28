@@ -54,7 +54,8 @@ class ActualStatusUpdate extends Model
     /**
      * The status type for this component (`fk_asu_status` is on (`component_type`, `status`)): matched on the code
      * and constrained to this row's current component type, so it lazy-loads the one right row.
-     * Eager loading cannot carry the per-row component type, so it is refused instead of returning nothing.
+     * Eager loading cannot carry the per-row component type, so it is refused instead of returning nothing; the same
+     * applies to has() / whereHas() and to a select() without `component_type`. Query status types from StatusType instead.
      *
      * @return BelongsTo<StatusType, $this>
      *
