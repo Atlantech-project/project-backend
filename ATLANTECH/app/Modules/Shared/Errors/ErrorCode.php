@@ -83,7 +83,7 @@ enum ErrorCode: string
             self::AccountDisabled => 'Account disabled',
             self::PasswordChangeRequired => 'Password change required',
             self::AppUpdateRequired => 'App update required',
-            self::LicenseReadOnly => 'Licence is read-only',
+            self::LicenseReadOnly => 'License is read-only',
             self::PlanLimitExceeded => 'Plan limit exceeded',
             self::TooManyAttempts => 'Too many attempts',
             self::IdempotencyKeyReused => 'Idempotency key reused',
