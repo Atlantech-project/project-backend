@@ -144,21 +144,24 @@ test('users sign in with a username and have no email column (DEC-35)', function
     expect($columns)->toContain('username')->not->toContain('email');
 })->group('schema');
 
-test('the version token updated_at is DATETIME(6) on the master-data tables', function () {
+test('the version token updated_at is DATETIME(6) and moves on every update on the master-data tables', function () {
     $tables = [
         'navigation_channels', 'port_profiles', 'port_settings', 'license_states', 'users', 'terminals',
         'berths', 'tugboats', 'safety_constraints', 'port_shifts', 'equipment', 'storage_facilities',
         'pilot_profiles', 'tug_master_profiles', 'pilot_rank_limits', 'yard_slots',
     ];
 
-    $types = DB::table('information_schema.COLUMNS')
+    $tokens = DB::table('information_schema.COLUMNS')
         ->where('TABLE_SCHEMA', DB::raw('DATABASE()'))
         ->where('COLUMN_NAME', 'updated_at')
         ->whereIn('TABLE_NAME', $tables)
-        ->pluck('COLUMN_TYPE', 'TABLE_NAME');
+        ->selectRaw("TABLE_NAME, CONCAT(COLUMN_TYPE, ' | ', IS_NULLABLE, ' | ', COLUMN_DEFAULT, ' | ', EXTRA) AS token")
+        ->pluck('token', 'TABLE_NAME');
 
-    expect($types)->toHaveCount(count($tables))
-        ->and($types->unique()->values()->all())->toBe(['datetime(6)']);
+    expect($tokens)->toHaveCount(count($tables))
+        ->and($tokens->unique()->values()->all())->toBe([
+            'datetime(6) | NO | CURRENT_TIMESTAMP(6) | DEFAULT_GENERATED on update CURRENT_TIMESTAMP(6)',
+        ]);
 })->group('schema');
 
 test('the connection runs in UTC', function () {
