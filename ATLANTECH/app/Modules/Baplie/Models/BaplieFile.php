@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Exactly one ACTIVE file per request (active_request_key). Replacing a revision: old ACTIVE -> REPLACED, new -> ACTIVE, in one transaction. Mistaken upload -> WITHDRAWN.
 Diagnostics rows live in baplie_parse_issue (no JSON copy here).
  * Columns written by an AI worker are not fillable (CT-15): `parse_status`, `staged_payload`.
+ * The Backend sets `staged_payload` on a staff correction (CT-15) explicitly with `forceFill()`.
  * Generated, never written: `live_hash_key`, `active_request_key`.
  * `updated_at` is the version token for the 409 check.
  */
