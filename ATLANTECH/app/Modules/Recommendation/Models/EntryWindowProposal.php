@@ -74,7 +74,7 @@ class EntryWindowProposal extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user(): BelongsTo
+    public function rejectedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rejected_by');
     }
@@ -98,7 +98,7 @@ class EntryWindowProposal extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user2(): BelongsTo
+    public function confirmedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'confirmed_by');
     }

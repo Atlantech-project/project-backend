@@ -4,7 +4,7 @@ namespace App\Modules\Berthing\Models;
 
 use App\Modules\Berthing\Enums\BerthingRequestCargoOperation;
 use App\Modules\Berthing\Enums\BerthingRequestCargoQuantityUnit;
-use App\Modules\MasterData\Models\TerminalCargoType;
+use App\Modules\MasterData\Models\Terminal;
 use Database\Factories\Berthing\BerthingRequestCargoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -45,10 +45,10 @@ class BerthingRequestCargo extends Pivot
     }
 
     /**
-     * @return BelongsTo<TerminalCargoType, $this>
+     * @return BelongsTo<Terminal, $this>
      */
     public function terminal(): BelongsTo
     {
-        return $this->belongsTo(TerminalCargoType::class, 'terminal_id', 'terminal_id');
+        return $this->belongsTo(Terminal::class, 'terminal_id');
     }
 }

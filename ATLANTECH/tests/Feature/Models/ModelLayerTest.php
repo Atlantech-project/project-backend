@@ -1,6 +1,31 @@
 <?php
 
 use App\Modules\Access\Models\User;
+use App\Modules\Berthing\Models\BerthingRequestCargo;
+use App\Modules\Execution\Models\ActualStatusUpdate;
+use App\Modules\MasterData\Models\Berth;
+use App\Modules\MasterData\Models\BerthTerminal;
+use App\Modules\MasterData\Models\CargoType;
+use App\Modules\MasterData\Models\Equipment;
+use App\Modules\MasterData\Models\EquipmentCargoCompatibility;
+use App\Modules\MasterData\Models\ImdgClass;
+use App\Modules\MasterData\Models\MlModelVersion;
+use App\Modules\MasterData\Models\SafetyConstraint;
+use App\Modules\MasterData\Models\StatusType;
+use App\Modules\MasterData\Models\StorageFacility;
+use App\Modules\MasterData\Models\StorageFacilityCargoCompatibility;
+use App\Modules\MasterData\Models\Terminal;
+use App\Modules\MasterData\Models\TerminalCargoType;
+use App\Modules\MasterData\Models\Tugboat;
+use App\Modules\Plan\Models\OperationalPlan;
+use App\Modules\Recommendation\Models\RecommendationOption;
+use App\Modules\Recommendation\Models\RecommendationOptionTug;
+use App\Modules\Recommendation\Models\SolverRun;
+use App\Modules\Recommendation\Models\SolverRunModelVersion;
+use App\Modules\Yard\Models\DgZoneAllowedClass;
+use App\Modules\Yard\Models\StorageAllocationItem;
+use App\Modules\Yard\Models\StorageMovement;
+use App\Modules\Yard\Models\YardZone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
@@ -142,6 +167,65 @@ test('every declared relation loads', function (string $class) {
     }
 })->with(fn () => collect(domainModels())->filter(fn (string $class) => declaredRelations($class) !== [])->values()->all())
     ->group('schema');
+
+test('a belongsTo relation returns its own parent, not a neighbour', function (string $child, string $relation, string $parent, string $column) {
+    $parent::factory()->create();
+    $target = $parent::factory()->create();
+    $row = $child::factory()->create([$column => $target->getKey()]);
+
+    expect($row->{$relation}?->getKey())->toBe($target->getKey());
+})->with([
+    'StorageMovement::storageFacility' => [StorageMovement::class, 'storageFacility', StorageFacility::class, 'storage_facility_id'],
+    'StorageAllocationItem::storageFacility' => [StorageAllocationItem::class, 'storageFacility', StorageFacility::class, 'storage_facility_id'],
+    'BerthingRequestCargo::terminal' => [BerthingRequestCargo::class, 'terminal', Terminal::class, 'terminal_id'],
+    'EquipmentCargoCompatibility::terminal' => [EquipmentCargoCompatibility::class, 'terminal', Terminal::class, 'terminal_id'],
+    'StorageFacilityCargoCompatibility::terminal' => [StorageFacilityCargoCompatibility::class, 'terminal', Terminal::class, 'terminal_id'],
+    'RecommendationOption::berth' => [RecommendationOption::class, 'berth', Berth::class, 'berth_id'],
+    'SafetyConstraint::berth' => [SafetyConstraint::class, 'berth', Berth::class, 'berth_id'],
+    'OperationalPlan::confirmedBy' => [OperationalPlan::class, 'confirmedBy', User::class, 'confirmed_by'],
+])->group('schema');
+
+test('a status update finds its status type by code within its own component type', function () {
+    StatusType::factory()->create(['component_type' => 'TUG', 'code' => 'ARRIVED']);
+    StatusType::factory()->create(['component_type' => 'BERTH', 'code' => 'ARRIVED']);
+    $update = ActualStatusUpdate::factory()->create(['component_type' => 'BERTH', 'status' => 'ARRIVED']);
+
+    expect($update->statusType?->component_type?->value)->toBe('BERTH')
+        ->and($update->statusType?->code)->toBe('ARRIVED');
+})->group('schema');
+
+test('a belongsToMany through a pivot returns exactly the linked rows', function (string $owner, string $relation, string $pivot, array $keys, string $related) {
+    [$ownerKey, $relatedKey, $relatedColumn] = $keys;
+    $model = $owner::factory()->create();
+    $related::factory()->create();
+    $linked = $related::factory()->create();
+    $pivot::factory()->create([$ownerKey => $model->getKey(), $relatedKey => $linked->getAttribute($relatedColumn)]);
+
+    expect($model->{$relation}()->pluck($related::query()->getModel()->qualifyColumn($relatedColumn))->all())
+        ->toBe([$linked->getAttribute($relatedColumn)]);
+})->with([
+    'Berth::terminals' => [Berth::class, 'terminals', BerthTerminal::class, ['berth_id', 'terminal_id', 'id'], Terminal::class],
+    'Terminal::berths' => [Terminal::class, 'berths', BerthTerminal::class, ['terminal_id', 'berth_id', 'id'], Berth::class],
+    'Terminal::cargoTypes' => [Terminal::class, 'cargoTypes', TerminalCargoType::class, ['terminal_id', 'cargo_type_id', 'id'], CargoType::class],
+    'StorageFacility::cargoTypes' => [StorageFacility::class, 'cargoTypes', StorageFacilityCargoCompatibility::class, ['storage_facility_id', 'cargo_type_id', 'id'], CargoType::class],
+    'Equipment::cargoTypes' => [Equipment::class, 'cargoTypes', EquipmentCargoCompatibility::class, ['equipment_id', 'cargo_type_id', 'id'], CargoType::class],
+    'YardZone::imdgClasses' => [YardZone::class, 'imdgClasses', DgZoneAllowedClass::class, ['yard_zone_id', 'imdg_class', 'code'], ImdgClass::class],
+    'RecommendationOption::tugboats' => [RecommendationOption::class, 'tugboats', RecommendationOptionTug::class, ['option_id', 'tugboat_id', 'id'], Tugboat::class],
+    'SolverRun::modelVersions' => [SolverRun::class, 'modelVersions', SolverRunModelVersion::class, ['solver_run_id', 'model_version_id', 'id'], MlModelVersion::class],
+])->group('schema');
+
+test('tables only an AI worker inserts give the Backend nothing to fill beyond what CT-15 allows', function () {
+    preg_match_all('/^\| `([a-z_]+)` \| AI[^|]*\| INSERT: [^|]+\| ([^|]+) \|/m', file_get_contents(base_path('docs/reference/contracts/ai/table-ownership.md')), $rows, PREG_SET_ORDER);
+    $models = collect(domainModels())->keyBy(fn (string $class) => (new $class)->getTable());
+
+    expect($rows)->not->toBeEmpty();
+
+    foreach ($rows as [, $table, $backendMay]) {
+        if (str_starts_with(trim($backendMay), 'Nothing')) {
+            expect((new $models[$table])->getFillable())->toBe([], $table);
+        }
+    }
+})->group('schema');
 
 test('columns a worker updates are not fillable, and generated columns never are (CT-15)', function () {
     preg_match_all('/^GRANT UPDATE \(([^)]+)\) ON `([a-z_]+)`/m', file_get_contents(database_path('grants/workers.sql')), $grants, PREG_SET_ORDER);

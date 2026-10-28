@@ -3,7 +3,6 @@
 namespace App\Modules\Yard\Models;
 
 use App\Modules\MasterData\Models\StorageFacility;
-use App\Modules\MasterData\Models\StorageFacilityCargoCompatibility;
 use App\Modules\Shared\Enums\CapacityUnit;
 use App\Modules\Yard\Enums\TerminalRecommendationType;
 use Database\Factories\Yard\StorageAllocationItemFactory;
@@ -38,14 +37,6 @@ class StorageAllocationItem extends Model
     }
 
     /**
-     * @return BelongsTo<StorageFacilityCargoCompatibility, $this>
-     */
-    public function storageFacility(): BelongsTo
-    {
-        return $this->belongsTo(StorageFacilityCargoCompatibility::class, 'storage_facility_id', 'storage_facility_id');
-    }
-
-    /**
      * @return BelongsTo<TerminalRecommendation, $this>
      */
     public function terminalRecommendation(): BelongsTo
@@ -56,7 +47,7 @@ class StorageAllocationItem extends Model
     /**
      * @return BelongsTo<StorageFacility, $this>
      */
-    public function storageFacility2(): BelongsTo
+    public function storageFacility(): BelongsTo
     {
         return $this->belongsTo(StorageFacility::class, 'storage_facility_id');
     }

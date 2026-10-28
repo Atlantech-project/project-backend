@@ -67,7 +67,7 @@ class BaplieFile extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user(): BelongsTo
+    public function uploadedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
     }
@@ -83,7 +83,7 @@ class BaplieFile extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user2(): BelongsTo
+    public function correctedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'corrected_by');
     }

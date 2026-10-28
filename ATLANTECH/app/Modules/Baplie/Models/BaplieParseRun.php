@@ -57,7 +57,7 @@ class BaplieParseRun extends Model
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user(): BelongsTo
+    public function triggeredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'triggered_by');
     }

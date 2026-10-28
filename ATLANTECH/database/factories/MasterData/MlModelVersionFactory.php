@@ -13,15 +13,16 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class MlModelVersionFactory extends Factory
 {
     /**
-     * Define the model's default state.
+     * Define the model's default state. `ml_models` holds one row per `model_key` (reference data),
+     * so versions reuse an existing model and only create one when there is none.
      *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            'ml_model_id' => MlModel::factory(),
-            'version_no' => fake()->numberBetween(1, 10),
+            'ml_model_id' => fn () => MlModel::query()->value('id') ?? MlModel::factory(),
+            'version_no' => fake()->unique()->numberBetween(1, 1_000_000),
             'status' => MlModelVersionStatus::Challenger,
             'hyperparameters' => null,
             'training_window_start' => null,

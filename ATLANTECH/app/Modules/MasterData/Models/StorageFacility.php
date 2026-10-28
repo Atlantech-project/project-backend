@@ -102,12 +102,12 @@ class StorageFacility extends Model
     }
 
     /**
-     * Through `storage_facility_cargo_compatibilities` (StorageFacilityCargoCompatibility).
+     * Through `storage_facility_cargo_compatibilities` (StorageFacilityCargoCompatibility). Attach with the owner's `terminal_id` (NOT NULL, part of the composite FK).
      *
      * @return BelongsToMany<CargoType, $this, StorageFacilityCargoCompatibility>
      */
     public function cargoTypes(): BelongsToMany
     {
-        return $this->belongsToMany(CargoType::class, 'storage_facility_cargo_compatibilities', 'storage_facility_id', 'cargo_type_id')->using(StorageFacilityCargoCompatibility::class);
+        return $this->belongsToMany(CargoType::class, 'storage_facility_cargo_compatibilities', 'storage_facility_id', 'cargo_type_id')->using(StorageFacilityCargoCompatibility::class)->withPivot('terminal_id');
     }
 }

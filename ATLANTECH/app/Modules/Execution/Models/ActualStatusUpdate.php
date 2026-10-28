@@ -51,17 +51,21 @@ class ActualStatusUpdate extends Model
     }
 
     /**
+     * The status type for this component (`fk_asu_status` is on (`component_type`, `status`)): matched on the code
+     * and constrained to this row's component type, so it lazy-loads the one right row. Not for eager loading.
+     *
      * @return BelongsTo<StatusType, $this>
      */
     public function statusType(): BelongsTo
     {
-        return $this->belongsTo(StatusType::class, 'component_type', 'component_type');
+        return $this->belongsTo(StatusType::class, 'status', 'code')
+            ->where('status_types.component_type', $this->getRawOriginal('component_type') ?? $this->getAttributes()['component_type'] ?? null);
     }
 
     /**
      * @return BelongsTo<User, $this>
      */
-    public function user(): BelongsTo
+    public function reportedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reported_by');
     }
