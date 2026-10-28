@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1246-1270 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1248-1272 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-45 · Display time zone
 
 | | |
@@ -20,7 +20,7 @@
 
 **Options:**
 
-1. Display in port time from `port_profile.timezone`.
+1. Display in port time from `port_profiles.timezone`.
 2. User device time.
 
 **Recommendation.** Option 1 on web and mobile.

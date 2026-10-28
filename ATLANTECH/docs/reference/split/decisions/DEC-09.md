@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 315-339 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 317-341 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-09 · Where deviation thresholds live
 
 | | |
@@ -20,7 +20,7 @@
 
 **Options:**
 
-1. `port_setting` keys per component type.
+1. `port_settings` keys per component type.
 2. A new table.
 
 **Recommendation.** Option 1 (agreed). Edited from P-62.

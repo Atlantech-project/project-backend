@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 707-730 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 709-732 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-24 · Part 1 settings: horizon, time step, minimum window, slot
 
 | | |
@@ -22,4 +22,4 @@
 
 1. Horizon 72 hours, step 30 minutes, minimum window 60 minutes, demand slot 60 minutes (proposed).
 
-**Recommendation.** Approve the proposed values as `port_setting` keys, changeable later without code.
+**Recommendation.** Approve the proposed values as `port_settings` keys, changeable later without code.

@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1220-1244 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1222-1246 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-44 · Storing the clock-skew review note
 
 | | |
@@ -21,6 +21,6 @@
 **Options:**
 
 1. Show the flag only, no note.
-2. A note field on `actual_status_update`.
+2. A note field on `actual_status_updates`.
 
 **Recommendation.** Option 1 for the MVP.

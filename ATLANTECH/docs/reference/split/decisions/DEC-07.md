@@ -16,7 +16,7 @@
 
 </div>
 
-**Topic.** `blocked_period.proposal_id` is mandatory, so a proposal must exist even when no window exists.
+**Topic.** `blocked_periods.proposal_id` is mandatory, so a proposal must exist even when no window exists.
 
 **Options:**
 

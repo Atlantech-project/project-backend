@@ -1,14 +1,14 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 988-1012 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 990-1014 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-35 · Sign-in identifier
 
 | | |
 | --- | --- |
 | Source | Screens P-16/P-52 · FR-AC-01 · FR-AC-09 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-35 · Sprint 1 |
 | Affects | P1-C1 · P1-C3 · FE-025 · MB-P52 |
-| Decision | ______ |
+| Decision | Closed (2026-10-28): Option 1. Users sign in with `username` on the web (P-16) and the tablet (P-52); the `users` table has no email column. `username` is unique and stored lowercase; `phone` is contact only and never used for sign-in. P-16 shows a Username field instead of Email. CT-03 and CT-04 use `{ "username", "password" }`. |
 
 <div dir="rtl">
 

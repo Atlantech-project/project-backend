@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1091-1115 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1093-1117 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-39 · CT Supervisor status list
 
 | | |
@@ -21,6 +21,6 @@
 **Options:**
 
 1. The same task statuses: In progress and Executed.
-2. Terminal-specific statuses from `status_type`.
+2. Terminal-specific statuses from `status_types`.
 
 **Recommendation.** Option 1 for the MVP: In progress and Executed on the terminal component.

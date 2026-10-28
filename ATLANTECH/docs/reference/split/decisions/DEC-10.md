@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 341-365 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 343-367 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-10 · Scope of the AI FastAPI service
 
 | | |

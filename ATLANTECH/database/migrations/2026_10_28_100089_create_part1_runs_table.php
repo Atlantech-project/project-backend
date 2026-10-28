@@ -1,0 +1,41 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('part1_runs', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('berthing_request_id');
+            $table->enum('status', ['QUEUED', 'RUNNING', 'DONE', 'FAILED', 'REPLACED'])->default('QUEUED');
+            $table->enum('outcome', ['WINDOWS_FOUND', 'NO_FEASIBLE_WINDOW', 'ENV_DATA_UNAVAILABLE'])->nullable();
+            $table->tinyInteger('retry_count')->default(0)->comment('0..3');
+            $table->unsignedBigInteger('entry_window_proposal_id')->nullable()->comment('Set only when windows are found');
+            $table->dateTime('queued_at')->useCurrent();
+            $table->dateTime('started_at')->nullable();
+            $table->dateTime('finished_at')->nullable();
+            $table->dateTime('result_handled_at')->nullable()->comment('Set by the Backend when it has handled the C-06 result (Backend only)');
+
+            $table->foreign('berthing_request_id', 'fk_p1r_request')->references('id')->on('berthing_requests');
+            $table->foreign('entry_window_proposal_id', 'fk_p1r_proposal')->references('id')->on('entry_window_proposals');
+        });
+
+        DB::statement('ALTER TABLE `part1_runs` ADD CONSTRAINT `chk_p1r_retry` CHECK (`retry_count` BETWEEN 0 AND 3)');
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('part1_runs');
+    }
+};
