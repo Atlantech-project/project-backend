@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('tier');
             $table->enum('status', ['ACTIVE', 'BLOCKED'])->default('ACTIVE')->comment('Administrative only; occupied = container_id IS NOT NULL');
             $table->unsignedBigInteger('container_id')->nullable()->unique('container_id');
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->unique(['id', 'yard_block_id'], 'uq_ys_id_block');
             $table->unique(['yard_block_id', 'bay', 'row_no', 'tier'], 'uq_ys_position');
 
