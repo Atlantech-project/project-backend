@@ -25,6 +25,7 @@ return new class extends Migration
             $table->dateTime('planned_start');
             $table->dateTime('planned_end');
             $table->enum('reservation_state', ['RESERVED', 'RELEASED', 'CONSUMED'])->default('RESERVED')->comment('RELEASED on plan cancellation');
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['assigned_by'], 'fk_pc_assigner');
             $table->index(['operational_plan_id'], 'fk_pc_plan');
             $table->index(['terminal_id'], 'fk_pc_terminal');

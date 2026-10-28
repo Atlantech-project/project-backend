@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('call_sign', 10)->nullable()->comment('Nullable');
             $table->char('flag_state', 2)->nullable()->comment('ISO 3166-1 alpha-2. Nullable');
 
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->foreign('vessel_type_id', 'fk_vessel_type')->references('id')->on('vessel_types');
 
             $table->comment('Block coefficient (Cb), GT and DWT are per call: they live on berthing_request.');

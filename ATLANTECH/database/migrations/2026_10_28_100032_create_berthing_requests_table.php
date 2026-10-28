@@ -33,6 +33,7 @@ return new class extends Migration
             $table->integer('deadweight_tonnes')->comment('DWT (tonnes), entered on the request form; input to the AI tug formula (OQ-15-1)');
             $table->enum('status', ['SUBMITTED', 'NEEDS_REVISION', 'PRELIMINARY_APPROVED', 'CUSTOMS_APPROVED', 'ENTRY_WINDOW_CONFIRMED', 'RECOMMENDATION_GENERATED', 'PLAN_CONFIRMED', 'PLAN_CANCELLED', 'COMPLETED', 'REJECTED', 'CANCELLED'])->default('SUBMITTED');
             $table->dateTime('created_at')->useCurrent();
+            $table->dateTime('updated_at', 6)->useCurrent()->useCurrentOnUpdate()->comment('Version token for the 409 check (microseconds)');
             $table->index(['submitted_by'], 'fk_br_user');
             $table->index(['vessel_id'], 'fk_br_vessel');
             $table->index(['status'], 'idx_br_status');
