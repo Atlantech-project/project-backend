@@ -26,6 +26,10 @@
   <img src="https://img.shields.io/badge/PHPUnit-tests-407E8C?style=flat-square&logo=php&logoColor=E5E1DD&labelColor=083A4F" alt="PHPUnit">
 </p>
 
+<p align="center">
+  <a href="https://github.com/Atlantech-project/project-backend/actions/workflows/ci.yml"><img src="https://github.com/Atlantech-project/project-backend/actions/workflows/ci.yml/badge.svg?branch=develop" alt="CI status of develop"></a>
+</p>
+
 <img src=".github/assets/wave.svg" width="100%" alt="">
 
 ## What lives here
@@ -151,6 +155,20 @@ vendor/bin/pint
 ## How we work
 
 Each task gets its own `feature/<task>` branch, cut from `develop` and merged through a pull request.
+
+### Continuous integration
+
+Every pull request into `develop` runs the `CI` workflow on GitHub (opened, new commits, reopened, ready for review; drafts are skipped). It does not run on pushes or on pull requests into `main`. Two jobs run in parallel:
+
+- `pint` checks code style with `vendor/bin/pint --test`.
+- `tests` runs the whole Pest suite against MySQL 8.4 and Redis 7.4 service containers (the same images as `docker-compose.yml`).
+
+Both are required checks on `develop`: a red `pint` or `tests` blocks the merge. Run the style check yourself before you push:
+
+```bash
+cd ATLANTECH
+composer lint      # pint --test, the same command CI runs
+```
 
 ## Neighbours
 
