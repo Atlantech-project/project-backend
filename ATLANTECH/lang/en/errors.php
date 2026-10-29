@@ -29,4 +29,5 @@ return [
     'idempotency_key_reused' => 'This request key was already used for a different request. Send the request again with a new key.',
     'service_unavailable' => 'The service is temporarily unavailable. Try again in a few minutes.',
     'server_error' => 'Something went wrong on our side. Try again; if the problem continues, contact support.',
+    'bad_request' => 'The request could not be processed. Check what you sent and try again.',
 ];

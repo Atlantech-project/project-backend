@@ -27,6 +27,7 @@ test('the catalogue holds exactly the agreed codes with their HTTP status', func
         'IDEMPOTENCY_KEY_REUSED' => 422,
         'SERVICE_UNAVAILABLE' => 503,
         'SERVER_ERROR' => 500,
+        'BAD_REQUEST' => 400,
     ]);
 });
 
