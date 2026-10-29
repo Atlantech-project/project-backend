@@ -114,3 +114,9 @@ it('describes the pagination bounds PageRequest enforces', function () {
         ])
         ->and(openApi()['components']['schemas']['PageMeta']['required'])->toBe(['page', 'per_page', 'total']);
 });
+
+it('names the session cookie the server really sets', function () {
+    expect(openApi()['components']['securitySchemes']['cookieAuth'])
+        ->in->toBe('cookie')
+        ->name->toBe(config('session.cookie'));
+});

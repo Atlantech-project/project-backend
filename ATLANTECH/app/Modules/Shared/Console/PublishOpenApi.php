@@ -32,11 +32,17 @@ class PublishOpenApi extends Command
             return self::FAILURE;
         }
 
-        if (! is_dir($folder)) {
-            mkdir($folder);
+        if (! is_dir($folder) && ! mkdir($folder)) {
+            $this->error("Could not create {$folder}.");
+
+            return self::FAILURE;
         }
 
-        copy(base_path('openapi/port-api.yaml'), $output);
+        if (! copy(base_path('openapi/port-api.yaml'), $output)) {
+            $this->error("Could not write {$output}.");
+
+            return self::FAILURE;
+        }
 
         $this->info('Wrote '.(realpath($output) ?: $output).'.');
 
