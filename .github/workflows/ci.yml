@@ -51,6 +51,24 @@ jobs:
       - name: Check code style
         run: vendor/bin/pint --test
 
+  # Required check name: "openapi". P1-A4: lints openapi/port-api.yaml (CT-02) with Spectral,
+  # run through npx at a pinned version (no package.json); fails on warnings. Ruleset: ATLANTECH/.spectral.yaml.
+  openapi:
+    name: openapi
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Lint the OpenAPI file
+        run: npx --yes @stoplight/spectral-cli@6.17.0 lint openapi/port-api.yaml --fail-severity=warn
+
   # Required check name: "tests"
   tests:
     name: tests

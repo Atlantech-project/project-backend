@@ -5,10 +5,10 @@
 | --- | --- |
 | Source | Backend open inputs |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-13 · Sprint 1 |
 | Affects | P1-A4 · CT-02 |
-| Decision | ______ |
+| Decision | Closed (2026-10-29): Option 1. The Backend Team is the single owner of the OpenAPI file (CT-02). Its source is project-backend `ATLANTECH/openapi/port-api.yaml`, published unchanged to PortHub `contracts/openapi/port-api.yaml` with `composer contracts:openapi`. Every backend PR that adds or changes an endpoint updates the file in the same PR, opens the paired PortHub PR, and the backend drift test and the Spectral CI check fail otherwise. The API readiness pack (CT-23) links the OpenAPI diff. Decided by Marwan (Backend lead) in P1-A4. |
 
 <div dir="rtl">
 

@@ -22,7 +22,8 @@
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "^5.3",
-        "pestphp/pest-plugin-laravel": "^5.0"
+        "pestphp/pest-plugin-laravel": "^5.0",
+        "symfony/yaml": "^8.1.9"
     },
     "autoload": {
         "psr-4": {
@@ -58,6 +59,9 @@
         ],
         "contracts:schema": [
             "@php artisan atlantech:contracts-schema"
+        ],
+        "contracts:openapi": [
+            "@php artisan atlantech:contracts-openapi"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
