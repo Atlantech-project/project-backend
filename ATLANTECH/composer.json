@@ -60,6 +60,9 @@
         "contracts:schema": [
             "@php artisan atlantech:contracts-schema"
         ],
+        "contracts:openapi": [
+            "@php artisan atlantech:contracts-openapi"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
