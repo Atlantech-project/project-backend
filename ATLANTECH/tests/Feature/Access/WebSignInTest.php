@@ -52,6 +52,13 @@ function rejectedAttempts(): Collection
     return AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->get();
 }
 
+it('hands the web app an XSRF-TOKEN cookie first', function () {
+    $this->withHeaders(['Origin' => SPA_ORIGIN, 'Referer' => SPA_ORIGIN.'/'])
+        ->get('/sanctum/csrf-cookie')
+        ->assertNoContent()
+        ->assertCookie('XSRF-TOKEN', null, false);
+});
+
 it('signs in, starts a new session and returns the profile', function () {
     $unit = OrganizationUnit::factory()->create();
     $user = userWithRole(Role::TerminalOfficer, $unit, ['username' => 'staff.ahmed', 'name' => 'Ahmed']);
