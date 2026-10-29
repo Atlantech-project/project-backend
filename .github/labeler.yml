@@ -1,0 +1,7 @@
+# actions/labeler config (.github/workflows/labeler.yml).
+# CT-17 §6: a PR touching a table or grant an AI worker reads or writes carries `ai-impact`.
+ai-impact:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ATLANTECH/database/migrations/**
+          - ATLANTECH/database/grants/**

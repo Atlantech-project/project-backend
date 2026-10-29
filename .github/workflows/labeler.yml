@@ -1,0 +1,19 @@
+name: Labeler
+
+# Adds `ai-impact` to PRs that touch migrations or worker grants (.github/labeler.yml).
+# Same-repo PRs only (pull_request, not pull_request_target): a fork gets no write token.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    name: labeler
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/labeler@v5

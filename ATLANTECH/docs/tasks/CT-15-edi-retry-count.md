@@ -60,8 +60,9 @@ One column added to the `r_edi` UPDATE grant in `database/grants/workers.sql`. A
 ## 9. Progress log
 
 - 2026-10-28 · Step 1 (C, approved in advance) · Grant changed at `workers.sql:404`; test added. Grants tests 5 passed; full suite 48 passed; Pint clean.
-- 2026-10-28 · PR · Merged to `develop` at 07:19 (PR #7, `1f5399d`) with `ai-impact`. The matrix and the dated DEC-08 note merged in PortHub PR #12.
+- 2026-10-28 · PR · Merged to `develop` at 07:19 (PR #7, `1f5399d`). The matrix and the dated DEC-08 note merged in PortHub PR #12.
 - 2026-10-28 · PortHub · `contracts/db/schema.sql` regenerated with the new grant (one line) and the `project-backend` pointer moved to `1f5399d`, on PortHub `feature/contracts-schema-sql-retry-count`.
+- 2026-10-29 · Correction: PR #7 did not carry `ai-impact` (the label did not exist yet). AI approval: Rashwan (AI lead, `mostafa-rashwan`) approved all work merged up to 2026-10-29, recorded by Marwan on 2026-10-29. The `ai-impact` label did not exist on GitHub before 2026-10-29, so no PR carries it.
 
 ## 10. Review
 
