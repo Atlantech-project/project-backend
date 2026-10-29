@@ -64,6 +64,25 @@ paths:
           $ref: '#/components/responses/ValidationFailed'
         '429':
           $ref: '#/components/responses/TooManyAttempts'
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      operationId: authMe
+      summary: Signed-in user's profile
+      description: >-
+        The profile of the user the session belongs to, the same shape as the sign-in answer. The web app calls it
+        after a page reload to know who is signed in.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: The signed-in user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
 components:
   securitySchemes:
     cookieAuth:

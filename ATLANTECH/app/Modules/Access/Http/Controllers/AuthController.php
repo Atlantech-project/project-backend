@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Access\Http\Requests\LoginRequest;
 use App\Modules\Access\Http\Resources\UserProfileResource;
 use App\Modules\Access\Services\SignInService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -31,5 +32,13 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return new UserProfileResource($user->load('activeRoleAssignment.organizationUnit'));
+    }
+
+    /**
+     * GET /api/v1/auth/me: the signed-in user's profile, the same shape as the login answer; 401 without a session.
+     */
+    public function me(Request $request): UserProfileResource
+    {
+        return new UserProfileResource($request->user()->load('activeRoleAssignment.organizationUnit'));
     }
 }
