@@ -7,6 +7,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -19,6 +20,7 @@ beforeEach(function () {
         Route::get('throttled', fn () => throw new ThrottleRequestsException(headers: ['Retry-After' => '30']));
         Route::get('down', fn () => throw new HttpException(503, 'maintenance internals'));
         Route::get('too-large', fn () => throw new HttpException(413, 'payload internals'));
+        Route::get('csrf', fn () => throw new TokenMismatchException('CSRF token mismatch.'));
         Route::get('crash', fn () => throw new RuntimeException('SQLSTATE[42S02]: secret_table missing'));
         Route::get('stable', fn () => throw new ApiProblemException(ErrorCode::AccountDisabled));
         Route::get('own-response', fn () => throw new HttpResponseException(response('teapot', 418)));
@@ -32,6 +34,7 @@ dataset('mapped statuses', [
     'unknown route → 404' => ['does-not-exist', 404, 'NOT_FOUND'],
     'ThrottleRequestsException → 429' => ['throttled', 429, 'TOO_MANY_ATTEMPTS'],
     'HttpException 503 → 503' => ['down', 503, 'SERVICE_UNAVAILABLE'],
+    'TokenMismatchException → 419' => ['csrf', 419, 'SESSION_EXPIRED'],
     'other 4xx → 400' => ['too-large', 400, 'BAD_REQUEST'],
     'any other Throwable → 500' => ['crash', 500, 'SERVER_ERROR'],
     'ApiProblemException keeps its code' => ['stable', 403, 'ACCOUNT_DISABLED'],

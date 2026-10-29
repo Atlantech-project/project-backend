@@ -15,6 +15,7 @@ test('the catalogue holds exactly the agreed codes with their HTTP status', func
         'VALIDATION_FAILED' => 422,
         'VERSION_CONFLICT' => 409,
         'UNAUTHENTICATED' => 401,
+        'SESSION_EXPIRED' => 419,
         'FORBIDDEN' => 403,
         'NOT_FOUND' => 404,
         'METHOD_NOT_ALLOWED' => 405,

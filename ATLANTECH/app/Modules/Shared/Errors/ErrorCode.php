@@ -15,6 +15,8 @@ enum ErrorCode: string
     case ValidationFailed = 'VALIDATION_FAILED';
     case VersionConflict = 'VERSION_CONFLICT';
     case Unauthenticated = 'UNAUTHENTICATED';
+    /** CSRF token missing or stale on a web (Sanctum SPA) request: fetch a new CSRF cookie and retry (P1-C1). */
+    case SessionExpired = 'SESSION_EXPIRED';
     case Forbidden = 'FORBIDDEN';
     case NotFound = 'NOT_FOUND';
     case MethodNotAllowed = 'METHOD_NOT_ALLOWED';
@@ -29,7 +31,7 @@ enum ErrorCode: string
     case IdempotencyKeyReused = 'IDEMPOTENCY_KEY_REUSED';
     case ServiceUnavailable = 'SERVICE_UNAVAILABLE';
     case ServerError = 'SERVER_ERROR';
-    /** Any other client error the framework raises (413, 415, 419 …), always 400; approved in P1-A2 step 4. */
+    /** Any other client error the framework raises (413, 415 …), always 400; approved in P1-A2 step 4. */
     case BadRequest = 'BAD_REQUEST';
 
     public const string TYPE_BASE_URI = 'https://atlantech.io/errors/';
@@ -46,6 +48,7 @@ enum ErrorCode: string
             self::NotFound => 404,
             self::MethodNotAllowed => 405,
             self::VersionConflict => 409,
+            self::SessionExpired => 419,
             self::ValidationFailed, self::PlanLimitExceeded, self::IdempotencyKeyReused => 422,
             self::LicenseReadOnly => 423,
             self::AppUpdateRequired => 426,
@@ -80,6 +83,7 @@ enum ErrorCode: string
             self::ValidationFailed => 'Validation failed',
             self::VersionConflict => 'Record changed',
             self::Unauthenticated => 'Unauthenticated',
+            self::SessionExpired => 'Session expired',
             self::Forbidden => 'Forbidden',
             self::NotFound => 'Not found',
             self::MethodNotAllowed => 'Method not allowed',

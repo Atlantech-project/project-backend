@@ -17,6 +17,7 @@ return [
     'validation_failed' => 'Some of the data you sent is not valid. Check the listed fields and try again.',
     'version_conflict' => 'This record was changed by another user. Reload it and apply your changes again.',
     'unauthenticated' => 'You are not signed in, or your session has expired. Sign in and try again.',
+    'session_expired' => 'Your session security token has expired. Reload the page and try again.',
     'forbidden' => 'You do not have permission to do this.',
     'not_found' => 'The requested item was not found. It may have been removed.',
     'method_not_allowed' => 'This action is not supported at this address.',

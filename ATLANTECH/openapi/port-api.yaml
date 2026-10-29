@@ -134,6 +134,7 @@ components:
         - VALIDATION_FAILED
         - VERSION_CONFLICT
         - UNAUTHENTICATED
+        - SESSION_EXPIRED
         - FORBIDDEN
         - NOT_FOUND
         - METHOD_NOT_ALLOWED
@@ -256,6 +257,19 @@ components:
             code: UNAUTHENTICATED
             message_key: errors.unauthenticated
             detail: 'You are not signed in, or your session has expired. Sign in and try again.'
+    SessionExpired:
+      description: '419 SESSION_EXPIRED'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://atlantech.io/errors/session-expired
+            title: 'Session expired'
+            status: 419
+            code: SESSION_EXPIRED
+            message_key: errors.session_expired
+            detail: 'Your session security token has expired. Reload the page and try again.'
     Forbidden:
       description: '403 FORBIDDEN'
       content:
