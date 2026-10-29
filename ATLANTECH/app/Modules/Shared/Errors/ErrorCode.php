@@ -29,7 +29,7 @@ enum ErrorCode: string
     case IdempotencyKeyReused = 'IDEMPOTENCY_KEY_REUSED';
     case ServiceUnavailable = 'SERVICE_UNAVAILABLE';
     case ServerError = 'SERVER_ERROR';
-    /** Any other client error the framework raises (e.g. 413 payload too large); proposed in P1-A2 step 4. */
+    /** Any other client error the framework raises (413, 415, 419 …), always 400; approved in P1-A2 step 4. */
     case BadRequest = 'BAD_REQUEST';
 
     public const string TYPE_BASE_URI = 'https://atlantech.io/errors/';

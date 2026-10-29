@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * The `?page=&per_page=` of a list endpoint (CT-01; P1-A2 question 3).
  *
- * `page` ≥ 1, `per_page` 1..100, default 25. A value out of range is refused with 422 VALIDATION_FAILED, never
+ * `page` 1..1 000 000, `per_page` 1..100, default 25. A value out of range is refused with 422 VALIDATION_FAILED, never
  * clamped; a page past the end is a normal 200 with empty `data`. Pair with PaginatedCollection for the response.
  */
 final readonly class PageRequest
@@ -21,6 +21,11 @@ final readonly class PageRequest
     public const int DEFAULT_PER_PAGE = 25;
 
     public const int MAX_PER_PAGE = 100;
+
+    /**
+     * Far past any real list; keeps `(page - 1) * per_page` inside an integer offset.
+     */
+    public const int MAX_PAGE = 1_000_000;
 
     public function __construct(
         public int $page = 1,
@@ -35,7 +40,7 @@ final readonly class PageRequest
     public static function rules(): array
     {
         return [
-            'page' => ['sometimes', 'integer', 'min:1'],
+            'page' => ['sometimes', 'integer', 'min:1', 'max:'.self::MAX_PAGE],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:'.self::MAX_PER_PAGE],
         ];
     }

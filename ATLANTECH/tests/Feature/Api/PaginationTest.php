@@ -53,11 +53,11 @@ it('accepts per_page up to 100', function () {
         ->assertJsonPath('meta.per_page', 100);
 });
 
-it('returns 200 with empty data for a page past the end', function () {
-    $this->getJson('/api/v1/_page/cargo-types?page=9')
+it('returns 200 with empty data for a page past the end', function (int $page) {
+    $this->getJson("/api/v1/_page/cargo-types?page={$page}")
         ->assertOk()
-        ->assertExactJson(['data' => [], 'meta' => ['page' => 9, 'per_page' => 25, 'total' => 30]]);
-});
+        ->assertExactJson(['data' => [], 'meta' => ['page' => $page, 'per_page' => 25, 'total' => 30]]);
+})->with([9, PageRequest::MAX_PAGE]);
 
 it('refuses an invalid page or per_page with 422 VALIDATION_FAILED', function (string $query, string $field, string $key) {
     $this->getJson("/api/v1/_page/cargo-types?{$query}")
@@ -73,4 +73,6 @@ it('refuses an invalid page or per_page with 422 VALIDATION_FAILED', function (s
     'page zero' => ['page=0', 'page', 'validation.min'],
     'page negative' => ['page=-1', 'page', 'validation.min'],
     'page not a number' => ['page=abc', 'page', 'validation.integer'],
+    'page above the maximum' => ['page=1000001', 'page', 'validation.max'],
+    'page that would overflow the offset' => ['page=9223372036854775807', 'page', 'validation.max'],
 ]);
