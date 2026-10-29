@@ -80,6 +80,28 @@ it('signs in, starts a new session and returns the profile', function () {
         ->and(rejectedAttempts())->toBeEmpty();
 });
 
+it('gives the session a new id on sign-in (no session fixation)', function () {
+    User::factory()->create(['username' => 'staff.ahmed']);
+    $this->withHeaders(['Origin' => SPA_ORIGIN, 'Referer' => SPA_ORIGIN.'/'])->get('/sanctum/csrf-cookie');
+    $guestSessionId = session()->getId();
+
+    signIn(['username' => 'staff.ahmed', 'password' => 'password'])->assertOk();
+
+    expect(session()->getId())->not->toBe($guestSessionId);
+});
+
+it('answers 400 BAD_REQUEST, without throttling or audit, when the origin is not stateful', function () {
+    User::factory()->create(['username' => 'staff.ahmed']);
+
+    $this->postJson('/api/v1/auth/login', ['username' => 'staff.ahmed', 'password' => 'password'])
+        ->assertStatus(400)
+        ->assertJsonPath('code', 'BAD_REQUEST');
+
+    $this->assertGuest('web');
+    expect(rejectedAttempts())->toBeEmpty();
+    signIn(['username' => 'staff.ahmed', 'password' => 'password'])->assertOk();
+});
+
 it('trims and lowercases the username before matching it', function () {
     User::factory()->create(['username' => 'staff.ahmed']);
 
@@ -148,6 +170,7 @@ it('answers the same 401 for an unknown user and a wrong password, and audits it
         // MySQL JSON stores object keys in its own order; toEqual compares by key.
         ->and($row->after_state)->toEqual([
             'route' => 'POST /api/v1/auth/login',
+            'status' => 401,
             'code' => 'UNAUTHENTICATED',
             'reason' => 'invalid_credentials',
             'username' => $username,
@@ -163,7 +186,7 @@ it('answers 403 ACCOUNT_DISABLED to a deactivated user with the right password, 
         ->assertJsonPath('code', 'ACCOUNT_DISABLED');
 
     $this->assertGuest('web');
-    expect(rejectedAttempts()->sole()->after_state)->toMatchArray(['code' => 'ACCOUNT_DISABLED', 'reason' => 'account_disabled']);
+    expect(rejectedAttempts()->sole()->after_state)->toMatchArray(['status' => 403, 'code' => 'ACCOUNT_DISABLED', 'reason' => 'account_disabled']);
 });
 
 it('throttles after 5 failed attempts per username and IP, with Retry-After and no audit row', function () {

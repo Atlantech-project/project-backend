@@ -9,6 +9,7 @@ use App\Modules\Shared\Errors\ErrorCode;
 use App\Modules\Shared\Models\AuditLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 
 /**
@@ -44,7 +45,13 @@ class SignInService
         $provider = Auth::guard('web')->getProvider();
         $user = $provider->retrieveByCredentials(['username' => $username]);
 
-        if (! $user instanceof User || ! $provider->validateCredentials($user, ['password' => $password])) {
+        if (! $user instanceof User) {
+            // Hash anyway, so an unknown username takes as long as a wrong password (no user enumeration by timing).
+            Hash::check($password, $this->dummyHash());
+            $this->refuse($usernameKey, $ipKey, ErrorCode::Unauthenticated, 'invalid_credentials', $username, $route);
+        }
+
+        if (! $provider->validateCredentials($user, ['password' => $password])) {
             $this->refuse($usernameKey, $ipKey, ErrorCode::Unauthenticated, 'invalid_credentials', $username, $route);
         }
 
@@ -58,7 +65,8 @@ class SignInService
     }
 
     /**
-     * Audit a refused sign-in (Coding Notes §6.4): no actor and no entity, the input username but never the password.
+     * Audit a refused sign-in (Coding Notes §6.4): no actor and no entity; `after_state` holds the route, the HTTP
+     * status and the error code (review 1 decision), the reason and the input username, but never the password.
      * Until the audit service exists (P2-D3) this is the one place that writes such a row.
      */
     public function recordRejectedAttempt(string $route, ErrorCode $code, string $reason, string $username): void
@@ -70,6 +78,7 @@ class SignInService
             'action' => AuditLogAction::RejectedAttempt,
             'after_state' => [
                 'route' => $route,
+                'status' => $code->status(),
                 'code' => $code->value,
                 'reason' => $reason,
                 'username' => $username,
@@ -107,6 +116,16 @@ class SignInService
         $this->recordRejectedAttempt($route, $code, $reason, $username);
 
         throw new ApiProblemException($code);
+    }
+
+    /**
+     * A hash made with the current hashing settings, checked when the username is unknown.
+     */
+    private function dummyHash(): string
+    {
+        static $hash = null;
+
+        return $hash ??= Hash::make(bin2hex(random_bytes(16)));
     }
 
     private function usernameKey(string $username, string $ip): string
