@@ -1,0 +1,5 @@
+# Review requests only: the develop-guard ruleset does not require code-owner approval.
+# AI workers read or write these tables and grants (CT-15, CT-17 §6): Rashwan (AI lead) reviews,
+# and the labeler adds `ai-impact`.
+/ATLANTECH/database/migrations/  @mostafa-rashwan
+/ATLANTECH/database/grants/      @mostafa-rashwan
