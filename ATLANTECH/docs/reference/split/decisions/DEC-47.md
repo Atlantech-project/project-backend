@@ -5,10 +5,10 @@
 | --- | --- |
 | Source | FE-OQ-29 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-47 · Sprint 2 |
 | Affects | FE-101 · MB-F4B · QA-01 |
-| Decision | ______ |
+| Decision | Closed (2026-10-29): Option 1 as the target. A shared dev server is updated on every merge to `develop`, and a separate demo on every release; the host and the deployment come with P6-R6 (or earlier if a host becomes available). Until then Frontend, Mobile and QA run the backend from `develop` on their own machine with `docker compose --profile server up -d --build` (app, nginx, MySQL 8.4, Redis 7.4; no local PHP needed; http://localhost:8000). Seed data arrives with P1-B6. Decided by Marwan (Backend lead). |
 
 <div dir="rtl">
 
