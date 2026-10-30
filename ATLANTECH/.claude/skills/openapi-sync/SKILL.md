@@ -30,7 +30,7 @@ Using `reference/mapping.md`, for each method and path:
 | --- | --- |
 | route method, URI, middleware (auth web / mobile) | path, operation, `security`, header parameters |
 | Form Request `rules()` | `requestBody` schema: required list, types, formats, patterns, enums |
-| API Resource `toArray()` | response schema, including `updated_at` (the version token, date-time) |
+| API Resource `toArray()` | response schema, including `version` (the `updated_at` value, the version token, date-time) |
 | status codes the controller and tests produce | `responses`, errors as `$ref` to `components/responses/<ErrorCode case>` |
 | pagination | `Page` / `PerPage` parameters and `{ data, meta: PageMeta }` |
 
@@ -41,7 +41,7 @@ Also list paths that exist on one side only: the drift test fails on them.
 1. Edit `openapi/port-api.yaml` on the task branch.
    - Change only this task's operations and schemas, and reuse the components.
    - Keep names in the SQL / enum vocabulary (CT-21).
-   - Bump `info.version` minor. It stays 0.x until CT-01 and CT-02 are approved; then it becomes 1.0.0.
+   - Bump `info.version` minor. It is 1.0.0 since CT-02; a breaking change is a major bump and `/api/v2`.
 2. With the first path in the file, turn `oas3-unused-component` and `openapi-tags` back on in `.spectral.yaml`, and add the tag.
 3. Run the drift test, then run the lint. In `ATLANTECH/`, the lint command is `npx --yes @stoplight/spectral-cli@<version in ci.yml> lint openapi/port-api.yaml --fail-severity=warn`.
 4. Show the diff to the lead.
