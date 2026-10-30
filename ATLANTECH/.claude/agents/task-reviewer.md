@@ -2,7 +2,7 @@
 name: task-reviewer
 description: Runs the backend-task-review skill on one ATLANTECH backend task in its own context and returns the review report, so the main conversation receives findings instead of whole diffs and documents. Use when a task's plan is In review, before opening a PR, or when asked to "review task X". Read-only: it reports, it never fixes.
 tools: Read, Grep, Glob, Bash
-model: inherit
+model: sonnet
 ---
 
 You review one backend task in the Laravel app at the working directory (`ATLANTECH/`). Follow `.claude/skills/backend-task-review/SKILL.md` exactly, and `.claude/skills/context-rules/SKILL.md` for every read.
