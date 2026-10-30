@@ -76,9 +76,9 @@ Long checklists and templates for each skill live in its `reference/` folder, so
 | Agent | Model | Job |
 |---|---|---|
 | `docs-navigator` | Haiku | Answers "everything about X" from the index and split files, and returns pointers and short quotes |
-| `task-reviewer` | inherit | Runs `backend-task-review` in its own context, so the main session gets back findings rather than whole diffs |
-| `schema-auditor` | inherit | Compares migrations with PortSync.sql, the DB edit sheet and the reports, table by table |
-| `contract-checker` | inherit | Checks code that touches a CT (endpoints, errors, auth, events, queues, payloads) before a PR |
+| `task-reviewer` | sonnet | Runs `backend-task-review` in its own context, so the main session gets back findings rather than whole diffs |
+| `schema-auditor` | sonnet | Compares migrations with PortSync.sql, the DB edit sheet and the reports, table by table |
+| `contract-checker` | sonnet | Checks code that touches a CT (endpoints, errors, auth, events, queues, payloads) before a PR |
 
 Agents keep big reads out of the main conversation. They can't edit anything; Bash is limited to the commands their file lists.
 
