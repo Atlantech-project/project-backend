@@ -3,8 +3,10 @@
 namespace App\Modules\Access\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Access\Http\Requests\ChangePasswordRequest;
 use App\Modules\Access\Http\Requests\LoginRequest;
 use App\Modules\Access\Http\Resources\UserProfileResource;
+use App\Modules\Access\Services\PasswordChangeService;
 use App\Modules\Access\Services\SignInService;
 use App\Modules\Shared\Errors\ApiProblemException;
 use App\Modules\Shared\Errors\ErrorCode;
@@ -44,10 +46,28 @@ class AuthController extends Controller
     }
 
     /**
-     * GET /api/v1/auth/me: the signed-in user's profile, the same shape as the login answer; 401 without a session.
+     * GET /api/v1/auth/me: the signed-in user's profile, the same shape as the login answer; 401 without a session,
+     * 403 ACCOUNT_DISABLED for a deactivated user.
      */
     public function me(Request $request): UserProfileResource
     {
         return new UserProfileResource($request->user()->load('activeRoleAssignment.organizationUnit'));
+    }
+
+    /**
+     * POST /api/v1/auth/change-password: saves the new password, clears the flag and answers with the profile and a
+     * new session id (P1-C2); 401, 403 ACCOUNT_DISABLED, 419, 422, 429.
+     */
+    public function changePassword(ChangePasswordRequest $request, PasswordChangeService $passwords): UserProfileResource
+    {
+        $user = $request->user();
+
+        $passwords->change($user, $request->string('new_password')->value());
+
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
+        return new UserProfileResource($user->load('activeRoleAssignment.organizationUnit'));
     }
 }
