@@ -11,6 +11,7 @@ use App\Modules\Access\Services\SignInService;
 use App\Modules\Shared\Errors\ApiProblemException;
 use App\Modules\Shared\Errors\ErrorCode;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -69,5 +70,20 @@ class AuthController extends Controller
         }
 
         return new UserProfileResource($user->load('activeRoleAssignment.organizationUnit'));
+    }
+
+    /**
+     * POST /api/v1/auth/logout: ends the web session; 204, 401, 403 ACCOUNT_DISABLED, 419. The mobile token is P1-C4.
+     */
+    public function logout(Request $request): Response
+    {
+        Auth::guard('web')->logout();
+
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        return response()->noContent();
     }
 }

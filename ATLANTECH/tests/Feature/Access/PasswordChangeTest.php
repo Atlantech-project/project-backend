@@ -6,7 +6,6 @@ use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Models\AuditLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
 
@@ -100,6 +99,28 @@ describe('a deactivated user', function () {
 
         $this->app['auth']->forgetGuards();
         $this->getJson('/api/v1/auth/me')->assertUnauthorized();
+    });
+});
+
+describe('POST auth/logout', function () {
+    it('ends the session, so the next request is 401', function () {
+        $user = gateUser();
+        $this->postJson('/api/v1/auth/login', ['username' => $user->username, 'password' => GATE_PASSWORD])->assertOk();
+
+        $this->postJson('/api/v1/auth/logout')->assertNoContent();
+
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/api/v1/auth/me')->assertUnauthorized();
+    });
+
+    it('stays open while the password change is pending', function () {
+        $this->actingAs(gateUser(['must_change_password' => true]), 'web');
+
+        $this->postJson('/api/v1/auth/logout')->assertNoContent();
+    });
+
+    it('answers 401 without a session', function () {
+        $this->postJson('/api/v1/auth/logout')->assertUnauthorized()->assertJsonPath('code', 'UNAUTHENTICATED');
     });
 });
 
