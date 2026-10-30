@@ -34,6 +34,7 @@ class ProblemRenderer
         403 => ErrorCode::Forbidden,
         404 => ErrorCode::NotFound,
         405 => ErrorCode::MethodNotAllowed,
+        419 => ErrorCode::SessionExpired,
         429 => ErrorCode::TooManyAttempts,
         503 => ErrorCode::ServiceUnavailable,
     ];

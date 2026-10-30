@@ -17,6 +17,7 @@ return [
     'validation_failed' => 'Some of the data you sent is not valid. Check the listed fields and try again.',
     'version_conflict' => 'This record was changed by another user. Reload it and apply your changes again.',
     'unauthenticated' => 'You are not signed in, or your session has expired. Sign in and try again.',
+    'session_expired' => 'Your session security token has expired. Reload the page and try again.',
     'forbidden' => 'You do not have permission to do this.',
     'not_found' => 'The requested item was not found. It may have been removed.',
     'method_not_allowed' => 'This action is not supported at this address.',
@@ -30,4 +31,7 @@ return [
     'service_unavailable' => 'The service is temporarily unavailable. Try again in a few minutes.',
     'server_error' => 'Something went wrong on our side. Try again; if the problem continues, contact support.',
     'bad_request' => 'The request could not be processed. Check what you sent and try again.',
+    'auth' => [
+        'invalid_credentials' => 'The username or password is incorrect.',
+    ],
 ];

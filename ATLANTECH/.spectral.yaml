@@ -1,7 +1,6 @@
 # Spectral ruleset for openapi/port-api.yaml (P1-A4). CI job "openapi" fails on warnings.
 extends: [[spectral:oas, recommended]]
 rules:
-  # Off while `paths` is empty (no endpoint yet): every component is unused and no tag is needed.
-  # Turn both back on with the first path.
+  # Off while the shared components from P1-A4 (paging, mobile headers, error responses) wait for the endpoints
+  # that use them: with one path, 18 of them are still unreferenced (P1-C1). Turn it back on once they are used.
   oas3-unused-component: off
-  openapi-tags: off
