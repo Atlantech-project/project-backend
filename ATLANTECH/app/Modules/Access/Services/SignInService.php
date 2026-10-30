@@ -46,13 +46,13 @@ class SignInService
         $user = $provider->retrieveByCredentials(['username' => $username]);
 
         if (! $user instanceof User) {
-            // Hash anyway, so an unknown username takes as long as a wrong password (no user enumeration by timing).
-            Hash::check($password, $this->dummyHash());
-            $this->refuse($usernameKey, $ipKey, ErrorCode::Unauthenticated, 'invalid_credentials', $username, $route);
+            // One hash, the same work as checking a real password, so timing does not reveal which usernames exist.
+            Hash::make($password);
+            $this->refuse($usernameKey, $ipKey, ErrorCode::Unauthenticated, 'invalid_credentials', $username, $route, __('errors.auth.invalid_credentials'));
         }
 
         if (! $provider->validateCredentials($user, ['password' => $password])) {
-            $this->refuse($usernameKey, $ipKey, ErrorCode::Unauthenticated, 'invalid_credentials', $username, $route);
+            $this->refuse($usernameKey, $ipKey, ErrorCode::Unauthenticated, 'invalid_credentials', $username, $route, __('errors.auth.invalid_credentials'));
         }
 
         if (! $user->is_active) {
@@ -108,24 +108,14 @@ class SignInService
      *
      * @throws ApiProblemException always.
      */
-    private function refuse(string $usernameKey, string $ipKey, ErrorCode $code, string $reason, string $username, string $route): never
+    private function refuse(string $usernameKey, string $ipKey, ErrorCode $code, string $reason, string $username, string $route, ?string $detail = null): never
     {
         RateLimiter::hit($usernameKey, self::DECAY_SECONDS);
         RateLimiter::hit($ipKey, self::DECAY_SECONDS);
 
         $this->recordRejectedAttempt($route, $code, $reason, $username);
 
-        throw new ApiProblemException($code);
-    }
-
-    /**
-     * A hash made with the current hashing settings, checked when the username is unknown.
-     */
-    private function dummyHash(): string
-    {
-        static $hash = null;
-
-        return $hash ??= Hash::make(bin2hex(random_bytes(16)));
+        throw new ApiProblemException($code, $detail);
     }
 
     private function usernameKey(string $username, string $ip): string

@@ -14,4 +14,4 @@ use App\Modules\Access\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
-Route::get('auth/me', [AuthController::class, 'me'])->middleware('auth:sanctum')->name('auth.me');
+Route::get('auth/me', [AuthController::class, 'me'])->middleware('auth:web')->name('auth.me');

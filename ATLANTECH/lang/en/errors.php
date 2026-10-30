@@ -31,4 +31,7 @@ return [
     'service_unavailable' => 'The service is temporarily unavailable. Try again in a few minutes.',
     'server_error' => 'Something went wrong on our side. Try again; if the problem continues, contact support.',
     'bad_request' => 'The request could not be processed. Check what you sent and try again.',
+    'auth' => [
+        'invalid_credentials' => 'The username or password is incorrect.',
+    ],
 ];

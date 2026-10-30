@@ -42,3 +42,12 @@ it('answers 401 UNAUTHENTICATED without a session', function () {
         ->assertHeader('Content-Type', 'application/problem+json')
         ->assertJsonPath('code', 'UNAUTHENTICATED');
 });
+
+it('answers 401, not 500, to a Bearer token while mobile tokens do not exist yet', function () {
+    $this->flushHeaders()
+        ->withToken('abc123')
+        ->getJson('/api/v1/auth/me')
+        ->assertStatus(401)
+        ->assertHeader('Content-Type', 'application/problem+json')
+        ->assertJsonPath('code', 'UNAUTHENTICATED');
+});

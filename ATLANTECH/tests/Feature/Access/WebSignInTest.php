@@ -10,6 +10,7 @@ use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Models\AuditLog;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 
 /*
@@ -160,7 +161,9 @@ it('answers the same 401 for an unknown user and a wrong password, and audits it
     signIn(['username' => $username, 'password' => 'wrong-password'])
         ->assertStatus(401)
         ->assertHeader('Content-Type', 'application/problem+json')
-        ->assertJsonPath('code', 'UNAUTHENTICATED');
+        ->assertJsonPath('code', 'UNAUTHENTICATED')
+        ->assertJsonPath('message_key', 'errors.unauthenticated')
+        ->assertJsonPath('detail', 'The username or password is incorrect.');
 
     $this->assertGuest('web');
     $row = rejectedAttempts()->sole();
@@ -177,6 +180,15 @@ it('answers the same 401 for an unknown user and a wrong password, and audits it
         ])
         ->and(json_encode($row->after_state))->not->toContain('wrong-password');
 })->with(['unknown user' => 'nobody.here', 'wrong password' => 'staff.ahmed']);
+
+it('spends one password hash on an unknown username, the same work as a wrong password', function () {
+    Hash::spy();
+
+    signIn(['username' => 'nobody.here', 'password' => 'wrong-password'])->assertStatus(401);
+
+    Hash::shouldHaveReceived('make')->once()->with('wrong-password');
+    Hash::shouldNotHaveReceived('check');
+});
 
 it('answers 403 ACCOUNT_DISABLED to a deactivated user with the right password, and audits it', function () {
     User::factory()->inactive()->create(['username' => 'gone.user']);
