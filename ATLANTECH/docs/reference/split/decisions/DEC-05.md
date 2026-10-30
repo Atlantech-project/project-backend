@@ -5,10 +5,10 @@
 | --- | --- |
 | Source | D-06 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-05 · Sprint 1 |
 | Affects | P3-I4 · FE-033 · CT-05 |
-| Decision | ______ |
+| Decision | Closed (2026-10-30): Option 1. A Laravel streamed endpoint, `GET /api/v1/events`, filtered by role and terminal, with `Last-Event-ID` catch-up from a short-lived Redis store. Reverb for mobile only. Risk for P3-I4: each open browser holds a PHP worker, so limit the connection time and size the worker pool. |
 
 <div dir="rtl">
 

@@ -29,7 +29,7 @@
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "e8959c8cf75ca012ea622cbe33eac59e884b4f4c"
+      "sha1": "a32401e2be9ff2eb3d66ed76f116feafe6f37d15"
     },
     {
       "path": "contracts/api-conventions.md",
@@ -44,7 +44,7 @@
     {
       "path": "decisions/ATLANTECH_Decisions.md",
       "source": "Code Notes/ATLANTECH_Decisions.md",
-      "sha1": "555675a0df2c58a55921d30d7d7bc43e5ecc9b8f"
+      "sha1": "23688d430a54f02716066686846cd955d4b87a2c"
     },
     {
       "path": "roadmap/ATLANTECH_Master_Roadmap.pdf",
@@ -246,6 +246,36 @@
       "path": "contracts/ai/table-ownership.md",
       "source": "Code Notes/contracts/ai/table-ownership.md",
       "sha1": "9d4b9646f5e30c7f92ee5c1e0ebd42f7417b1607"
+    },
+    {
+      "path": "contracts/ai/envelope.schema.json",
+      "source": "Code Notes/contracts/ai/envelope.schema.json",
+      "sha1": "7e2013413bd3fc1633875697442ebf4db1a87764"
+    },
+    {
+      "path": "contracts/ai/c01-part1-run.schema.json",
+      "source": "Code Notes/contracts/ai/c01-part1-run.schema.json",
+      "sha1": "abcf46489b31c750e005c057dc2ebe555403bed3"
+    },
+    {
+      "path": "contracts/ai/c02-part2-solve.schema.json",
+      "source": "Code Notes/contracts/ai/c02-part2-solve.schema.json",
+      "sha1": "61262a66fed75dbf283bcf70f75578e6a5106683"
+    },
+    {
+      "path": "contracts/ai/c03-yard.schema.json",
+      "source": "Code Notes/contracts/ai/c03-yard.schema.json",
+      "sha1": "ad55b6762da709c216cc95e64ee4581e9bfa0e9a"
+    },
+    {
+      "path": "contracts/ai/c04-baplie.schema.json",
+      "source": "Code Notes/contracts/ai/c04-baplie.schema.json",
+      "sha1": "1acaec588ac110f2002c226e6ae881845db279b6"
+    },
+    {
+      "path": "contracts/ai/contract-v1-record.md",
+      "source": "Code Notes/contracts/ai/contract-v1-record.md",
+      "sha1": "f5ce382812e83f8c6cc6cc153a462dd75117dafd"
     },
     {
       "path": "contracts/ai/c05-validation.schema.json",
