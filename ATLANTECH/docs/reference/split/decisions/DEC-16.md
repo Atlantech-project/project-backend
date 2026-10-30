@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 501-524 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 502-525 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-16 · C-03 · Yard placement
 
 | | |
