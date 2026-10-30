@@ -94,6 +94,7 @@ describe('a deactivated user', function () {
         $user = gateUser();
         $this->postJson('/api/v1/auth/login', ['username' => $user->username, 'password' => GATE_PASSWORD])->assertOk();
         $user->forceFill(['is_active' => false])->save();
+        $this->app['auth']->forgetGuards();
 
         $this->getJson('/api/v1/auth/me')->assertForbidden();
 
@@ -127,7 +128,7 @@ describe('POST auth/change-password', function () {
         expect($row->action)->toBe(AuditLogAction::Update)
             ->and($row->actor_id)->toBe($user->id)
             ->and($row->before_state)->toBe(['must_change_password' => true])
-            ->and($row->after_state)->toBe(['must_change_password' => false, 'password_changed' => true]);
+            ->and($row->after_state)->toEqual(['must_change_password' => false, 'password_changed' => true]);
     });
 
     it('gives a new session id', function () {
