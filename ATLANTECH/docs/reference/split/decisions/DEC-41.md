@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1144-1168 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1145-1169 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-41 · Automatic sync right after saving an event while online
 
 | | |

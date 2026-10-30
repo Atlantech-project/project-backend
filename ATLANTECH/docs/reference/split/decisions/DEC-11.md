@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 369-394 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 370-395 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-11 · Redis persistence
 
 | | |

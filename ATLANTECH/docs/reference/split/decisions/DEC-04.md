@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 153-177 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 154-178 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-04 · Job envelope, versioning, retries and stale-run timeout
 
 | | |

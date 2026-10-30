@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1391-1408 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1392-1409 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-51 · Shared berths
 
 | | |
