@@ -16,13 +16,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class UserProfileResource extends JsonResource
 {
     /**
-     * CT-03 returns the profile as the whole body, not under "data".
-     *
-     * @var string|null
-     */
-    public static $wrap = null;
-
-    /**
      * @return array{id: int, name: string, role: string|null, terminal_ids: list<int>, must_change_password: bool}
      */
     public function toArray(Request $request): array
