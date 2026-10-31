@@ -5,10 +5,10 @@
 | --- | --- |
 | Source | Flutter R1 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-40 · Sprint 6 |
 | Affects | P5-O3 · MB-P55 · MB-P19 · CT-07 |
-| Decision | ______ |
+| Decision | Closed (2026-10-31): Option 1. `type = "ACKNOWLEDGE"` and `payload = { notification_id }`. A repeat is recognised from the notification state and returns `DUPLICATE`; no new column. Full text in CT-07 v1.0. |
 
 <div dir="rtl">
 

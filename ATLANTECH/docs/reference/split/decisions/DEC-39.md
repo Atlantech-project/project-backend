@@ -5,10 +5,10 @@
 | --- | --- |
 | Source | Screens P-55 · Flutter tasks |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-39 · Sprint 6 |
 | Affects | P5-O8 · MB-P55 |
-| Decision | ______ |
+| Decision | Closed (2026-10-31): Option 1. `new_status` is `STARTED` or `DONE` for terminal components too; P-55 labels them In progress and Executed. Full text in CT-07 v1.0. |
 
 <div dir="rtl">
 

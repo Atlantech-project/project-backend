@@ -5,10 +5,10 @@
 | --- | --- |
 | Source | FE-OQ-31 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-44 · Sprint 6 |
 | Affects | P5-O5 · FE-065 |
-| Decision | ______ |
+| Decision | Closed (2026-10-31): Option 1. The flag is shown with no review note for the MVP. |
 
 <div dir="rtl">
 

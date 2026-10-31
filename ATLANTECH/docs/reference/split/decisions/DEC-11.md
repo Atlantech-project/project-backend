@@ -5,10 +5,10 @@
 | --- | --- |
 | Source | AIBD-029 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-11 · Sprint 3 |
 | Affects | P3-I2 · P6-R6 |
-| Decision | ______ |
+| Decision | Closed (2026-10-31): Option 1. AOF enabled with `appendfsync everysec`, and the P3-I2 sweeper as the safety net. The SSE catch-up store (CT-05) stays short-lived: a client whose events are lost gets `RESYNC`. |
 
 <div dir="rtl">
 
