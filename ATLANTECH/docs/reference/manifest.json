@@ -29,7 +29,7 @@
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "a5d452fd20ae766cc63be2ed71c34423df2abf7f"
+      "sha1": "d413744fba808b14386ad99996e583457ae65e11"
     },
     {
       "path": "contracts/api-conventions.md",
@@ -44,7 +44,7 @@
     {
       "path": "contracts/auth-web.md",
       "source": "Code Notes/contracts/auth-web.md",
-      "sha1": "d4856c5762c230fe16d112703bb986c601be6a15"
+      "sha1": "e3d9f314c905399e34daae887483cbed74db9a18"
     },
     {
       "path": "decisions/ATLANTECH_Decisions.md",

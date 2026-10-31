@@ -4,6 +4,7 @@ use App\Modules\Access\Http\Middleware\EnsureAccountUsable;
 use App\Modules\Access\Models\User;
 use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Models\AuditLog;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
@@ -100,6 +101,75 @@ describe('a deactivated user', function () {
         $this->app['auth']->forgetGuards();
         $this->getJson('/api/v1/auth/me')->assertUnauthorized();
     });
+});
+
+describe('refused attempts are audited', function () {
+    function gateRefusals(): Collection
+    {
+        return AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->get();
+    }
+
+    it('records the gate refusal with its actor, route and code', function () {
+        $user = gateUser(['must_change_password' => true]);
+        $this->actingAs($user, 'web');
+
+        $this->getJson('/api/v1/_gate')->assertForbidden();
+
+        $row = gateRefusals()->sole();
+        expect($row->actor_id)->toBe($user->id)
+            ->and($row->entity_id)->toBe($user->id)
+            ->and($row->after_state)->toMatchArray([
+                'route' => 'GET /api/v1/_gate',
+                'status' => 403,
+                'code' => 'PASSWORD_CHANGE_REQUIRED',
+                'reason' => 'password_change_required',
+            ]);
+    });
+
+    it('records a deactivated user', function () {
+        $this->actingAs(gateUser(['is_active' => false]), 'web');
+
+        $this->getJson('/api/v1/auth/me')->assertForbidden();
+
+        expect(gateRefusals()->sole()->after_state)->toMatchArray(['code' => 'ACCOUNT_DISABLED', 'reason' => 'account_disabled']);
+    });
+
+    it('records a wrong current password, never the password itself', function () {
+        $user = gateUser();
+        $this->actingAs($user, 'web');
+
+        changePassword(['current_password' => 'Wrong-pass1'])->assertUnprocessable();
+
+        $row = gateRefusals()->sole();
+        expect($row->after_state)->toMatchArray(['status' => 422, 'code' => 'VALIDATION_FAILED', 'reason' => 'wrong_current_password'])
+            ->and(json_encode($row->after_state))->not->toContain('Wrong-pass1');
+    });
+
+    it('does not record a weak new password', function () {
+        $this->actingAs(gateUser(), 'web');
+
+        changePassword(['new_password' => 'abcdefg', 'new_password_confirmation' => 'abcdefg'])->assertUnprocessable();
+
+        expect(gateRefusals())->toBeEmpty();
+    });
+
+    it('does not record what the gate allows', function () {
+        $this->actingAs(gateUser(['must_change_password' => true]), 'web');
+
+        $this->getJson('/api/v1/auth/me')->assertOk();
+
+        expect(gateRefusals())->toBeEmpty();
+    });
+});
+
+describe('without a valid XSRF token', function () {
+    it('answers 419 SESSION_EXPIRED', function (string $path) {
+        $this->actingAs(gateUser(), 'web');
+        // CSRF checks are skipped while running unit tests; leave the testing environment for this request.
+        $this->app['env'] = 'local';
+
+        $this->postJson($path)->assertStatus(419)->assertJsonPath('code', 'SESSION_EXPIRED');
+    })->with(['/api/v1/auth/change-password', '/api/v1/auth/logout']);
 });
 
 describe('POST auth/logout', function () {

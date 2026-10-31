@@ -65,16 +65,16 @@ class SignInService
     }
 
     /**
-     * Audit a refused sign-in (Coding Notes §6.4): no actor and no entity; `after_state` holds the route, the HTTP
+     * Audit a refused attempt (Coding Notes §6.4): no actor and no entity before sign-in, the signed-in user after it; `after_state` holds the route, the HTTP
      * status and the error code (review 1 decision), the reason and the input username, but never the password.
      * Until the audit service exists (P2-D3) this is the one place that writes such a row.
      */
-    public function recordRejectedAttempt(string $route, ErrorCode $code, string $reason, string $username): void
+    public function recordRejectedAttempt(string $route, ErrorCode $code, string $reason, string $username, ?User $actor = null): void
     {
         DB::transaction(fn () => AuditLog::query()->create([
-            'actor_id' => null,
+            'actor_id' => $actor?->id,
             'entity_type' => 'users',
-            'entity_id' => null,
+            'entity_id' => $actor?->id,
             'action' => AuditLogAction::RejectedAttempt,
             'after_state' => [
                 'route' => $route,
