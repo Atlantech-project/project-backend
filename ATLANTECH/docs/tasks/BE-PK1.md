@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | In progress |
+| Status | In review |
 | Phase / package | Readiness packs |
 | Sprint · feature | Sprint 1 · FT-13 Integration, quality and release |
 | Effort (plan) | 0.5 |
@@ -69,21 +69,22 @@ BE-PK2 starts from this pack's Known gaps.
 
 | Finding | Sources that disagree | Proposed resolution | Decided by |
 | --- | --- | --- | --- |
-| Examples are from the test client, not a deployed server | Skill vs no dev server | Stated in the pack | Pending, Marwan in the PR |
-| The template asks for one block per endpoint and status | Template vs identical error bodies | One body per status plus a status table | Pending, Marwan in the PR |
-| FRR 2 scope: Sprint 2 also has FT-01 FE and MB tasks | PL-FRR2 vs Q1 | FT-02 only | Mariam, Q1 |
+| Examples are from the test client, not a deployed server | Skill vs no dev server | Stated in the pack | Marwan, relayed by Mariam 2026-10-31; not yet on the PR |
+| The template asks for one block per endpoint and status | Template vs identical error bodies | One body per status plus a status table | Marwan, relayed by Mariam 2026-10-31; not yet on the PR |
+| FRR 2 scope: Sprint 2 also has other features (FT-01, FT-03) | PL-FRR2 vs Q1 | FT-02 only | Marwan, relayed by Mariam 2026-10-31; not yet on the PR |
 
 ## 8. Open questions
 
 | # | Question | Answer | Answered by / date |
 | --- | --- | --- | --- |
-| 1 | Which features does the pack cover? | FT-02 only | Mariam · 2026-10-31 |
+| 1 | Which features does the pack cover? | FT-02 only | Mariam · 2026-10-31; Marwan agrees, relayed by Mariam |
 
 ## 9. Progress log
 
 - 2026-10-31 · Step 1 drafted on local branches, not pushed. `contract-checker`: no mismatches (read-only, nothing run). Waiting for approval (mode C).
 - 2026-10-31 · Error bodies captured through the test client on MySQL; they matched the pack. The temporary capture test was deleted and not committed. The Examples gap was removed from the pack.
+- 2026-10-31 · Review fixes applied: pack title. Mariam reports that Marwan agrees.
 
 ## 10. Review
 
-Not run yet.
+2026-10-31 · `task-reviewer`: 1 Must fix, the FT-02-only scope, now agreed. Should fix: the pack title is now the roadmap name. It could not open the PR links; their numbers match the P1-C1 and P1-C2 plans. CT-23 merges first.
