@@ -2,12 +2,12 @@
 
 | | |
 | --- | --- |
-| Status | CT-04, CT-05, CT-06, CT-19, CT-20 Done · CT-07 waits for the Mobile Team |
+| Status | Done |
 | Phase / package | Sprint 1 contracts (roadmap tasks owned by the Backend Team) |
 | Sprint · feature | Sprint 1 · FT-01 Platform foundation and contracts |
 | Branch | `feature/CT-sprint1-contracts` here and in PortHub |
 | Depends on | CT-01 · CT-08 · DEC-05 · DEC-35 |
-| Blocked by | CT-07: the Mobile Team's approval of the event shape |
+| Blocked by | nothing |
 | Unblocks | P1-C3 · P1-C5 · P3-I4 · P3-I6 · P5-N1 · P5-N2 · P5-O1 · P5-O2 · FE-033 · FE-057 · FE-059 · FE-074 · FE-077 · MB-F4B · MB-F5 · MB-P52 · MB-P53 |
 
 ## 1. What is asked
@@ -16,10 +16,10 @@ Resolve the six contracts with the lead and publish them in PortHub. Paths go in
 
 **Done when:**
 
-- [x] CT-04 and CT-20 text in the Contracts file, Approved v1.0.
+- [x] CT-04 and CT-20 text in the Contracts file, Approved.
 - [x] `realtime-sse.md`, `realtime-mobile.md` and `mock-workers.md`, Approved v1.0.
-- [x] `sync-events.md` written, as Draft v1.0.
-- [ ] CT-07 approved by the Mobile Team.
+- [x] `sync-events.md` written, Approved v1.1.
+- [x] CT-07 approved by the Mobile Team (Farouk, on PortHub PR #27).
 - [x] DEC-11, DEC-39, DEC-40 and DEC-44 closed in all three places.
 - [x] Changed contracts copied to Code Notes and synced here.
 
@@ -54,7 +54,7 @@ Resolve the six contracts with the lead and publish them in PortHub. Paths go in
 | Mock selection | Vessel tag, then `mock_scenario` JSON, then the default |
 | CT-20 and open AI decisions | Close it now with nullable fields; `version_no` is computed and `version` stays the token |
 | CT-07 Mobile review (DEC-58) | Acknowledge marks the whole re-send chain; CT-21 example is the error; server-set `system_label`; `GET /system/info` is the connectivity check |
-| Approval | Five approved by the lead without team review; CT-07 stays Draft for the Mobile Team |
+| Approval | Five approved by the lead without team review; CT-07 approved by the lead and the Mobile Team |
 
 ## 4. What later tasks must do
 
@@ -63,7 +63,7 @@ Resolve the six contracts with the lead and publish them in PortHub. Paths go in
 - **P3-I4:** the "Blocked: D-06" note in the backend tasks file is out of date, because DEC-05 is closed. Set the connection time limit and the worker pool size there.
 - **P5-O1:** build `system_label` (CT-07), including its storage and any CT-17 addition. Check the 24-hour rule and the clear rules with the lead when planning.
 - **P5-O3:** an acknowledgement marks all `SENT` rows of the chain.
-- **UML:** `GET /system/ping` in the sync flow is out of date (DEC-58), so the Documentation copy needs updating.
+- **UML:** the sync sequence in the Documentation copy needs three changes: `GET /system/ping` is out of date (DEC-58), the 100-event batch is missing (CT-07), and it must not say "flagged" on mobile (DEC-44).
 - **Seeds:** `status_types` needs `STARTED` and `DONE` for `TERMINAL_OPS` (DEC-39).
 
 ## 5. Open points for the lead
@@ -75,5 +75,6 @@ Resolve the six contracts with the lead and publish them in PortHub. Paths go in
 
 | Date | Step | Result |
 | --- | --- | --- |
+| 2026-10-31 | The Mobile Team approved CT-07 | CT-07 Approved v1.1 |
 | 2026-10-31 | Applied the Mobile review of CT-07 (DEC-58) | Back with the Mobile Team for approval |
 | 2026-10-31 | Verified the findings against the sources, took the lead's decisions, wrote the contracts | CT-07 waits for the Mobile Team |

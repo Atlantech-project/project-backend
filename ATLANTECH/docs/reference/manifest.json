@@ -29,7 +29,7 @@
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "482223d4cd96fabacc124c34c62c359d89cee2e5"
+      "sha1": "f35dbc7695914ec441cb159422a2c971867933f8"
     },
     {
       "path": "contracts/api-conventions.md",
@@ -59,7 +59,7 @@
     {
       "path": "contracts/sync-events.md",
       "source": "Code Notes/contracts/sync-events.md",
-      "sha1": "c0d15fb690b262c7860673560969d46c430d5a94"
+      "sha1": "2d12806d5541922652136bb9e911ccea5b97a043"
     },
     {
       "path": "contracts/mock-workers.md",
