@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1450-1467 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1451-1468 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-54 · Licence, SaaS and READ_ONLY in the task files
 
 | | |

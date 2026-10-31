@@ -24,12 +24,12 @@
     {
       "path": "backend/Coding_Notes_and_Mapping.md",
       "source": "Code Notes/Coding_Notes_and_Mapping.md",
-      "sha1": "204ce23515aea72ceb82805691da2a896eb9b796"
+      "sha1": "97dafd215458078f13d01bc5bea1c13e43855f96"
     },
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "f35dbc7695914ec441cb159422a2c971867933f8"
+      "sha1": "b1eb952bc114516c848c9139cff5aac06bbbf7a3"
     },
     {
       "path": "contracts/api-conventions.md",
@@ -67,9 +67,14 @@
       "sha1": "d95b2fc7bc7254942aba322d919a8f70d17fe5e5"
     },
     {
+      "path": "contracts/reference-seed.json",
+      "source": "Code Notes/contracts/db/reference-seed.json",
+      "sha1": "730c954b7661b588f09974cdc951fb5bc64a427f"
+    },
+    {
       "path": "decisions/ATLANTECH_Decisions.md",
       "source": "Code Notes/ATLANTECH_Decisions.md",
-      "sha1": "3c2c180b6dbbff7d08f102e6204b7d8220849229"
+      "sha1": "121a2351ba5ed54e31f20351f18e49586eebf12b"
     },
     {
       "path": "roadmap/ATLANTECH_Master_Roadmap.pdf",
