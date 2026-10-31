@@ -69,7 +69,7 @@ BE-PK2 starts from this pack's Known gaps.
 
 | Finding | Sources that disagree | Proposed resolution | Decided by |
 | --- | --- | --- | --- |
-| Examples should come from tests or a run; MySQL was not available | Skill vs this machine | Taken from OpenAPI, CT-03 and the code, and stated in the pack | Pending, Marwan in the PR |
+| Examples are from the test client, not a deployed server | Skill vs no dev server | Stated in the pack | Pending, Marwan in the PR |
 | The template asks for one block per endpoint and status | Template vs identical error bodies | One body per status plus a status table | Pending, Marwan in the PR |
 | FRR 2 scope: Sprint 2 also has FT-01 FE and MB tasks | PL-FRR2 vs Q1 | FT-02 only | Mariam, Q1 |
 
@@ -82,6 +82,7 @@ BE-PK2 starts from this pack's Known gaps.
 ## 9. Progress log
 
 - 2026-10-31 · Step 1 drafted on local branches, not pushed. `contract-checker`: no mismatches (read-only, nothing run). Waiting for approval (mode C).
+- 2026-10-31 · Error bodies captured through the test client on MySQL; they matched the pack. The temporary capture test was deleted and not committed. The Examples gap was removed from the pack.
 
 ## 10. Review
 
