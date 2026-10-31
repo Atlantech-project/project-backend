@@ -38,7 +38,15 @@ class PublishStatusVocabulary extends Command
 
         foreach (File::glob(app_path('Modules/*/Enums/*.php')) as $path) {
             $module = basename(dirname($path, 2));
-            $enum = new ReflectionEnum(implode('\\', ['App', 'Modules', $module, 'Enums', basename($path, '.php')]));
+            $class = implode('\\', ['App', 'Modules', $module, 'Enums', basename($path, '.php')]);
+
+            if (! enum_exists($class)) {
+                $this->error("{$class} is not an enum.");
+
+                return self::FAILURE;
+            }
+
+            $enum = new ReflectionEnum($class);
             $document = (string) $enum->getDocComment();
 
             preg_match_all('/`([a-z0-9_]+\.[a-z0-9_]+)`/', $document, $matches);
@@ -53,6 +61,12 @@ class PublishStatusVocabulary extends Command
             $values = array_map(fn (BackedEnum $case): string => (string) $case->value, $enum->getName()::cases());
 
             foreach ($matches[1] as $column) {
+                if (isset($vocabulary[$section][$column])) {
+                    $this->error("{$column} is named by more than one enum; {$class} is the second.");
+
+                    return self::FAILURE;
+                }
+
                 $vocabulary[$section][$column] = $values;
             }
         }
