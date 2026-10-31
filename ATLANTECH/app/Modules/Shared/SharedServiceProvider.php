@@ -3,6 +3,7 @@
 namespace App\Modules\Shared;
 
 use App\Modules\Shared\Console\PublishOpenApi;
+use App\Modules\Shared\Console\PublishStatusVocabulary;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -13,7 +14,7 @@ class SharedServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([PublishOpenApi::class]);
+            $this->commands([PublishOpenApi::class, PublishStatusVocabulary::class]);
         }
     }
 }

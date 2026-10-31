@@ -61,6 +61,9 @@
         "contracts:schema": [
             "@php artisan atlantech:contracts-schema"
         ],
+        "contracts:status-vocabulary": [
+            "@php artisan atlantech:contracts-status-vocabulary"
+        ],
         "contracts:openapi": [
             "@php artisan atlantech:contracts-openapi"
         ],
