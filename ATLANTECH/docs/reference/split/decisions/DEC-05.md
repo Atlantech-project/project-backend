@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 180-204 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 181-205 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-05 · SSE source for the dashboard
 
 | | |

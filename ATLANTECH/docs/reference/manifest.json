@@ -29,7 +29,7 @@
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "4c06eb576fdc6967ed0dac1a8e1013fb5e40b185"
+      "sha1": "482223d4cd96fabacc124c34c62c359d89cee2e5"
     },
     {
       "path": "contracts/api-conventions.md",
@@ -59,7 +59,7 @@
     {
       "path": "contracts/sync-events.md",
       "source": "Code Notes/contracts/sync-events.md",
-      "sha1": "c1053239a82a5af4b8ec8493997a92aca4d4427c"
+      "sha1": "c0d15fb690b262c7860673560969d46c430d5a94"
     },
     {
       "path": "contracts/mock-workers.md",
@@ -69,7 +69,7 @@
     {
       "path": "decisions/ATLANTECH_Decisions.md",
       "source": "Code Notes/ATLANTECH_Decisions.md",
-      "sha1": "6c0de1f66de505f2d3500e79c372494f347f807b"
+      "sha1": "3c2c180b6dbbff7d08f102e6204b7d8220849229"
     },
     {
       "path": "roadmap/ATLANTECH_Master_Roadmap.pdf",

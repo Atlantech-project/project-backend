@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 101-125 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 102-126 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-02 · Who writes status transitions, history, audit and run rows
 
 | | |

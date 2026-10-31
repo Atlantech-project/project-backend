@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 835-859 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 836-860 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-29 · Yard recommendation method, objective and confidence
 
 | | |

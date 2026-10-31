@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1506-1523 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1507-1524 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-57 · Port API status codes, error catalogue and version token
 
 | | |

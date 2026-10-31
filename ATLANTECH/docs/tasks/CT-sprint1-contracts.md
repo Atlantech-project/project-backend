@@ -53,6 +53,7 @@ Resolve the six contracts with the lead and publish them in PortHub. Paths go in
 | 423 on sync | None in v1.0 |
 | Mock selection | Vessel tag, then `mock_scenario` JSON, then the default |
 | CT-20 and open AI decisions | Close it now with nullable fields; `version_no` is computed and `version` stays the token |
+| CT-07 Mobile review (DEC-58) | Acknowledge marks the whole re-send chain; CT-21 example is the error; server-set `system_label`; `GET /system/info` is the connectivity check |
 | Approval | Five approved by the lead without team review; CT-07 stays Draft for the Mobile Team |
 
 ## 4. What later tasks must do
@@ -60,15 +61,19 @@ Resolve the six contracts with the lead and publish them in PortHub. Paths go in
 - **P1-C3:** add `personal_access_tokens` to CT-17, and let the password change and logout routes accept the Bearer token.
 - **P5-O2:** the "creation events 423 in READ_ONLY" text in the backend tasks file is deferred (DEC-54).
 - **P3-I4:** the "Blocked: D-06" note in the backend tasks file is out of date, because DEC-05 is closed. Set the connection time limit and the worker pool size there.
+- **P5-O1:** build `system_label` (CT-07), including its storage and any CT-17 addition. Check the 24-hour rule and the clear rules with the lead when planning.
+- **P5-O3:** an acknowledgement marks all `SENT` rows of the chain.
+- **UML:** `GET /system/ping` in the sync flow is out of date (DEC-58), so the Documentation copy needs updating.
 - **Seeds:** `status_types` needs `STARTED` and `DONE` for `TERMINAL_OPS` (DEC-39).
 
 ## 5. Open points for the lead
 
 - `TUG_STILL_BUSY` has no flow in the requirements or the UML. It is outside the MOBILE list in CT-06 until one exists.
-- The CT-21 example lists `plan_components.status`, which is not a column. CT-21 is Mariam's.
+- The CT-21 example lists `plan_components.status`, which is not a column, and `ESCALATED` in `notification.status`, which is not a value (DEC-58). CT-21 is Mariam's.
 
 ## 9. Progress log
 
 | Date | Step | Result |
 | --- | --- | --- |
+| 2026-10-31 | Applied the Mobile review of CT-07 (DEC-58) | Back with the Mobile Team for approval |
 | 2026-10-31 | Verified the findings against the sources, took the lead's decisions, wrote the contracts | CT-07 waits for the Mobile Team |
