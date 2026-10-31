@@ -29,7 +29,7 @@
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "b1eb952bc114516c848c9139cff5aac06bbbf7a3"
+      "sha1": "6b0e829203d83291770aabf443fcb1f2091a18fd"
     },
     {
       "path": "contracts/api-conventions.md",
@@ -70,6 +70,21 @@
       "path": "contracts/reference-seed.json",
       "source": "Code Notes/contracts/db/reference-seed.json",
       "sha1": "730c954b7661b588f09974cdc951fb5bc64a427f"
+    },
+    {
+      "path": "contracts/status-vocabulary.json",
+      "source": "Code Notes/contracts/status-vocabulary.json",
+      "sha1": "cb142a77bdd8acc2df141ae1c8f4d0cfee9dc061"
+    },
+    {
+      "path": "contracts/readiness/TEMPLATE.md",
+      "source": "Code Notes/contracts/readiness/TEMPLATE.md",
+      "sha1": "f3784887051a965e38c30538442225d473db68f6"
+    },
+    {
+      "path": "contracts/readiness/FT-02.md",
+      "source": "Code Notes/contracts/readiness/FT-02.md",
+      "sha1": "2f68fc0c62a7afaa5a1e1ca124432e80714cdcfb"
     },
     {
       "path": "decisions/ATLANTECH_Decisions.md",
