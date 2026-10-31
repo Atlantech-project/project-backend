@@ -123,6 +123,8 @@ components:
 3. If `must_change_password = true`: `POST /api/v1/auth/change-password`
 4. `POST /api/v1/auth/logout`
 
+Full text: [`auth-web.md`](auth-web.md), which wins over this summary.
+
 The sign-in identifier is `username` (DEC-35, closed); users have no email.
 
 ```json
@@ -133,7 +135,7 @@ The sign-in identifier is `username` (DEC-35, closed); users have no email.
 {
   "id": 41,
   "name": "Port Staff",
-  "role": "PORT_AUTHORITY_STAFF",
+  "role": "PORT_STAFF",
   "terminal_ids": [],
   "must_change_password": false
 }
@@ -274,7 +276,7 @@ data: {"entity":"berthing_request","id":1550,"recommendation_id":880,"status":"R
 | Owner | AI Team (JSON Schema) · Backend Team (sending with RPUSH) |
 | Reviewers | Backend Team · AI Team |
 | Output | `contracts/ai/envelope.schema.json` |
-| Status | Proposed v1.0 · 2026-10-27 (DEC-04). Consolidates the envelope rules already approved in CT-09 to CT-14 and CT-16; becomes Approved on Backend Team sign-off |
+| Status | Approved v1.0 · 2026-10-30 on Backend Team sign-off (DEC-04). Consolidates the envelope rules already approved in CT-09 to CT-14 and CT-16 |
 
 The envelope is the outer JSON message for every job the Backend sends to an AI worker. Each job type's payload has its own schema (C-01 to C-05); this contract covers everything around it. The completion message going the other way is C-06 (CT-14).
 

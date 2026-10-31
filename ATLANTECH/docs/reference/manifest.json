@@ -1,6 +1,6 @@
 {
   "sourceRoot": "E:/collage/GRADUATION PROGECT",
-  "syncedAt": "2026-10-30",
+  "syncedAt": "2026-10-31",
   "watch": [
     "Code Notes",
     "Documentation"
@@ -29,22 +29,27 @@
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "e8959c8cf75ca012ea622cbe33eac59e884b4f4c"
+      "sha1": "a5d452fd20ae766cc63be2ed71c34423df2abf7f"
     },
     {
       "path": "contracts/api-conventions.md",
       "source": "Code Notes/contracts/api-conventions.md",
-      "sha1": "383c946b03244be512d7846731e5a093fa1945ab"
+      "sha1": "80ba2538ad631bf049fab57f4d7fe9fa60453968"
     },
     {
       "path": "contracts/error-codes.md",
       "source": "Code Notes/contracts/error-codes.md",
-      "sha1": "fb6c458489c22c8132203d358f55a4c8e9367a65"
+      "sha1": "7b21b26bcb9327d1d7dc9e359bece2c281e53667"
+    },
+    {
+      "path": "contracts/auth-web.md",
+      "source": "Code Notes/contracts/auth-web.md",
+      "sha1": "d4856c5762c230fe16d112703bb986c601be6a15"
     },
     {
       "path": "decisions/ATLANTECH_Decisions.md",
       "source": "Code Notes/ATLANTECH_Decisions.md",
-      "sha1": "555675a0df2c58a55921d30d7d7bc43e5ecc9b8f"
+      "sha1": "0bb4e164ac93557329fcaeb026e164a4494e7268"
     },
     {
       "path": "roadmap/ATLANTECH_Master_Roadmap.pdf",
@@ -246,6 +251,36 @@
       "path": "contracts/ai/table-ownership.md",
       "source": "Code Notes/contracts/ai/table-ownership.md",
       "sha1": "9d4b9646f5e30c7f92ee5c1e0ebd42f7417b1607"
+    },
+    {
+      "path": "contracts/ai/envelope.schema.json",
+      "source": "Code Notes/contracts/ai/envelope.schema.json",
+      "sha1": "7e2013413bd3fc1633875697442ebf4db1a87764"
+    },
+    {
+      "path": "contracts/ai/c01-part1-run.schema.json",
+      "source": "Code Notes/contracts/ai/c01-part1-run.schema.json",
+      "sha1": "abcf46489b31c750e005c057dc2ebe555403bed3"
+    },
+    {
+      "path": "contracts/ai/c02-part2-solve.schema.json",
+      "source": "Code Notes/contracts/ai/c02-part2-solve.schema.json",
+      "sha1": "61262a66fed75dbf283bcf70f75578e6a5106683"
+    },
+    {
+      "path": "contracts/ai/c03-yard.schema.json",
+      "source": "Code Notes/contracts/ai/c03-yard.schema.json",
+      "sha1": "ad55b6762da709c216cc95e64ee4581e9bfa0e9a"
+    },
+    {
+      "path": "contracts/ai/c04-baplie.schema.json",
+      "source": "Code Notes/contracts/ai/c04-baplie.schema.json",
+      "sha1": "1acaec588ac110f2002c226e6ae881845db279b6"
+    },
+    {
+      "path": "contracts/ai/contract-v1-record.md",
+      "source": "Code Notes/contracts/ai/contract-v1-record.md",
+      "sha1": "ca4109c2ea98894cb9eb79578d1c67bd37396785"
     },
     {
       "path": "contracts/ai/c05-validation.schema.json",
