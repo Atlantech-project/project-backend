@@ -3,6 +3,7 @@
 namespace App\Modules\Access\Http\Middleware;
 
 use App\Modules\Access\Models\User;
+use App\Modules\Access\Services\SignInService;
 use App\Modules\Shared\Errors\ApiProblemException;
 use App\Modules\Shared\Errors\ErrorCode;
 use Closure;
@@ -18,6 +19,8 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class EnsureAccountUsable
 {
+    public function __construct(private readonly SignInService $signIn) {}
+
     /**
      * Route names open while the password change is pending.
      *
@@ -39,16 +42,24 @@ class EnsureAccountUsable
         }
 
         if (! $user->is_active) {
+            $this->audit($request, $user, ErrorCode::AccountDisabled, 'account_disabled');
             $this->endSession($request);
 
             throw new ApiProblemException(ErrorCode::AccountDisabled);
         }
 
         if ($user->must_change_password && ! $request->routeIs(...self::ALLOWED_DURING_PASSWORD_CHANGE)) {
+            $this->audit($request, $user, ErrorCode::PasswordChangeRequired, 'password_change_required');
+
             throw new ApiProblemException(ErrorCode::PasswordChangeRequired);
         }
 
         return $next($request);
+    }
+
+    private function audit(Request $request, User $user, ErrorCode $code, string $reason): void
+    {
+        $this->signIn->recordRejectedAttempt($request->method().' /'.$request->path(), $code, $reason, $user->username, $user);
     }
 
     private function endSession(Request $request): void
