@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1095-1119 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1096-1120 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-39 · CT Supervisor status list
 
 | | |

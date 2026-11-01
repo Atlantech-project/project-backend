@@ -1,14 +1,14 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 319-343 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 320-344 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-09 · Where deviation thresholds live
 
 | | |
 | --- | --- |
 | Source | D-10 · OD-16 (part) · AIBD-020 |
 | Owner | Backend Team |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-09 · Sprint 6 |
 | Affects | P5-O6 · P5-O7 |
-| Decision | ______ |
+| Decision | Closed (2026-10-31): Option 1. `port_settings` keys per component type. The numbers come from DEC-30, and the keys are added to `reference-seed.json` then. |
 
 <div dir="rtl">
 

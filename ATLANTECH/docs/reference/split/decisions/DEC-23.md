@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 685-709 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 686-710 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-23 · Objective terms, weights and number of options
 
 | | |

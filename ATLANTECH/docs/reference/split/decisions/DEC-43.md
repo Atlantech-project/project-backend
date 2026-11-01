@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1198-1222 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1199-1223 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-43 · Recommendation confidence field on P-38
 
 | | |

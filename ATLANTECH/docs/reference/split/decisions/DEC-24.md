@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 711-734 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 712-735 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-24 · Part 1 settings: horizon, time step, minimum window, slot
 
 | | |
