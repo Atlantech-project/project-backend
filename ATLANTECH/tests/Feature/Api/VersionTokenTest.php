@@ -123,3 +123,14 @@ it('re-checks the version on the locked row and issues FOR UPDATE', function () 
 
     expect(collect(DB::getQueryLog())->pluck('query')->implode(' '))->toContain('for update');
 });
+
+it('fails loudly when version.token names a route parameter that is not a bound model', function () {
+    Route::middleware(['api', 'port.api', 'ability:tug-fleet.manage', 'version.token:tug'])
+        ->prefix('api/v1')
+        ->patch('test/typo/{tugboat}', fn () => ['ok' => true]);
+    $tugboat = Tugboat::factory()->create();
+
+    $this->withoutExceptionHandling()
+        ->actingAs(makeUserWithRole(Role::TugManager), 'web')
+        ->patchJson("/api/v1/test/typo/{$tugboat->id}", ['version' => VersionToken::of($tugboat->refresh())]);
+})->throws(LogicException::class, 'version.token:tug');
