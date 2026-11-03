@@ -5,29 +5,34 @@ use App\Modules\Shared\Audit\AuditService;
 use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Errors\ErrorCode;
 use App\Modules\Shared\Models\AuditLog;
+use App\Modules\Shared\Models\AuditLogBuilder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 /*
  * P2-D3 audit service (FR-GL-02, NFR-SEC-6). Transactions are the subject here, so these tests commit for real on the
- * MySQL schema database and remove what they wrote.
+ * MySQL schema database. They read and remove only the rows they wrote (ids above the baseline taken before each test),
+ * so a run that shares the database with other processes does not touch their rows.
  */
 
 beforeEach(function () {
     useSchemaDatabase();
-    cleanAudit();
+    $this->auditBaseline = (int) DB::table('audit_logs')->max('id');
     $this->audit = app(AuditService::class);
 });
 
 afterEach(function () {
-    cleanAudit();
+    DB::table('audit_logs')->where('id', '>', $this->auditBaseline)->delete();
+    DB::table('users')->where('username', 'like', 'audit-test-%')->delete();
     DB::disconnect();
 });
 
-function cleanAudit(): void
+/**
+ * The audit rows this test wrote.
+ */
+function ownAuditRows(): AuditLogBuilder
 {
-    DB::table('audit_logs')->delete();
-    DB::table('users')->where('username', 'like', 'audit-test-%')->delete();
+    return AuditLog::query()->where('id', '>', test()->auditBaseline);
 }
 
 function auditTestUser(array $attributes = []): User
@@ -45,7 +50,7 @@ it('saves the change and its audit row together', function () {
         return $user;
     });
 
-    $row = AuditLog::query()->where('entity_id', $user->id)->sole();
+    $row = ownAuditRows()->where('entity_id', $user->id)->sole();
 
     expect($row->action)->toBe(AuditLogAction::Create)
         ->and($row->entity_type)->toBe('users')
@@ -66,7 +71,7 @@ it('stores neither the change nor the audit row when the write fails', function 
     }))->toThrow(RuntimeException::class);
 
     expect(User::query()->where('username', $username)->exists())->toBeFalse()
-        ->and(AuditLog::query()->count())->toBe(0);
+        ->and(ownAuditRows()->count())->toBe(0);
 });
 
 it('stores neither when the audit row cannot be saved', function () {
@@ -84,13 +89,13 @@ it('stores neither when the audit row cannot be saved', function () {
 it('refuses to write an audit row outside a transaction', function () {
     expect(fn () => $this->audit->record(AuditLogAction::Update, 'users', 1, null, null, null))
         ->toThrow(LogicException::class)
-        ->and(AuditLog::query()->count())->toBe(0);
+        ->and(ownAuditRows()->count())->toBe(0);
 });
 
 it('writes NULL actor for the system', function () {
     $this->audit->transaction(fn () => $this->audit->record(AuditLogAction::StatusChange, 'berthing_requests', 7, null, ['status' => 'A'], ['status' => 'B']));
 
-    $row = AuditLog::query()->sole();
+    $row = ownAuditRows()->sole();
 
     expect($row->actor_id)->toBeNull()
         ->and($row->action)->toBe(AuditLogAction::StatusChange)
@@ -106,7 +111,7 @@ it('stores only the changed fields on update and nothing when nothing changed', 
         $this->audit->recordUpdated($user, $actor->id);
     });
 
-    $row = AuditLog::query()->where('action', AuditLogAction::Update)->sole();
+    $row = ownAuditRows()->where('action', AuditLogAction::Update)->sole();
 
     expect(array_keys($row->before_state))->toBe(['name', 'updated_at'])
         ->and($row->before_state['name'])->toBe('Old')
@@ -121,7 +126,7 @@ it('stores only the changed fields on update and nothing when nothing changed', 
     });
 
     expect($unchanged)->toBeNull()
-        ->and(AuditLog::query()->count())->toBe(1);
+        ->and(ownAuditRows()->count())->toBe(1);
 });
 
 it('stores the old row on delete, without an after state', function () {
@@ -132,7 +137,7 @@ it('stores the old row on delete, without an after state', function () {
         $this->audit->recordDeleted($user, null);
     });
 
-    $row = AuditLog::query()->where('action', AuditLogAction::Delete)->sole();
+    $row = ownAuditRows()->where('action', AuditLogAction::Delete)->sole();
 
     expect($row->before_state)->toHaveKey('username', $user->username)
         ->and($row->after_state)->toBeNull();
@@ -151,7 +156,7 @@ it('keeps a refused attempt after the refused write was rolled back', function (
         $this->audit->rejectedAttempt('POST /api/v1/berths', ErrorCode::LicenseReadOnly, 'license_read_only', $actor->id, $actor->username, 'berths');
     }
 
-    $row = AuditLog::query()->sole();
+    $row = ownAuditRows()->sole();
 
     expect($row->action)->toBe(AuditLogAction::RejectedAttempt)
         ->and($row->entity_type)->toBe('berths')
@@ -170,7 +175,7 @@ it('keeps a refused attempt after the refused write was rolled back', function (
 it('records a refusal before sign-in with no actor and no entity', function () {
     $this->audit->rejectedAttempt('POST /api/v1/auth/login', ErrorCode::Unauthenticated, 'invalid_credentials', null, 'nobody');
 
-    $row = AuditLog::query()->sole();
+    $row = ownAuditRows()->sole();
 
     expect($row->actor_id)->toBeNull()
         ->and($row->entity_id)->toBeNull()
@@ -184,15 +189,25 @@ it('refuses to update or delete an audit row through the model or the query buil
     expect(fn () => $row->update(['entity_type' => 'x']))->toThrow(LogicException::class)
         ->and(fn () => $row->fill(['entity_type' => 'y'])->saveQuietly())->toThrow(LogicException::class)
         ->and(fn () => $row->delete())->toThrow(LogicException::class)
-        ->and(fn () => AuditLog::query()->update(['entity_type' => 'x']))->toThrow(LogicException::class)
-        ->and(fn () => AuditLog::query()->delete())->toThrow(LogicException::class)
-        ->and(AuditLog::query()->sole()->entity_type)->toBe($type);
+        ->and(fn () => ownAuditRows()->update(['entity_type' => 'x']))->toThrow(LogicException::class)
+        ->and(fn () => ownAuditRows()->delete())->toThrow(LogicException::class)
+        ->and(ownAuditRows()->sole()->entity_type)->toBe($type);
 });
 
 it('refuses increments on an audit row', function () {
     $row = AuditLog::factory()->create();
 
     expect(fn () => $row->increment('entity_id'))->toThrow(LogicException::class)
-        ->and(fn () => AuditLog::query()->increment('entity_id'))->toThrow(LogicException::class)
-        ->and(fn () => AuditLog::query()->decrement('entity_id'))->toThrow(LogicException::class);
+        ->and(fn () => ownAuditRows()->increment('entity_id'))->toThrow(LogicException::class)
+        ->and(fn () => ownAuditRows()->decrement('entity_id'))->toThrow(LogicException::class);
+});
+
+it('refuses statements the query builder would otherwise run', function () {
+    $row = AuditLog::factory()->create();
+
+    expect(fn () => AuditLog::truncate())->toThrow(LogicException::class)
+        ->and(fn () => AuditLog::query()->truncate())->toThrow(LogicException::class)
+        ->and(fn () => ownAuditRows()->updateOrInsert(['id' => $row->id], ['entity_type' => 'x']))->toThrow(LogicException::class)
+        ->and(fn () => ownAuditRows()->updateFrom(['entity_type' => 'x']))->toThrow(LogicException::class)
+        ->and(ownAuditRows()->sole()->entity_type)->toBe($row->entity_type);
 });

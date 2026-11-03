@@ -60,6 +60,30 @@ class AuditLogBuilder extends Builder
         $this->refuse();
     }
 
+    /**
+     * Not defined on the Eloquent builder, so without this `__call` would forward it to the query builder and run it.
+     */
+    public function updateOrInsert(...$arguments): never
+    {
+        $this->refuse();
+    }
+
+    /**
+     * Not defined on the Eloquent builder, so without this `__call` would forward it to the query builder and run it.
+     */
+    public function updateFrom(...$arguments): never
+    {
+        $this->refuse();
+    }
+
+    /**
+     * Not defined on the Eloquent builder, so without this `__call` would forward it to the query builder and empty the table.
+     */
+    public function truncate(): never
+    {
+        $this->refuse();
+    }
+
     private function refuse(): never
     {
         throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never updated or deleted.');
