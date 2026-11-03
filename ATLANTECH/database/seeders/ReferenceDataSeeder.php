@@ -47,9 +47,9 @@ class ReferenceDataSeeder extends Seeder
 
         DB::transaction(function () use ($spec): void {
             foreach (self::SECTIONS as $section => [$model, $keys]) {
-                foreach ($spec[$section] as $row) {
-                    $model::query()->updateOrCreate(array_intersect_key($row, array_flip($keys)), $row);
-                }
+                $columns = array_keys($spec[$section][0]);
+
+                $model::query()->upsert($spec[$section], $keys, array_values(array_diff($columns, $keys)));
             }
         });
     }

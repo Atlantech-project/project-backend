@@ -7,6 +7,7 @@ use App\Modules\Access\Models\User;
 use App\Modules\Access\Models\UserRoleAssignment;
 use App\Modules\MasterData\Models\PilotProfile;
 use App\Modules\MasterData\Models\PilotSchedule;
+use App\Modules\MasterData\Models\PortProfile;
 use App\Modules\MasterData\Models\PortShift;
 use App\Modules\MasterData\Models\Terminal;
 use App\Modules\MasterData\Models\Tugboat;
@@ -30,6 +31,8 @@ class DemoPeopleSeeder extends Seeder
 
     public function run(): void
     {
+        DemoPortSeeder::ensureAllowed();
+
         $people = (new DemoPortSeeder)->fixture()['people'];
         $password = config('seeding.demo_user_password');
         $this->passwordHash = Hash::make(filled($password) ? $password : Str::random(40));
@@ -109,7 +112,7 @@ class DemoPeopleSeeder extends Seeder
     private function seedSchedules(array $people): void
     {
         $shiftIds = PortShift::query()->orderBy('start_time')->pluck('id')->values();
-        $start = Carbon::today('Africa/Cairo');
+        $start = Carbon::today(PortProfile::query()->findOrFail(1)->timezone);
         $pilotIds = User::query()->whereIn('username', array_column($people['pilots'], 'username'))->orderBy('username')->pluck('id')->values();
         $masterIds = User::query()->whereIn('username', array_column($people['tugs'], 'master_username'))->orderBy('username')->pluck('id')->values();
         $pilotsBy = User::query()->where('username', $people['scheduled_by']['pilots'])->value('id');

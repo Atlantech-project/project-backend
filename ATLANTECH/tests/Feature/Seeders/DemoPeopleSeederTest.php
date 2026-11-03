@@ -11,6 +11,7 @@ use App\Modules\MasterData\Models\TugMasterSchedule;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoPeopleSeeder;
 use Database\Seeders\DemoPortSeeder;
+use Database\Seeders\PortProfileSeeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -97,7 +98,8 @@ it('loads the demo port only when the config allows it', function () {
     $this->seed(DatabaseSeeder::class);
 
     expect(DB::table('berths')->count())->toBe(0)
-        ->and(DB::table('port_profiles')->count())->toBe(1);
+        ->and(DB::table('port_profiles')->count())->toBe(1)
+        ->and(DB::table('port_settings')->where('setting_key', 'min_app_version')->exists())->toBeTrue();
 
     config(['seeding.demo_port' => true]);
     $this->seed(DatabaseSeeder::class);
@@ -105,3 +107,35 @@ it('loads the demo port only when the config allows it', function () {
     expect(DB::table('berths')->count())->toBe(36)
         ->and(User::query()->count())->toBe(33);
 });
+
+it('refuses to run any demo seeder by class name when demo seeding is off', function (string $seeder) {
+    config(['seeding.demo_port' => false]);
+
+    expect(fn () => $this->seed($seeder))->toThrow(RuntimeException::class, 'SEED_DEMO_PORT');
+})->with([DemoPortSeeder::class, DemoPeopleSeeder::class, PortProfileSeeder::class]);
+
+it('turns demo seeding off in production and when APP_ENV is missing, unless SEED_DEMO_PORT is set', function (?string $appEnv, ?string $seedDemoPort, bool $expected) {
+    $saved = [getenv('APP_ENV'), getenv('SEED_DEMO_PORT'), $_ENV, $_SERVER];
+
+    foreach (['APP_ENV' => $appEnv, 'SEED_DEMO_PORT' => $seedDemoPort] as $name => $value) {
+        unset($_ENV[$name], $_SERVER[$name]);
+        putenv($value === null ? $name : "{$name}={$value}");
+
+        if ($value !== null) {
+            $_ENV[$name] = $_SERVER[$name] = $value;
+        }
+    }
+
+    try {
+        expect((require config_path('seeding.php'))['demo_port'])->toBe($expected);
+    } finally {
+        putenv($saved[0] === false ? 'APP_ENV' : 'APP_ENV='.$saved[0]);
+        putenv($saved[1] === false ? 'SEED_DEMO_PORT' : 'SEED_DEMO_PORT='.$saved[1]);
+        [, , $_ENV, $_SERVER] = $saved;
+    }
+})->with([
+    'production' => ['production', null, false],
+    'APP_ENV missing' => [null, null, false],
+    'local' => ['local', null, true],
+    'production forced' => ['production', 'true', true],
+]);

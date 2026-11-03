@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Modules\MasterData\Models\PortSetting;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Seeds the Backend `port_settings` keys of `reference-seed.json` with the CT-18 section 3 rules: missing keys are
@@ -16,7 +17,15 @@ class PortSettingsSeeder extends Seeder
         /** @var array{port_settings: list<array<string, mixed>>} $spec */
         $spec = json_decode((string) file_get_contents($specPath ?? database_path('seeders/data/reference-seed.json')), true, flags: JSON_THROW_ON_ERROR);
 
-        foreach ($spec['port_settings'] as $row) {
+        DB::transaction(fn () => $this->upsert($spec['port_settings']));
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $rows
+     */
+    private function upsert(array $rows): void
+    {
+        foreach ($rows as $row) {
             $setting = PortSetting::query()->firstOrNew(['setting_key' => $row['setting_key']]);
 
             $setting->description = $row['description'] ?? null;

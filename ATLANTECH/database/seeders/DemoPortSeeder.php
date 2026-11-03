@@ -10,9 +10,10 @@ use App\Modules\MasterData\Models\PortShift;
 use App\Modules\MasterData\Models\Terminal;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
- * A demo port at the scale of the reference port: 8 terminals, 36 berths, a channel and three shifts, read from
+ * A demo port at the scale of the reference port: the port profile, 8 terminals, 36 berths, a channel and three shifts, read from
  * `database/seeders/data/damietta-demo-port.json` (the same fixture AI-015 uses). Every row is upserted by its
  * code, so a second run changes nothing.
  */
@@ -25,6 +26,10 @@ class DemoPortSeeder extends Seeder
 
     public function run(): void
     {
+        self::ensureAllowed();
+
+        $this->call(PortProfileSeeder::class);
+
         DB::transaction(function (): void {
             $this->seedOrganizationUnits();
             $this->seedTerminals();
@@ -32,6 +37,17 @@ class DemoPortSeeder extends Seeder
             $this->seedChannel();
             $this->seedShifts();
         });
+    }
+
+    /**
+     * Demo data never reaches a production database unless SEED_DEMO_PORT=true, even when a seeder is run by
+     * its class name (`db:seed --class=...`).
+     */
+    public static function ensureAllowed(): void
+    {
+        if (! config('seeding.demo_port')) {
+            throw new RuntimeException('Demo seeding is off in this environment. Set SEED_DEMO_PORT=true to load the demo port.');
+        }
     }
 
     /**

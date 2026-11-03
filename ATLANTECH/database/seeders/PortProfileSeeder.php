@@ -13,10 +13,13 @@ class PortProfileSeeder extends Seeder
     public const PUBLIC_ID = '7d0f6b1e-5a1c-4e0a-9a53-0d1b7e3c2f10';
 
     /**
-     * Create the singleton `port_profiles` row (id 1). An existing row is left as it is: the SaaS side owns it.
+     * Create the singleton `port_profiles` row (id 1) of the demo port. An existing row is left as it is: the SaaS
+     * side owns it, and a production deployment gets it from provisioning, not from this seeder (P1-B6 K1).
      */
     public function run(): void
     {
+        DemoPortSeeder::ensureAllowed();
+
         PortProfile::query()->firstOrCreate(['id' => 1], [
             'public_id' => self::PUBLIC_ID,
             'port_code' => 'EGDAM',

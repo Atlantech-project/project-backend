@@ -39,6 +39,17 @@ it('adds nothing on a second run and follows a changed name', function () {
         ->and(ImdgClass::query()->where('code', '3')->value('name'))->toBe('Flammable liquids');
 });
 
+it('follows a changed name on status_types, whose key is (component_type, code)', function () {
+    $this->seed(ReferenceDataSeeder::class);
+    $row = StatusType::query()->first();
+    $expected = $row->name;
+    StatusType::query()->where(['component_type' => $row->component_type, 'code' => $row->code])->update(['name' => 'changed']);
+
+    $this->seed(ReferenceDataSeeder::class);
+
+    expect(StatusType::query()->where(['component_type' => $row->component_type, 'code' => $row->code])->value('name'))->toBe($expected);
+});
+
 it('keeps cargo types pointing at existing IMDG classes', function () {
     $this->seed(ReferenceDataSeeder::class);
 

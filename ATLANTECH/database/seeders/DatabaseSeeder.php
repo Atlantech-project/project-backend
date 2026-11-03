@@ -23,7 +23,6 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call([
-            PortProfileSeeder::class,
             PortSettingsSeeder::class,
             ReferenceDataSeeder::class,
         ]);
