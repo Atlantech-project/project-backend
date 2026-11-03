@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Access\Enums\Ability;
 use App\Modules\Access\Http\Middleware\EnsureAccountUsable;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as RouteFacade;
@@ -47,7 +48,23 @@ it('keeps the allow-list free of names that no route has', function () {
     expect(array_diff(ABILITY_FREE_ROUTES, $names))->toBe([]);
 });
 
+it('names only abilities that exist, so a typo is caught here and not as a 500', function () {
+    $unknown = [];
+
+    foreach (apiRoutes() as $route) {
+        foreach ($route->gatherMiddleware() as $middleware) {
+            if (is_string($middleware) && str_starts_with($middleware, 'ability:') && Ability::tryFrom(substr($middleware, 8)) === null) {
+                $unknown[] = '/'.$route->uri().' '.$middleware;
+            }
+        }
+    }
+
+    expect($unknown)->toBe([]);
+});
+
 it('runs the ability check after the password gate and the terminal check after the ability check', function () {
+    $outOfOrder = [];
+
     foreach (apiRoutes() as $route) {
         $middleware = array_values($route->gatherMiddleware());
         $abilityAt = collect($middleware)->search(fn ($m) => is_string($m) && str_starts_with($m, 'ability:'));
@@ -59,10 +76,22 @@ it('runs the ability check after the password gate and the terminal check after 
         $gateAt = array_search(EnsureAccountUsable::class, $middleware, true);
         $terminalAt = array_search('terminal.scope', $middleware, true);
 
-        expect($gateAt)->not->toBeFalse()->and($gateAt)->toBeLessThan($abilityAt);
-
-        if ($terminalAt !== false) {
-            expect($terminalAt)->toBeGreaterThan($abilityAt);
+        if ($gateAt === false || $gateAt > $abilityAt || ($terminalAt !== false && $terminalAt < $abilityAt)) {
+            $outOfOrder[] = '/'.$route->uri();
         }
     }
+
+    expect($outOfOrder)->toBe([]);
+});
+
+it('puts terminal.scope on every route that has a {terminal} parameter', function () {
+    $unscoped = [];
+
+    foreach (apiRoutes() as $route) {
+        if (in_array('terminal', $route->parameterNames(), true) && ! in_array('terminal.scope', $route->gatherMiddleware(), true)) {
+            $unscoped[] = '/'.$route->uri();
+        }
+    }
+
+    expect($unscoped)->toBe([]);
 });
