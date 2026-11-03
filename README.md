@@ -110,7 +110,7 @@ npm install
 
 cp .env.example .env
 php artisan key:generate
-php artisan migrate
+php artisan migrate --seed        # reference rows + the demo port (set DEMO_USER_PASSWORD in .env to sign in as a demo user)
 
 composer run dev                # app, queue worker, logs
 ```
@@ -126,10 +126,10 @@ cd project-backend/ATLANTECH
 cp .env.example .env
 docker compose --profile server run --rm app php artisan key:generate --show   # paste the key into APP_KEY in .env
 docker compose --profile server up -d --build
-docker compose exec app php artisan migrate
+docker compose exec app php artisan migrate --seed   # reference rows + demo port; set DEMO_USER_PASSWORD in .env first
 ```
 
-The API answers at http://localhost:8000 (`/up` returns 200 when it is ready). After pulling new code, run the `up -d --build` and `migrate` lines again.
+The API answers at http://localhost:8000 (`/up` returns 200 when it is ready). After pulling new code, run the `up -d --build` and `migrate --seed` lines again (seeding twice adds nothing). Demo usernames are in `database/seeders/data/damietta-demo-port.json`; every demo user must change the password at first sign-in.
 
 ### Services
 

@@ -11,13 +11,24 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database. The reference rows and the demo port come in P1-B6.
+     * Seed the application's database. Reference rows and the demo port: P1-B6.
      */
     public function run(): void
     {
-        User::factory()->create([
-            'name' => 'Test User',
-            'username' => 'test.user',
+        if (! app()->isProduction()) {
+            User::query()->firstOrCreate(['username' => 'test.user'], User::factory()->make([
+                'name' => 'Test User',
+                'username' => 'test.user',
+            ])->getAttributes());
+        }
+
+        $this->call([
+            PortSettingsSeeder::class,
+            ReferenceDataSeeder::class,
         ]);
+
+        if (config('seeding.demo_port')) {
+            $this->call([DemoPortSeeder::class, DemoPeopleSeeder::class]);
+        }
     }
 }

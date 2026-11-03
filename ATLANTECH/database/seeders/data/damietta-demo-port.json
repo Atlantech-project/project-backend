@@ -1,0 +1,755 @@
+{
+  "note": "Demo port at the scale of the reference port (Damietta: 8 terminals, 36 berths). Fictional data for tests; also the fixture for AI-015.",
+  "depth_datum": "LAT",
+  "terminals": [
+    {
+      "code": "DCT",
+      "name": "Damietta Container Terminal",
+      "terminal_type": "CONTAINER"
+    },
+    {
+      "code": "DIPCO",
+      "name": "Damietta International Port Terminal",
+      "terminal_type": "CONTAINER"
+    },
+    {
+      "code": "DCHC",
+      "name": "Damietta Container and Cargo Handling",
+      "terminal_type": "CONTAINER"
+    },
+    {
+      "code": "GENCARGO",
+      "name": "General Cargo Terminal",
+      "terminal_type": "NON_CONTAINER"
+    },
+    {
+      "code": "DRYBULK",
+      "name": "Dry Bulk Terminal",
+      "terminal_type": "NON_CONTAINER"
+    },
+    {
+      "code": "GRAIN",
+      "name": "Grain Terminal",
+      "terminal_type": "NON_CONTAINER"
+    },
+    {
+      "code": "LIQBULK",
+      "name": "Liquid Bulk Terminal",
+      "terminal_type": "NON_CONTAINER"
+    },
+    {
+      "code": "RORO",
+      "name": "Ro-Ro and Vehicles Terminal",
+      "terminal_type": "NON_CONTAINER"
+    }
+  ],
+  "berths": [
+    {
+      "code": "B01",
+      "name": "Berth 1",
+      "terminal_codes": [
+        "DCT"
+      ],
+      "length": 300.0,
+      "water_depth": 14.5,
+      "max_vessel_loa": 285.0,
+      "latitude": 31.42,
+      "longitude": 31.77
+    },
+    {
+      "code": "B02",
+      "name": "Berth 2",
+      "terminal_codes": [
+        "DCT"
+      ],
+      "length": 320.0,
+      "water_depth": 14.0,
+      "max_vessel_loa": 305.0,
+      "latitude": 31.4235,
+      "longitude": 31.774
+    },
+    {
+      "code": "B03",
+      "name": "Berth 3",
+      "terminal_codes": [
+        "DCT"
+      ],
+      "length": 340.0,
+      "water_depth": 14.5,
+      "max_vessel_loa": 325.0,
+      "latitude": 31.427,
+      "longitude": 31.778
+    },
+    {
+      "code": "B04",
+      "name": "Berth 4",
+      "terminal_codes": [
+        "DCT"
+      ],
+      "length": 360.0,
+      "water_depth": 14.0,
+      "max_vessel_loa": 345.0,
+      "latitude": 31.4305,
+      "longitude": 31.782
+    },
+    {
+      "code": "B05",
+      "name": "Berth 5",
+      "terminal_codes": [
+        "DCT"
+      ],
+      "length": 300.0,
+      "water_depth": 14.5,
+      "max_vessel_loa": 285.0,
+      "latitude": 31.434,
+      "longitude": 31.786
+    },
+    {
+      "code": "B06",
+      "name": "Berth 6",
+      "terminal_codes": [
+        "DCT",
+        "DIPCO"
+      ],
+      "length": 320.0,
+      "water_depth": 14.0,
+      "max_vessel_loa": 305.0,
+      "latitude": 31.4375,
+      "longitude": 31.79
+    },
+    {
+      "code": "B07",
+      "name": "Berth 7",
+      "terminal_codes": [
+        "DIPCO"
+      ],
+      "length": 300.0,
+      "water_depth": 14.5,
+      "max_vessel_loa": 285.0,
+      "latitude": 31.441,
+      "longitude": 31.794
+    },
+    {
+      "code": "B08",
+      "name": "Berth 8",
+      "terminal_codes": [
+        "DIPCO"
+      ],
+      "length": 320.0,
+      "water_depth": 14.0,
+      "max_vessel_loa": 305.0,
+      "latitude": 31.4445,
+      "longitude": 31.798
+    },
+    {
+      "code": "B09",
+      "name": "Berth 9",
+      "terminal_codes": [
+        "DIPCO"
+      ],
+      "length": 340.0,
+      "water_depth": 14.5,
+      "max_vessel_loa": 325.0,
+      "latitude": 31.448,
+      "longitude": 31.802
+    },
+    {
+      "code": "B10",
+      "name": "Berth 10",
+      "terminal_codes": [
+        "DIPCO"
+      ],
+      "length": 360.0,
+      "water_depth": 14.0,
+      "max_vessel_loa": 345.0,
+      "latitude": 31.4515,
+      "longitude": 31.77
+    },
+    {
+      "code": "B11",
+      "name": "Berth 11",
+      "terminal_codes": [
+        "DIPCO"
+      ],
+      "length": 300.0,
+      "water_depth": 14.5,
+      "max_vessel_loa": 285.0,
+      "latitude": 31.455,
+      "longitude": 31.774
+    },
+    {
+      "code": "B12",
+      "name": "Berth 12",
+      "terminal_codes": [
+        "DIPCO"
+      ],
+      "length": 320.0,
+      "water_depth": 14.0,
+      "max_vessel_loa": 305.0,
+      "latitude": 31.4585,
+      "longitude": 31.778
+    },
+    {
+      "code": "B13",
+      "name": "Berth 13",
+      "terminal_codes": [
+        "DCHC"
+      ],
+      "length": 300.0,
+      "water_depth": 14.5,
+      "max_vessel_loa": 285.0,
+      "latitude": 31.462,
+      "longitude": 31.782
+    },
+    {
+      "code": "B14",
+      "name": "Berth 14",
+      "terminal_codes": [
+        "DCHC"
+      ],
+      "length": 320.0,
+      "water_depth": 14.0,
+      "max_vessel_loa": 305.0,
+      "latitude": 31.4655,
+      "longitude": 31.786
+    },
+    {
+      "code": "B15",
+      "name": "Berth 15",
+      "terminal_codes": [
+        "DCHC"
+      ],
+      "length": 340.0,
+      "water_depth": 14.5,
+      "max_vessel_loa": 325.0,
+      "latitude": 31.469,
+      "longitude": 31.79
+    },
+    {
+      "code": "B16",
+      "name": "Berth 16",
+      "terminal_codes": [
+        "DCHC"
+      ],
+      "length": 360.0,
+      "water_depth": 14.0,
+      "max_vessel_loa": 345.0,
+      "latitude": 31.4725,
+      "longitude": 31.794
+    },
+    {
+      "code": "B17",
+      "name": "Berth 17",
+      "terminal_codes": [
+        "DCHC",
+        "GENCARGO"
+      ],
+      "length": 300.0,
+      "water_depth": 14.5,
+      "max_vessel_loa": 285.0,
+      "latitude": 31.476,
+      "longitude": 31.798
+    },
+    {
+      "code": "B18",
+      "name": "Berth 18",
+      "terminal_codes": [
+        "GENCARGO"
+      ],
+      "length": 210.0,
+      "water_depth": 12.0,
+      "max_vessel_loa": 195.0,
+      "latitude": 31.4795,
+      "longitude": 31.802
+    },
+    {
+      "code": "B19",
+      "name": "Berth 19",
+      "terminal_codes": [
+        "GENCARGO"
+      ],
+      "length": 220.0,
+      "water_depth": 12.5,
+      "max_vessel_loa": 205.0,
+      "latitude": 31.483,
+      "longitude": 31.77
+    },
+    {
+      "code": "B20",
+      "name": "Berth 20",
+      "terminal_codes": [
+        "GENCARGO"
+      ],
+      "length": 230.0,
+      "water_depth": 12.0,
+      "max_vessel_loa": 215.0,
+      "latitude": 31.4865,
+      "longitude": 31.774
+    },
+    {
+      "code": "B21",
+      "name": "Berth 21",
+      "terminal_codes": [
+        "GENCARGO"
+      ],
+      "length": 210.0,
+      "water_depth": 12.5,
+      "max_vessel_loa": 195.0,
+      "latitude": 31.49,
+      "longitude": 31.778
+    },
+    {
+      "code": "B22",
+      "name": "Berth 22",
+      "terminal_codes": [
+        "GENCARGO"
+      ],
+      "length": 220.0,
+      "water_depth": 12.0,
+      "max_vessel_loa": 205.0,
+      "latitude": 31.4935,
+      "longitude": 31.782
+    },
+    {
+      "code": "B23",
+      "name": "Berth 23",
+      "terminal_codes": [
+        "DRYBULK"
+      ],
+      "length": 230.0,
+      "water_depth": 13.0,
+      "max_vessel_loa": 215.0,
+      "latitude": 31.497,
+      "longitude": 31.786
+    },
+    {
+      "code": "B24",
+      "name": "Berth 24",
+      "terminal_codes": [
+        "DRYBULK"
+      ],
+      "length": 245.0,
+      "water_depth": 13.5,
+      "max_vessel_loa": 230.0,
+      "latitude": 31.5005,
+      "longitude": 31.79
+    },
+    {
+      "code": "B25",
+      "name": "Berth 25",
+      "terminal_codes": [
+        "DRYBULK"
+      ],
+      "length": 260.0,
+      "water_depth": 13.0,
+      "max_vessel_loa": 245.0,
+      "latitude": 31.504,
+      "longitude": 31.794
+    },
+    {
+      "code": "B26",
+      "name": "Berth 26",
+      "terminal_codes": [
+        "DRYBULK"
+      ],
+      "length": 230.0,
+      "water_depth": 13.5,
+      "max_vessel_loa": 215.0,
+      "latitude": 31.5075,
+      "longitude": 31.798
+    },
+    {
+      "code": "B27",
+      "name": "Berth 27",
+      "terminal_codes": [
+        "GRAIN"
+      ],
+      "length": 230.0,
+      "water_depth": 13.0,
+      "max_vessel_loa": 215.0,
+      "latitude": 31.511,
+      "longitude": 31.802
+    },
+    {
+      "code": "B28",
+      "name": "Berth 28",
+      "terminal_codes": [
+        "GRAIN"
+      ],
+      "length": 245.0,
+      "water_depth": 13.5,
+      "max_vessel_loa": 230.0,
+      "latitude": 31.5145,
+      "longitude": 31.77
+    },
+    {
+      "code": "B29",
+      "name": "Berth 29",
+      "terminal_codes": [
+        "GRAIN"
+      ],
+      "length": 260.0,
+      "water_depth": 13.0,
+      "max_vessel_loa": 245.0,
+      "latitude": 31.518,
+      "longitude": 31.774
+    },
+    {
+      "code": "B30",
+      "name": "Berth 30",
+      "terminal_codes": [
+        "GRAIN"
+      ],
+      "length": 230.0,
+      "water_depth": 13.5,
+      "max_vessel_loa": 215.0,
+      "latitude": 31.5215,
+      "longitude": 31.778
+    },
+    {
+      "code": "B31",
+      "name": "Berth 31",
+      "terminal_codes": [
+        "LIQBULK"
+      ],
+      "length": 200.0,
+      "water_depth": 12.5,
+      "max_vessel_loa": 185.0,
+      "latitude": 31.525,
+      "longitude": 31.782
+    },
+    {
+      "code": "B32",
+      "name": "Berth 32",
+      "terminal_codes": [
+        "LIQBULK"
+      ],
+      "length": 210.0,
+      "water_depth": 12.5,
+      "max_vessel_loa": 195.0,
+      "latitude": 31.5285,
+      "longitude": 31.786
+    },
+    {
+      "code": "B33",
+      "name": "Berth 33",
+      "terminal_codes": [
+        "LIQBULK"
+      ],
+      "length": 220.0,
+      "water_depth": 12.5,
+      "max_vessel_loa": 205.0,
+      "latitude": 31.532,
+      "longitude": 31.79
+    },
+    {
+      "code": "B34",
+      "name": "Berth 34",
+      "terminal_codes": [
+        "RORO"
+      ],
+      "length": 190.0,
+      "water_depth": 11.5,
+      "max_vessel_loa": 175.0,
+      "latitude": 31.5355,
+      "longitude": 31.794
+    },
+    {
+      "code": "B35",
+      "name": "Berth 35",
+      "terminal_codes": [
+        "RORO"
+      ],
+      "length": 200.0,
+      "water_depth": 11.5,
+      "max_vessel_loa": 185.0,
+      "latitude": 31.539,
+      "longitude": 31.798
+    },
+    {
+      "code": "B36",
+      "name": "Berth 36",
+      "terminal_codes": [
+        "RORO"
+      ],
+      "length": 210.0,
+      "water_depth": 11.5,
+      "max_vessel_loa": 195.0,
+      "latitude": 31.5425,
+      "longitude": 31.802
+    }
+  ],
+  "navigation_channel": {
+    "name": "Damietta Entrance Channel",
+    "depth": 15.0,
+    "depth_datum": "LAT",
+    "width": 250.0,
+    "speed_limit_knots": 8.0,
+    "waypoints": [
+      {
+        "label": "Fairway Buoy",
+        "latitude": 31.52,
+        "longitude": 31.75
+      },
+      {
+        "label": "Outer Gate",
+        "latitude": 31.49,
+        "longitude": 31.765
+      },
+      {
+        "label": "Inner Gate",
+        "latitude": 31.46,
+        "longitude": 31.78
+      },
+      {
+        "label": "Turning Basin",
+        "latitude": 31.44,
+        "longitude": 31.79
+      }
+    ]
+  },
+  "port_shifts": [
+    {
+      "code": "NIGHT",
+      "name": "Night shift",
+      "start_time": "00:00:00",
+      "end_time": "08:00:00"
+    },
+    {
+      "code": "DAY",
+      "name": "Day shift",
+      "start_time": "08:00:00",
+      "end_time": "16:00:00"
+    },
+    {
+      "code": "EVENING",
+      "name": "Evening shift",
+      "start_time": "16:00:00",
+      "end_time": "00:00:00"
+    }
+  ],
+  "people": {
+    "note": "Fake names. Usernames are the demo sign-in names; the password is DEMO_USER_PASSWORD.",
+    "role_users": [
+      {
+        "username": "port.gm",
+        "name": "Youssef Ismail",
+        "role": "PORT_GM",
+        "unit": "HARBOUR_AUTHORITY"
+      },
+      {
+        "username": "port.staff",
+        "name": "Khaled Taha",
+        "role": "PORT_STAFF",
+        "unit": "HARBOUR_AUTHORITY"
+      },
+      {
+        "username": "safety.officer",
+        "name": "Mahmoud Nasr",
+        "role": "MARINE_SAFETY_OFFICER",
+        "unit": "HARBOUR_AUTHORITY"
+      },
+      {
+        "username": "pilotage.manager",
+        "name": "Tarek Ragab",
+        "role": "PILOTAGE_MANAGER",
+        "unit": "MARINE_SERVICES"
+      },
+      {
+        "username": "pilotage.officer",
+        "name": "Hossam Shaker",
+        "role": "PILOTAGE_OFFICER",
+        "unit": "MARINE_SERVICES"
+      },
+      {
+        "username": "tug.manager",
+        "name": "Sherif Farouk",
+        "role": "TUG_MANAGER",
+        "unit": "MARINE_SERVICES"
+      },
+      {
+        "username": "tug.officer",
+        "name": "Karim Zaki",
+        "role": "TUG_OFFICER",
+        "unit": "MARINE_SERVICES"
+      },
+      {
+        "username": "terminal.admin",
+        "name": "Ahmed Darwish",
+        "role": "TERMINAL_ADMIN",
+        "unit": "DCT"
+      },
+      {
+        "username": "terminal.officer",
+        "name": "Mostafa Hassan",
+        "role": "TERMINAL_OFFICER",
+        "unit": "DCT"
+      },
+      {
+        "username": "terminal.supervisor",
+        "name": "Ali Fathy",
+        "role": "TERMINAL_SUPERVISOR",
+        "unit": "DCT"
+      }
+    ],
+    "pilots": [
+      {
+        "username": "pilot.01",
+        "name": "Hany Abbas",
+        "pilot_rank": "FIRST"
+      },
+      {
+        "username": "pilot.02",
+        "name": "Adel Barakat",
+        "pilot_rank": "FIRST"
+      },
+      {
+        "username": "pilot.03",
+        "name": "Samir Mansour",
+        "pilot_rank": "FIRST"
+      },
+      {
+        "username": "pilot.04",
+        "name": "Walid Soliman",
+        "pilot_rank": "SECOND"
+      },
+      {
+        "username": "pilot.05",
+        "name": "Ibrahim Lotfy",
+        "pilot_rank": "SECOND"
+      },
+      {
+        "username": "pilot.06",
+        "name": "Ramy Salem",
+        "pilot_rank": "SECOND"
+      },
+      {
+        "username": "pilot.07",
+        "name": "Nader Ismail",
+        "pilot_rank": "SECOND"
+      },
+      {
+        "username": "pilot.08",
+        "name": "Amr Taha",
+        "pilot_rank": "THIRD"
+      },
+      {
+        "username": "pilot.09",
+        "name": "Ayman Nasr",
+        "pilot_rank": "THIRD"
+      },
+      {
+        "username": "pilot.10",
+        "name": "Sameh Ragab",
+        "pilot_rank": "THIRD"
+      },
+      {
+        "username": "pilot.11",
+        "name": "Fady Shaker",
+        "pilot_rank": "THIRD"
+      },
+      {
+        "username": "pilot.12",
+        "name": "Hatem Farouk",
+        "pilot_rank": "THIRD"
+      }
+    ],
+    "tugs": [
+      {
+        "name": "Damietta 1",
+        "tug_power": 55.0,
+        "tug_power_unit": "BOLLARD_PULL_TONNES",
+        "capacity": null,
+        "status": "AVAILABLE",
+        "master_username": "tugmaster.01",
+        "master_name": "Magdy Zaki"
+      },
+      {
+        "name": "Damietta 2",
+        "tug_power": 55.0,
+        "tug_power_unit": "BOLLARD_PULL_TONNES",
+        "capacity": null,
+        "status": "AVAILABLE",
+        "master_username": "tugmaster.02",
+        "master_name": "Essam Darwish"
+      },
+      {
+        "name": "Damietta 3",
+        "tug_power": 60.0,
+        "tug_power_unit": "BOLLARD_PULL_TONNES",
+        "capacity": null,
+        "status": "AVAILABLE",
+        "master_username": "tugmaster.03",
+        "master_name": "Wael Hassan"
+      },
+      {
+        "name": "Damietta 4",
+        "tug_power": 60.0,
+        "tug_power_unit": "BOLLARD_PULL_TONNES",
+        "capacity": null,
+        "status": "AVAILABLE",
+        "master_username": "tugmaster.04",
+        "master_name": "Medhat Fathy"
+      },
+      {
+        "name": "Nile Star",
+        "tug_power": 45.0,
+        "tug_power_unit": "BOLLARD_PULL_TONNES",
+        "capacity": null,
+        "status": "AVAILABLE",
+        "master_username": "tugmaster.05",
+        "master_name": "Gamal Abbas"
+      },
+      {
+        "name": "Nile Giant",
+        "tug_power": 45.0,
+        "tug_power_unit": "BOLLARD_PULL_TONNES",
+        "capacity": null,
+        "status": "AVAILABLE",
+        "master_username": "tugmaster.06",
+        "master_name": "Sayed Barakat"
+      },
+      {
+        "name": "Delta Pusher",
+        "tug_power": 70.0,
+        "tug_power_unit": "BOLLARD_PULL_TONNES",
+        "capacity": null,
+        "status": "AVAILABLE",
+        "master_username": "tugmaster.07",
+        "master_name": "Nabil Mansour"
+      },
+      {
+        "name": "Delta Fighter",
+        "tug_power": 70.0,
+        "tug_power_unit": "BOLLARD_PULL_TONNES",
+        "capacity": null,
+        "status": "AVAILABLE",
+        "master_username": "tugmaster.08",
+        "master_name": "Yasser Soliman"
+      },
+      {
+        "name": "Port Said 7",
+        "tug_power": 50.0,
+        "tug_power_unit": "BOLLARD_PULL_TONNES",
+        "capacity": null,
+        "status": "AVAILABLE",
+        "master_username": "tugmaster.09",
+        "master_name": "Fouad Lotfy"
+      },
+      {
+        "name": "Port Said 9",
+        "tug_power": 50.0,
+        "tug_power_unit": "BOLLARD_PULL_TONNES",
+        "capacity": null,
+        "status": "AVAILABLE",
+        "master_username": "tugmaster.10",
+        "master_name": "Omar Salem"
+      }
+    ],
+    "schedule_days": 7,
+    "scheduled_by": {
+      "pilots": "pilotage.officer",
+      "tug_masters": "tug.officer"
+    }
+  }
+}
