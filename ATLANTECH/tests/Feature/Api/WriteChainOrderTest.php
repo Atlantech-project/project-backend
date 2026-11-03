@@ -52,6 +52,10 @@ beforeEach(function () {
         ->prefix('api/v1')
         ->post('test/chain', fn () => response()->json(['ok' => true]));
 
+    Route::middleware(['api', 'port.api', 'ability:users.manage'])
+        ->prefix('api/v1')
+        ->post('test/chain-hooks', fn () => response()->json(['ok' => true]));
+
     // Every step listed first-to-last the wrong way round: the priority list must still order them.
     Route::middleware(['api', 'version.token', 'ability:users.manage', 'port.api'])
         ->prefix('api/v1')
@@ -71,12 +75,12 @@ afterEach(function () {
     DB::disconnect();
 });
 
-it('passes a request through all hook steps while they are pass-through', function () {
+it('passes a request through the app version and licence hooks while they are pass-through', function () {
     $user = makeUserWithRole(Role::PortGm);
 
     $this->actingAs($user, 'web')
         ->withHeaders(['X-App-Version' => '0.0.1'])
-        ->postJson('/api/v1/test/chain')
+        ->postJson('/api/v1/test/chain-hooks')
         ->assertOk();
 });
 
