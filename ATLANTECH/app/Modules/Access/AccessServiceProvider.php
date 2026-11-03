@@ -6,6 +6,7 @@ use App\Modules\Access\Console\PublishRoleMatrix;
 use App\Modules\Access\Enums\Ability;
 use App\Modules\Access\Http\Middleware\EnsureAbility;
 use App\Modules\Access\Http\Middleware\EnsureTerminalScope;
+use App\Modules\Access\Http\Middleware\EnsureMinAppVersion;
 use App\Modules\Access\Models\User;
 use App\Modules\Access\Services\RolePermissions;
 use Illuminate\Routing\Router;
@@ -25,6 +26,7 @@ class AccessServiceProvider extends ServiceProvider
 
         $router->aliasMiddleware('ability', EnsureAbility::class);
         $router->aliasMiddleware('terminal.scope', EnsureTerminalScope::class);
+        $router->aliasMiddleware('app.version', EnsureMinAppVersion::class);
 
         foreach (Ability::cases() as $ability) {
             Gate::define($ability->value, function (User $user) use ($ability): bool {

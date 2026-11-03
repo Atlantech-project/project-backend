@@ -11,12 +11,11 @@
 */
 
 use App\Modules\Access\Http\Controllers\AuthController;
-use App\Modules\Access\Http\Middleware\EnsureAccountUsable;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
 
-Route::middleware(['auth:web', EnsureAccountUsable::class])->group(function () {
+Route::middleware('port.api')->group(function () {
     Route::get('auth/me', [AuthController::class, 'me'])->name('auth.me');
     Route::post('auth/change-password', [AuthController::class, 'changePassword'])->middleware('throttle:5,1')->name('auth.change-password');
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
