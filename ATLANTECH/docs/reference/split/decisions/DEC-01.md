@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 75-100 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 76-101 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-01 · AI completion signal
 
 | | |

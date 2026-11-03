@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 424-448 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 425-449 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-13 · Who keeps the OpenAPI file current
 
 | | |

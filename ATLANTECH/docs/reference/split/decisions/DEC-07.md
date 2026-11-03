@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 233-257 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 234-258 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-07 · Storing a NO_FEASIBLE_WINDOW result
 
 | | |

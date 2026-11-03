@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1276-1299 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1277-1300 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-46 · Supported browsers and viewports
 
 | | |

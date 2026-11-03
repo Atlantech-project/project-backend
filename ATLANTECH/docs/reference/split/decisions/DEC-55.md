@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1469-1486 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1470-1487 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-55 · TIMING and NCT recommendation producers
 
 | | |

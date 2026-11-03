@@ -1161,7 +1161,7 @@ Workers treat an unknown ENUM value they read as a warning and skip the row; the
 | Owner | AI Team (`seed-spec.json`) · Backend Team (`reference-seed.json`, seeders) |
 | Reviewers | Backend Team · AI Team (codes it depends on) |
 | Output | `contracts/ai/seed-spec.json` · `contracts/db/reference-seed.json` |
-| Status | Approved v1.0 · 2026-10-27 (DEC-12 · DEC-23). Values marked ⟨AI⟩ arrive with the `seed-spec.json` PR |
+| Status | Proposed v1.1 (DEC-59), waiting for AI Team approval · Approved v1.0 · 2026-10-27 (DEC-12 · DEC-23). Values marked ⟨AI⟩ arrive with the `seed-spec.json` PR |
 
 **1. Scope.**
 
@@ -1192,7 +1192,7 @@ Workers treat an unknown ENUM value they read as a warning and skip the row; the
     { "model_key": "M2_SERVICE_TIME", "algorithm_family": "GRADIENT_BOOSTING", "description": "Berth service time (P50 / P90)" }
   ],
   "ml_model_versions": [
-    { "model_key": "M2_SERVICE_TIME", "version_no": 1, "status": "CHAMPION", "artifact_path": "models/m2_service_time/v1.joblib", "trained_at": "2026-11-01T00:00:00Z", "hyperparameters": {} }
+    { "model_key": "M2_SERVICE_TIME", "version_no": 1, "status": "CHAMPION", "artifact_path": "models/m2_service_time/v1.joblib", "trained_at": "2026-11-01T00:00:00Z", "deployed_at": "2026-11-01T00:00:00Z", "hyperparameters": {} }
   ],
   "port_settings": [
     { "setting_key": "solver_time_limit_seconds", "value_type": "INT", "value": "10", "min": 1, "max": 120, "description": "CP-SAT time limit per solve" }
@@ -1200,7 +1200,9 @@ Workers treat an unknown ENUM value they read as a warning and skip the row; the
 }
 ```
 
-- `min` / `max` are optional and omitted for `STRING`, `JSON` and `BOOL`.
+- `min` / `max` are optional and omitted for `STRING`, `JSON` and `BOOL`. They are stored in `port_settings.min_value` and `max_value` (added by P1-B6).
+- A `CHAMPION` row must carry `deployed_at` (schema check).
+- `reference-seed.json` uses the same format, with its rows in [`db/reference-seed.json`](db/reference-seed.json). Its Backend keys are `reminder_lead_minutes` and `min_app_version`. The delay threshold keys are added when DEC-30 gives the numbers (DEC-09).
 - `ml_model_versions` is seeded because `solver_run_model_versions` needs an existing version and `w_part3` cannot insert versions in the MVP (DEC-08). A model with no CHAMPION at go-live has no row; the worker uses the CT-10 fallback.
 
 **3. Seeding rules (Backend).**
@@ -1366,17 +1368,30 @@ With `NO_FEASIBLE_PLAN`, `recommendation_id`, `version`, `version_no`, `status`,
 | Between | Backend → Frontend · Mobile · AI · QA |
 | Owner | Backend Team (from the PHP enums) |
 | Reviewers | All teams |
-| Output | `contracts/status-vocabulary.json`, generated automatically from the enums |
+| Status | Approved v1.0 · 2026-10-31 by Marwan (Backend lead), without team review |
+| Output | `contracts/status-vocabulary.json`, generated automatically from the enums with `composer contracts:status-vocabulary` |
+
+**Full list:** [`status-vocabulary.json`](status-vocabulary.json), which wins over this example. Nobody edits it by hand.
 
 ```json
 {
-  "berthing_requests.status": ["SUBMITTED","NEEDS_REVISION","PRELIMINARY_APPROVED","CUSTOMS_APPROVED","ENTRY_WINDOW_CONFIRMED","RECOMMENDATION_GENERATED","PLAN_CONFIRMED","PLAN_CANCELLED","COMPLETED","REJECTED","CANCELLED"],
-  "plan_components.status": ["UNASSIGNED","ASSIGNED","STARTED","DONE"],
-  "recommendations.status": ["PENDING_REVIEW","MODIFIED_BY_STAFF","CONFIRMED","REPLACED"],
-  "notification.status": ["SENT","FAILED","ESCALATED"],
-  "terminal_recommendations.lifecycle_status": ["YARD_REC_REQUESTED","YARD_REC_GENERATED","GENERATION_FAILED","ACCEPTED","REJECTED","EXPORTED_TO_TOS"]
+  "version": "1.0",
+  "columns": {
+    "berthing_requests.status": ["SUBMITTED","NEEDS_REVISION","PRELIMINARY_APPROVED","CUSTOMS_APPROVED","ENTRY_WINDOW_CONFIRMED","RECOMMENDATION_GENERATED","PLAN_CONFIRMED","PLAN_CANCELLED","COMPLETED","REJECTED","CANCELLED"],
+    "notification_logs.status": ["SENT","FAILED","ACKNOWLEDGED"],
+    "recommendations.status": ["PENDING_REVIEW","CONFIRMED","REJECTED","INVALIDATED","REPLACED","MODIFIED_BY_STAFF"],
+    "terminal_recommendations.lifecycle_status": ["YARD_REC_REQUESTED","YARD_REC_GENERATED","GENERATION_FAILED","YARD_REC_ACCEPTED","YARD_REC_REJECTED","EXPORTED_TO_TOS"]
+  },
+  "derived": {
+    "plan_components.derived_status": ["UNASSIGNED","ASSIGNED","STARTED","DONE"]
+  }
 }
 ```
+
+- `columns` lists every enum column in the database. `derived` lists values that have no column.
+- `plan_components` has no `status` column. The value is derived from the assignment and the latest `actual_status_updates` row (CT-07). CT-07 returns `ASSIGNED`, `STARTED` or `DONE`, because a field task always has an assignee. The name `derived_status` exists only in this file; the CT-07 field is `status`.
+- `ESCALATED` is not a status: an escalation is a `notification_logs` row of type `ACK_ESCALATION` (DEC-58).
+- `actual_status_updates.status` is not listed: it is a `VARCHAR` checked against the `status_types` rows.
 
 ---
 
@@ -1415,7 +1430,10 @@ With `NO_FEASIBLE_PLAN`, `recommendation_id`, `version`, `version_no`, `status`,
 | Between | Backend → Frontend · Mobile · QA |
 | Owner | Backend Team |
 | Reviewers | Frontend Team · Mobile Team · QA Team at the FRR |
-| Output | `contracts/readiness/FT-xx.md` for each feature |
+| Status | Approved v1.0 · 2026-10-31 by Marwan (Backend lead), without team review. The teams still review each pack at its FRR |
+| Output | `contracts/readiness/FT-xx.md` for each feature, built from [`readiness/TEMPLATE.md`](readiness/TEMPLATE.md) |
+
+**Full template:** [`readiness/TEMPLATE.md`](readiness/TEMPLATE.md), which wins over this summary.
 
 ```markdown
 # FT-06 Berthing requests and BAPLIE — API readiness pack

@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | In review |
+| Status | Done |
 | Phase / package | Readiness packs |
 | Sprint · feature | Sprint 1 · FT-13 Integration, quality and release |
 | Effort (plan) | 0.5 |
@@ -19,7 +19,7 @@ Add the API readiness pack for FRR 2 (Marwan's message, 2026-10-31; `roadmap/roa
 
 - [x] `contracts/readiness/FT-02.md` follows the CT-23 template. *`contract-checker`: no mismatches.*
 - [x] Anything not yet true is under Known gaps. *Same check.*
-- [ ] The lead approved the pack and the PortHub PR is merged, before FRR 2.
+- [x] The lead approved the pack and the PortHub PR is merged, before FRR 2.
 
 **Out of scope:** a pack for FT-01, which has no endpoints (Q1) · building P1-C3, P1-C4 mobile, P1-C5, P1-B6.
 

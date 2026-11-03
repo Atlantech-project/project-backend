@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 207-231 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 208-232 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-06 · Joint solve scope: which requests may change per trigger
 
 | | |

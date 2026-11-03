@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1018-1041 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1019-1042 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-36 · One role per user vs role history
 
 | | |

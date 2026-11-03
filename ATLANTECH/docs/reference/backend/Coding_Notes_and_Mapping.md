@@ -124,3 +124,19 @@ After the accepted changes, the class diagrams need these updates (I will write 
 - New attributes: `active_from` and `active_to` on the role assignment; `purpose`, `source` on `Recommendation`; `result_detail` on `SolverRun`; `client_sent_at` and `clock_skew_suspect` on `ActualStatusUpdate`; reject-all fields on `EntryWindowProposal`; stale, provider rank, manual fields on `ForecastRun`; lifecycle, rationale, confidence on `TerminalRecommendation`; licence-state statuses; `on_hold` on `License`; `roles` on `SaasAdmin`; `live_period_key` and `active_port_key` helpers described as notes.
 - Class changes with no SQL change: the PlanComponent derived states. Enumerations in the diagrams use the final SQL values (see the list at the top of section 1): parse status `PENDING, PARSED, FAILED, QUARANTINED`; recommendation status `PENDING_REVIEW, MODIFIED_BY_STAFF, CONFIRMED, REJECTED, INVALIDATED, REPLACED`; `ActualStatusUpdate` keeps `client_event_id` and `reported_at`.
 - Fix F-01 (`TerminalRecommendation` multiplicity 0..3), F-02 (DataSource wording), F-04 (8 SaaS plus 87 Port counts, now 8 plus 90).
+
+## 9. Task notes
+
+These notes correct the task files, which stay as they are. Where a note and a task's text differ, follow the note.
+
+| Task | Note | Source |
+| --- | --- | --- |
+| P1-B6 | Add `min_value` and `max_value` to `port_settings`, with the CT-17 addition. Load `contracts/db/reference-seed.json` with the CT-18 seeding rules | CT-18 v1.1 · DEC-59 |
+| P5-O6 | Add the delay threshold keys to `reference-seed.json` when DEC-30 gives the numbers | DEC-09 |
+| P3-I4 | Ignore "Blocked: D-06". DEC-05 is closed, so the task is not blocked. Set the connection time limit and the worker pool size here | DEC-05 · CT-05 |
+| P5-O1 | Build `system_label`, including its storage and any CT-17 addition | CT-07 v1.1 · DEC-58 |
+| P5-O2 | Ignore "creation events 423 in READ_ONLY". v1.0 has no creation events, so this endpoint does not return 423. The rule returns with the licence work | CT-07 · DEC-54 |
+| P5-O3 | An acknowledgement marks all `SENT` rows of the re-send chain | CT-07 v1.1 · DEC-58 |
+| P1-C3 | Add `personal_access_tokens` to CT-17. Let the password change and logout routes accept the Bearer token | CT-04 v1.1 |
+| P1-C5 | `GET /api/v1/system/info` is also the connectivity check, so there is no `GET /system/ping` | CT-04 v1.1 · DEC-58 |
+| Seeds (section 7) | The `status_type` statuses are `STARTED` and `DONE`, not `COMPLETED`, including for `TERMINAL_OPS` | CT-07 · DEC-39 |

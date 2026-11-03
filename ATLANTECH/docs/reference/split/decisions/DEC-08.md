@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 259-317 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 260-318 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-08 · Database read source and worker privileges
 
 | | |

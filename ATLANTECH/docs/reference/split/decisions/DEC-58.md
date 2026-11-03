@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1526-1550 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1527-1551 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-58 · Field task details from the CT-07 Mobile review
 
 | | |

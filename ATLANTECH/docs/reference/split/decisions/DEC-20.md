@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 607-631 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 608-632 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-20 · Tug-count formula
 
 | | |
