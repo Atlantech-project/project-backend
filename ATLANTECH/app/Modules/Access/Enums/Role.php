@@ -19,4 +19,26 @@ enum Role: string
     case TerminalAdmin = 'TERMINAL_ADMIN';
     case TerminalOfficer = 'TERMINAL_OFFICER';
     case TerminalSupervisor = 'TERMINAL_SUPERVISOR';
+
+    /**
+     * Terminal-scoped roles act only on their own terminal (FR-AC-15).
+     */
+    public function isTerminalScoped(): bool
+    {
+        return match ($this) {
+            self::TerminalAdmin, self::TerminalOfficer, self::TerminalSupervisor => true,
+            default => false,
+        };
+    }
+
+    /**
+     * Field roles reach only their own assigned tasks (FR-AC-16, DEC-48: no web abilities).
+     */
+    public function isFieldRole(): bool
+    {
+        return match ($this) {
+            self::MarinePilot, self::TugMaster, self::TerminalSupervisor => true,
+            default => false,
+        };
+    }
 }

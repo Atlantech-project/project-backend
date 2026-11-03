@@ -9,7 +9,8 @@ use ReflectionEnum;
 
 /**
  * Generates PortHub contracts/status-vocabulary.json (CT-21) from the PHP enums in app/Modules/<Module>/Enums.
- * Each enum names its columns in its PHPDoc as `table.column`; an enum tagged `@derived` goes under "derived".
+ * Each enum names its columns in its PHPDoc as `table.column`; an enum tagged `@derived` goes under "derived",
+ * one tagged `@not-stored` (a code-only vocabulary such as `Ability`) is left out.
  */
 class PublishStatusVocabulary extends Command
 {
@@ -48,6 +49,10 @@ class PublishStatusVocabulary extends Command
 
             $enum = new ReflectionEnum($class);
             $document = (string) $enum->getDocComment();
+
+            if (str_contains($document, '@not-stored')) {
+                continue;
+            }
 
             preg_match_all('/`([a-z0-9_]+\.[a-z0-9_]+)`/', $document, $matches);
 

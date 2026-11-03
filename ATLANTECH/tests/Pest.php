@@ -1,5 +1,10 @@
 <?php
 
+use App\Modules\Access\Enums\Role;
+use App\Modules\Access\Enums\UnitType;
+use App\Modules\Access\Models\OrganizationUnit;
+use App\Modules\Access\Models\User;
+use App\Modules\Access\Models\UserRoleAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -70,4 +75,31 @@ function useSchemaDatabase(): void
         Artisan::call('migrate:fresh', ['--database' => 'mysql', '--force' => true]);
         $migrated = true;
     }
+}
+
+/**
+ * A user holding one active role in the unit the role belongs to (the Harbour Authority and Marine Services units are single;
+ * a terminal role gets a new terminal unless `$unit` is given). A null role makes a user with no active role.
+ *
+ * @param  array<string, mixed>  $attributes  User attributes.
+ */
+function makeUserWithRole(?Role $role, array $attributes = [], ?OrganizationUnit $unit = null): User
+{
+    $user = User::factory()->create($attributes);
+
+    if ($role === null) {
+        return $user;
+    }
+
+    $unit ??= match (true) {
+        $role->isTerminalScoped() => OrganizationUnit::factory()->create(),
+        in_array($role, [Role::PortGm, Role::PortStaff, Role::MarineSafetyOfficer], true) => OrganizationUnit::query()->where('unit_type', UnitType::HarbourAuthority)->first()
+            ?? OrganizationUnit::factory()->harbourAuthority()->create(),
+        default => OrganizationUnit::query()->where('unit_type', UnitType::MarineServices)->first()
+            ?? OrganizationUnit::factory()->marineServices()->create(),
+    };
+
+    UserRoleAssignment::factory()->for($user)->for($unit)->create(['role' => $role, 'unit_type' => $unit->unit_type]);
+
+    return $user;
 }
