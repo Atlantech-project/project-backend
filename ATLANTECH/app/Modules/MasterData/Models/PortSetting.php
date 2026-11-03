@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Table(name: 'port_settings')]
 #[DateFormat('Y-m-d H:i:s.u')]
-#[Fillable(['setting_key', 'setting_value', 'value_type', 'description', 'updated_by'])]
+#[Fillable(['setting_key', 'setting_value', 'value_type', 'min_value', 'max_value', 'description', 'updated_by'])]
 #[UseFactory(PortSettingFactory::class)]
 class PortSetting extends Model
 {
@@ -40,6 +40,8 @@ class PortSetting extends Model
     {
         return [
             'value_type' => PortSettingValueType::class,
+            'min_value' => 'decimal:6',
+            'max_value' => 'decimal:6',
             'updated_at' => 'datetime',
         ];
     }

@@ -23,6 +23,8 @@ class PortSettingFactory extends Factory
             'setting_key' => strtoupper(Str::random(10)),
             'setting_value' => fake()->lexify(str_repeat('?', 10)),
             'value_type' => PortSettingValueType::Int,
+            'min_value' => null,
+            'max_value' => null,
             'description' => null,
             'updated_by' => null,
         ];

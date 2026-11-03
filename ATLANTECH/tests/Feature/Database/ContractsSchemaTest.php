@@ -22,7 +22,7 @@ test('schema.sql carries the header, the full structure and the worker roles, an
 
         expect($schema)
             ->toStartWith('-- ATLANTECH port database schema (CT-17 v1.0).')
-            ->toContain('-- Last migration: 2026_10_28_200000_add_deferred_foreign_keys')
+            ->toContain('-- Last migration: 2026_11_03_183535_alter_port_settings_add_min_max')
             ->toContain('CREATE TABLE `yard_runs`')
             ->toContain('CONSTRAINT `chk_br_ports` CHECK')
             ->toContain('GENERATED ALWAYS AS')
