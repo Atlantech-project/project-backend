@@ -3,12 +3,10 @@
 namespace App\Modules\Access\Services;
 
 use App\Modules\Access\Models\User;
-use App\Modules\Shared\Enums\AuditLogAction;
+use App\Modules\Shared\Audit\AuditService;
 use App\Modules\Shared\Errors\ApiProblemException;
 use App\Modules\Shared\Errors\ErrorCode;
-use App\Modules\Shared\Models\AuditLog;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -26,6 +24,8 @@ class SignInService
     public const int MAX_ATTEMPTS_PER_IP = 20;
 
     public const int DECAY_SECONDS = 60;
+
+    public function __construct(private readonly AuditService $audit) {}
 
     /**
      * The active user the credentials belong to.
@@ -67,23 +67,11 @@ class SignInService
     /**
      * Audit a refused attempt (Coding Notes §6.4): no actor and no entity before sign-in, the signed-in user after it; `after_state` holds the route, the HTTP
      * status and the error code (review 1 decision), the reason and the input username, but never the password.
-     * Until the audit service exists (P2-D3) this is the one place that writes such a row.
+     * Kept for the callers that still use it; it only forwards to `AuditService::rejectedAttempt` (P2-D3) and goes once they call the service.
      */
     public function recordRejectedAttempt(string $route, ErrorCode $code, string $reason, string $username, ?User $actor = null): void
     {
-        DB::transaction(fn () => AuditLog::query()->create([
-            'actor_id' => $actor?->id,
-            'entity_type' => 'users',
-            'entity_id' => $actor?->id,
-            'action' => AuditLogAction::RejectedAttempt,
-            'after_state' => [
-                'route' => $route,
-                'status' => $code->status(),
-                'code' => $code->value,
-                'reason' => $reason,
-                'username' => $username,
-            ],
-        ]));
+        $this->audit->rejectedAttempt($route, $code, $reason, $actor?->id, $username, 'users', $actor?->id);
     }
 
     /**

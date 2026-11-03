@@ -2,6 +2,7 @@
 
 namespace App\Modules\Access\Models;
 
+use App\Modules\Access\Services\AccessScope;
 use App\Modules\Shared\Models\AuditLog;
 use Database\Factories\Access\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\DateFormat;
@@ -28,6 +29,8 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    private ?AccessScope $accessScope = null;
 
     /**
      * The column that holds the password hash.
@@ -81,6 +84,14 @@ class User extends Authenticatable
     public function activeRoleAssignment(): HasOne
     {
         return $this->hasOne(UserRoleAssignment::class)->whereNull('active_to');
+    }
+
+    /**
+     * Role and terminal scope, read once for this instance (P2-D1).
+     */
+    public function accessScope(): AccessScope
+    {
+        return $this->accessScope ??= AccessScope::for($this);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Plan\Models;
 
+use App\Modules\Access\Models\Concerns\RestrictsToOwnTasks;
 use App\Modules\Access\Models\User;
 use App\Modules\MasterData\Models\Berth;
 use App\Modules\MasterData\Models\Terminal;
@@ -28,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PlanComponent extends Model
 {
     /** @use HasFactory<PlanComponentFactory> */
-    use HasFactory;
+    use HasFactory, RestrictsToOwnTasks;
 
     /**
      * The table has no `created_at` column.
