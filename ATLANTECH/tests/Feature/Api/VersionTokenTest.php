@@ -2,7 +2,9 @@
 
 use App\Modules\Access\Enums\Role;
 use App\Modules\MasterData\Models\Tugboat;
+use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Errors\ApiProblemException;
+use App\Modules\Shared\Models\AuditLog;
 use App\Modules\Shared\Support\VersionToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +32,18 @@ beforeEach(function () {
             });
 
             return ['id' => $locked->id, 'version' => VersionToken::of($locked->refresh())];
+        });
+
+    // Someone else saves between the middleware check and the endpoint's lock: the locked re-check refuses.
+    Route::middleware(['api', 'port.api', 'ability:tug-fleet.manage', 'version.token:tugboat'])
+        ->prefix('api/v1')
+        ->patch('test/tugboats-race/{tugboat}', function (Request $request, Tugboat $tugboat) {
+            DB::transaction(function () use ($request, $tugboat) {
+                $tugboat->newQuery()->whereKey($tugboat->id)->update(['name' => 'Inside the refused write', 'updated_at' => now()->addSecond()]);
+                VersionToken::lockAndAssert($tugboat, $request->input('version'));
+            });
+
+            return ['ok' => true];
         });
 
     Route::middleware(['api', 'port.api', 'ability:tug-fleet.manage', 'version.token:tugboat'])
@@ -134,3 +148,63 @@ it('fails loudly when version.token names a route parameter that is not a bound 
         ->actingAs(makeUserWithRole(Role::TugManager), 'web')
         ->patchJson("/api/v1/test/typo/{$tugboat->id}", ['version' => VersionToken::of($tugboat->refresh())]);
 })->throws(LogicException::class, 'version.token:tug');
+
+/**
+ * The one REJECTED_ATTEMPT row of the test, checked against the refused record and reason.
+ */
+function assertVersionRefusalAudited(Tugboat $tugboat, int $actorId, string $code, int $status, string $reason): void
+{
+    $row = AuditLog::query()->sole();
+
+    expect($row->action)->toBe(AuditLogAction::RejectedAttempt)
+        ->and($row->actor_id)->toBe($actorId)
+        ->and($row->entity_type)->toBe('tugboats')
+        ->and($row->entity_id)->toBe($tugboat->id)
+        ->and($row->after_state)->toMatchArray(['status' => $status, 'code' => $code, 'reason' => $reason]);
+}
+
+it('audits a stale version refused by the middleware as REJECTED_ATTEMPT on the record', function () {
+    $tugboat = Tugboat::factory()->create();
+    $user = makeUserWithRole(Role::TugManager);
+
+    $this->actingAs($user, 'web')
+        ->patchJson("/api/v1/test/tugboats/{$tugboat->id}", ['version' => '2000-01-01T00:00:00.000000Z', 'name' => 'X'])
+        ->assertStatus(409);
+
+    assertVersionRefusalAudited($tugboat, $user->id, 'VERSION_CONFLICT', 409, 'stale_version');
+});
+
+it('audits a missing version as REJECTED_ATTEMPT with 422', function () {
+    $tugboat = Tugboat::factory()->create();
+    $user = makeUserWithRole(Role::TugManager);
+
+    $this->actingAs($user, 'web')
+        ->patchJson("/api/v1/test/tugboats/{$tugboat->id}", ['name' => 'X'])
+        ->assertUnprocessable();
+
+    assertVersionRefusalAudited($tugboat, $user->id, 'VALIDATION_FAILED', 422, 'version_invalid');
+});
+
+it('audits the 409 from the locked re-check after the refused write rolled back', function () {
+    $tugboat = Tugboat::factory()->create();
+    $name = $tugboat->name;
+    $user = makeUserWithRole(Role::TugManager);
+
+    $this->actingAs($user, 'web')
+        ->patchJson("/api/v1/test/tugboats-race/{$tugboat->id}", ['version' => VersionToken::of($tugboat->refresh())])
+        ->assertStatus(409)
+        ->assertJsonPath('code', 'VERSION_CONFLICT');
+
+    expect($tugboat->refresh()->name)->toBe($name);
+    assertVersionRefusalAudited($tugboat, $user->id, 'VERSION_CONFLICT', 409, 'stale_version');
+});
+
+it('writes no audit row for an accepted write', function () {
+    $tugboat = Tugboat::factory()->create();
+
+    $this->actingAs(makeUserWithRole(Role::TugManager), 'web')
+        ->patchJson("/api/v1/test/tugboats/{$tugboat->id}", ['version' => VersionToken::of($tugboat->refresh()), 'name' => 'Y'])
+        ->assertOk();
+
+    expect(AuditLog::query()->count())->toBe(0);
+});
