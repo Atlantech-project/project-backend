@@ -176,3 +176,14 @@ it('records a refusal before sign-in with no actor and no entity', function () {
         ->and($row->entity_id)->toBeNull()
         ->and($row->after_state)->toHaveKey('username', 'nobody');
 });
+
+it('refuses to update or delete an audit row through the model or the query builder', function () {
+    $row = AuditLog::factory()->create();
+    $type = $row->entity_type;
+
+    expect(fn () => $row->update(['entity_type' => 'x']))->toThrow(LogicException::class)
+        ->and(fn () => $row->delete())->toThrow(LogicException::class)
+        ->and(fn () => AuditLog::query()->update(['entity_type' => 'x']))->toThrow(LogicException::class)
+        ->and(fn () => AuditLog::query()->delete())->toThrow(LogicException::class)
+        ->and(AuditLog::query()->sole()->entity_type)->toBe($type);
+});

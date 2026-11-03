@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Builder;
+use LogicException;
 
 /**
  * Append-only: the application DB user gets INSERT + SELECT only on this table (P21-03).
@@ -20,6 +22,24 @@ class AuditLog extends Model
 {
     /** @use HasFactory<AuditLogFactory> */
     use HasFactory;
+
+    /**
+     * Append-only (NFR-SEC-6): a saved row cannot be updated or deleted through the model.
+     */
+    protected static function booted(): void
+    {
+        static::updating(fn () => throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never updated.'));
+        static::deleting(fn () => throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never deleted.'));
+    }
+
+    /**
+     * @param  Builder  $query
+     * @return AuditLogBuilder
+     */
+    public function newEloquentBuilder($query)
+    {
+        return new AuditLogBuilder($query);
+    }
 
     /**
      * @return array<string, string>
