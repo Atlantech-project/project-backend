@@ -27,5 +27,9 @@ class DatabaseSeeder extends Seeder
             PortSettingsSeeder::class,
             ReferenceDataSeeder::class,
         ]);
+
+        if (config('seeding.demo_port')) {
+            $this->call(DemoPortSeeder::class);
+        }
     }
 }
