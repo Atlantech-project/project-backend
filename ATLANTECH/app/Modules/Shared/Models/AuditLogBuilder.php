@@ -40,6 +40,26 @@ class AuditLogBuilder extends Builder
         $this->refuse();
     }
 
+    public function increment(...$arguments): never
+    {
+        $this->refuse();
+    }
+
+    public function decrement(...$arguments): never
+    {
+        $this->refuse();
+    }
+
+    public function incrementEach(...$arguments): never
+    {
+        $this->refuse();
+    }
+
+    public function decrementEach(...$arguments): never
+    {
+        $this->refuse();
+    }
+
     private function refuse(): never
     {
         throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never updated or deleted.');

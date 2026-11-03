@@ -188,3 +188,11 @@ it('refuses to update or delete an audit row through the model or the query buil
         ->and(fn () => AuditLog::query()->delete())->toThrow(LogicException::class)
         ->and(AuditLog::query()->sole()->entity_type)->toBe($type);
 });
+
+it('refuses increments on an audit row', function () {
+    $row = AuditLog::factory()->create();
+
+    expect(fn () => $row->increment('entity_id'))->toThrow(LogicException::class)
+        ->and(fn () => AuditLog::query()->increment('entity_id'))->toThrow(LogicException::class)
+        ->and(fn () => AuditLog::query()->decrement('entity_id'))->toThrow(LogicException::class);
+});

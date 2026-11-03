@@ -31,6 +31,11 @@ class AuditLog extends Model
         throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never updated.');
     }
 
+    protected function incrementOrDecrement(...$arguments): never
+    {
+        throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never updated.');
+    }
+
     protected function performDeleteOnModel(): never
     {
         throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never deleted.');
