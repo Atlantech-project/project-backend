@@ -45,7 +45,6 @@ enum Ability: string
     // Terminal master data (own terminal)
     case EquipmentManage = 'equipment.manage';
     case YardManage = 'yard.manage';
-    case StorageManage = 'storage.manage';
 
     // Terminal planning (own terminal)
     case YardRecommendationsDecide = 'yard-recommendations.decide';

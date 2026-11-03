@@ -65,7 +65,6 @@ final class RolePermissions
                 Ability::PortStateRead,
                 Ability::EquipmentManage,
                 Ability::YardManage,
-                Ability::StorageManage,
             ],
             Role::TerminalOfficer => [
                 Ability::PortStateRead,
