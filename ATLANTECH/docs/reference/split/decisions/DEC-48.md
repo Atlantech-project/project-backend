@@ -5,10 +5,10 @@
 | --- | --- |
 | Source | FE-OQ-12 |
 | Owner | Leads Council |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-48 · Sprint 2 |
 | Affects | FE-021 |
-| Decision | ______ |
+| Decision | Closed (2026-11-01): Option 1. A pilot, tug master or CT Supervisor who signs in on the web lands on P-20 with a "use the mobile app" message; there is no web version of My Tasks. Brought by Marwan (Backend lead) for the Leads Council. |
 
 <div dir="rtl">
 

@@ -5,10 +5,10 @@
 | --- | --- |
 | Source | Screens OQ-9 · A-2 |
 | Owner | Leads Council |
-| Status | Open |
+| Status | Closed |
 | Closing task | DEC-42 · Sprint 2 |
 | Affects | — |
-| Decision | ______ |
+| Decision | Closed (2026-11-01): Option 1. Staff pages on the tablet and a provisioning screen are not in the MVP, and no task builds them. Brought by Marwan (Backend lead) for the Leads Council. |
 
 <div dir="rtl">
 
