@@ -15,14 +15,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::query()->firstOrCreate(['username' => 'test.user'], User::factory()->make([
-            'name' => 'Test User',
-            'username' => 'test.user',
-        ])->makeVisible('password_hash')->getAttributes());
+        if (! app()->isProduction()) {
+            User::query()->firstOrCreate(['username' => 'test.user'], User::factory()->make([
+                'name' => 'Test User',
+                'username' => 'test.user',
+            ])->getAttributes());
+        }
 
         $this->call([
             PortProfileSeeder::class,
             PortSettingsSeeder::class,
+            ReferenceDataSeeder::class,
         ]);
     }
 }
