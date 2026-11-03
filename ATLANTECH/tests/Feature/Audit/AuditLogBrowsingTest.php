@@ -1,28 +1,19 @@
 <?php
 
+use App\Modules\Access\Enums\Role;
 use App\Modules\Access\Models\User;
 use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Models\AuditLog;
 use Illuminate\Support\Facades\DB;
 
 /*
- * P2-F8 audit log browsing (FR-MD-16). `ability:audit.read` arrives with P2-D1, so these tests register a pass-through
- * `ability` alias; the 403 for the other roles is tested when P2-D1 is merged. Every test is rolled back.
+ * P2-F8 audit log browsing (FR-MD-16): PORT_GM only (`ability:audit.read`, P2-D1). Every test is rolled back.
  */
-
-class PassThroughAbility
-{
-    public function handle($request, Closure $next, string $ability)
-    {
-        return $next($request);
-    }
-}
 
 beforeEach(function () {
     useSchemaDatabase();
     DB::beginTransaction();
-    app('router')->aliasMiddleware('ability', PassThroughAbility::class);
-    $this->admin = User::factory()->create(['name' => 'Amal Admin', 'username' => 'amal.admin']);
+    $this->admin = makeUserWithRole(Role::PortGm, ['name' => 'Amal Admin', 'username' => 'amal.admin']);
 });
 
 afterEach(function () {
@@ -118,3 +109,21 @@ it('answers 422 for a bad filter', function (string $query, string $field) {
     'per_page 101' => ['per_page=101', 'per_page'],
     'entity_id 0' => ['entity_id=0', 'entity_id'],
 ]);
+
+it('answers 403 FORBIDDEN to every role except the Port Admin and audits the refusal', function (Role $role) {
+    $user = makeUserWithRole($role);
+    $before = AuditLog::query()->count();
+
+    $this->actingAs($user, 'web')->getJson('/api/v1/audit-logs')
+        ->assertForbidden()
+        ->assertJsonPath('code', 'FORBIDDEN');
+
+    expect(AuditLog::query()->count())->toBe($before + 1)
+        ->and(AuditLog::query()->latest('id')->first()->action)->toBe(AuditLogAction::RejectedAttempt);
+})->with(array_filter(Role::cases(), fn (Role $role) => $role !== Role::PortGm));
+
+it('answers 403 FORBIDDEN to a user with no active role', function () {
+    $this->actingAs(makeUserWithRole(null), 'web')->getJson('/api/v1/audit-logs')
+        ->assertForbidden()
+        ->assertJsonPath('code', 'FORBIDDEN');
+});
