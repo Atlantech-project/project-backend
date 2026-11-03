@@ -26,10 +26,14 @@ class AuditLog extends Model
     /**
      * Append-only (NFR-SEC-6): a saved row cannot be updated or deleted through the model.
      */
-    protected static function booted(): void
+    protected function performUpdate(\Illuminate\Database\Eloquent\Builder $query): never
     {
-        static::updating(fn () => throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never updated.'));
-        static::deleting(fn () => throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never deleted.'));
+        throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never updated.');
+    }
+
+    protected function performDeleteOnModel(): never
+    {
+        throw new LogicException('audit_logs is append-only (NFR-SEC-6): rows are never deleted.');
     }
 
     /**

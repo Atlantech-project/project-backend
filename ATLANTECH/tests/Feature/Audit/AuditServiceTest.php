@@ -182,6 +182,7 @@ it('refuses to update or delete an audit row through the model or the query buil
     $type = $row->entity_type;
 
     expect(fn () => $row->update(['entity_type' => 'x']))->toThrow(LogicException::class)
+        ->and(fn () => $row->fill(['entity_type' => 'y'])->saveQuietly())->toThrow(LogicException::class)
         ->and(fn () => $row->delete())->toThrow(LogicException::class)
         ->and(fn () => AuditLog::query()->update(['entity_type' => 'x']))->toThrow(LogicException::class)
         ->and(fn () => AuditLog::query()->delete())->toThrow(LogicException::class)
