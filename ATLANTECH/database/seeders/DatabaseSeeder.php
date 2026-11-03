@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         if (config('seeding.demo_port')) {
-            $this->call(DemoPortSeeder::class);
+            $this->call([DemoPortSeeder::class, DemoPeopleSeeder::class]);
         }
     }
 }
