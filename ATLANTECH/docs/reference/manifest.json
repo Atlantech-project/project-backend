@@ -1,6 +1,6 @@
 {
   "sourceRoot": "E:/collage/GRADUATION PROGECT",
-  "syncedAt": "2026-10-31",
+  "syncedAt": "2026-11-03",
   "watch": [
     "Code Notes",
     "Documentation"
@@ -89,7 +89,7 @@
     {
       "path": "decisions/ATLANTECH_Decisions.md",
       "source": "Code Notes/ATLANTECH_Decisions.md",
-      "sha1": "121a2351ba5ed54e31f20351f18e49586eebf12b"
+      "sha1": "07bcd66f1bf77def299b6c483bb575c123675f58"
     },
     {
       "path": "roadmap/ATLANTECH_Master_Roadmap.pdf",
