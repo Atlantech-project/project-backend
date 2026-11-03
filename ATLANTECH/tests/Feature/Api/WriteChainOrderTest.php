@@ -2,6 +2,7 @@
 
 use App\Modules\Access\Enums\Role;
 use App\Modules\Access\Http\Middleware\EnsureMinAppVersion;
+use App\Modules\Access\Models\OrganizationUnit;
 use App\Modules\Access\Models\User;
 use App\Modules\License\Http\Middleware\EnsureLicenseAllowsWrite;
 use App\Modules\Shared\Errors\ApiProblemException;
@@ -55,6 +56,10 @@ beforeEach(function () {
     Route::middleware(['api', 'version.token', 'ability:users.manage', 'port.api'])
         ->prefix('api/v1')
         ->post('test/chain-reversed', fn () => response()->json(['ok' => true]));
+
+    Route::middleware(['api', 'version.token', 'terminal.scope', 'app.version', 'ability:port-state.read', 'port.api'])
+        ->prefix('api/v1')
+        ->post('test/terminals/{terminal}', fn () => response()->json(['ok' => true]));
 
     Route::middleware(['api', 'port.api', 'ability:users.manage'])
         ->prefix('api/v1')
@@ -111,4 +116,21 @@ it('answers 403 before 404 for an unauthorised caller and 404 for an allowed one
     $this->actingAs(makeUserWithRole(Role::PortGm), 'web')
         ->getJson('/api/v1/test/users/999999')
         ->assertNotFound();
+});
+
+it('refuses another terminal with 403 before 426, 423 and 409, and before any 404', function () {
+    fakeHookSteps();
+    $own = OrganizationUnit::factory()->create();
+    $other = OrganizationUnit::factory()->create();
+    $user = makeUserWithRole(Role::TerminalOfficer, unit: $own);
+    $allFail = ['X-Fail' => '426,423,409'];
+
+    $this->actingAs($user, 'web')->withHeaders($allFail)->postJson("/api/v1/test/terminals/{$other->terminal_id}")
+        ->assertForbidden()->assertJsonPath('code', 'FORBIDDEN');
+    $this->actingAs($user, 'web')->withHeaders($allFail)->postJson('/api/v1/test/terminals/999999')
+        ->assertForbidden()->assertJsonPath('code', 'FORBIDDEN');
+    $this->actingAs($user, 'web')->withHeaders($allFail)->postJson("/api/v1/test/terminals/{$own->terminal_id}")
+        ->assertStatus(426);
+    $this->actingAs($user, 'web')->withHeaders(['X-Fail' => ''])->postJson("/api/v1/test/terminals/{$own->terminal_id}")
+        ->assertOk();
 });
