@@ -5,6 +5,9 @@ namespace App\Modules\Access\Enums;
 /**
  * What a role may do, grouped by function area. Each route declares the one it needs
  * (`->middleware('ability:users.manage')`). The role-to-ability map is `RolePermissions` (P2-D1).
+ * Not a database value, so not in the status vocabulary (CT-21).
+ *
+ * @not-stored
  */
 enum Ability: string
 {

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Access;
 
+use App\Modules\Access\Console\PublishRoleMatrix;
 use App\Modules\Access\Enums\Ability;
 use App\Modules\Access\Http\Middleware\EnsureAbility;
 use App\Modules\Access\Http\Middleware\EnsureTerminalScope;
@@ -18,6 +19,10 @@ class AccessServiceProvider extends ServiceProvider
 {
     public function boot(Router $router): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([PublishRoleMatrix::class]);
+        }
+
         $router->aliasMiddleware('ability', EnsureAbility::class);
         $router->aliasMiddleware('terminal.scope', EnsureTerminalScope::class);
 
