@@ -4,6 +4,8 @@ namespace App\Modules\Shared;
 
 use App\Modules\Shared\Console\PublishOpenApi;
 use App\Modules\Shared\Console\PublishStatusVocabulary;
+use App\Modules\Shared\Http\Middleware\EnsureRecordVersion;
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -11,8 +13,10 @@ use Illuminate\Support\ServiceProvider;
  */
 class SharedServiceProvider extends ServiceProvider
 {
-    public function boot(): void
+    public function boot(Router $router): void
     {
+        $router->aliasMiddleware('version.token', EnsureRecordVersion::class);
+
         if ($this->app->runningInConsole()) {
             $this->commands([PublishOpenApi::class, PublishStatusVocabulary::class]);
         }

@@ -1,7 +1,6 @@
 <?php
 
 use App\Modules\Access\Enums\Ability;
-use App\Modules\Access\Http\Middleware\EnsureAccountUsable;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as RouteFacade;
 
@@ -62,26 +61,24 @@ it('names only abilities that exist, so a typo is caught here and not as a 500',
     expect($unknown)->toBe([]);
 });
 
-it('runs the ability check after the password gate and the terminal check after the ability check', function () {
-    $outOfOrder = [];
+/*
+ * P2-D2 owns the order: the priority list in bootstrap/app.php sorts auth, password gate, ability, terminal scope and the
+ * later write-chain steps whatever order a route lists them in (proven in WriteChainOrderTest). What a route must not do
+ * is skip the chain, so every route with an ability runs inside the `port.api` group.
+ */
+it('runs every route with an ability inside the port.api group, so it gets the whole write chain', function () {
+    $outsideChain = [];
 
     foreach (apiRoutes() as $route) {
-        $middleware = array_values($route->gatherMiddleware());
-        $abilityAt = collect($middleware)->search(fn ($m) => is_string($m) && str_starts_with($m, 'ability:'));
+        $middleware = $route->gatherMiddleware();
+        $declaresAbility = collect($middleware)->contains(fn ($m) => is_string($m) && str_starts_with($m, 'ability:'));
 
-        if ($abilityAt === false) {
-            continue;
-        }
-
-        $gateAt = array_search(EnsureAccountUsable::class, $middleware, true);
-        $terminalAt = array_search('terminal.scope', $middleware, true);
-
-        if ($gateAt === false || $gateAt > $abilityAt || ($terminalAt !== false && $terminalAt < $abilityAt)) {
-            $outOfOrder[] = '/'.$route->uri();
+        if ($declaresAbility && ! in_array('port.api', $middleware, true)) {
+            $outsideChain[] = '/'.$route->uri();
         }
     }
 
-    expect($outOfOrder)->toBe([]);
+    expect($outsideChain)->toBe([]);
 });
 
 it('puts terminal.scope on every route that has a {terminal} parameter', function () {
