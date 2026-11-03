@@ -4,6 +4,7 @@ namespace App\Modules\Access;
 
 use App\Modules\Access\Enums\Ability;
 use App\Modules\Access\Http\Middleware\EnsureAbility;
+use App\Modules\Access\Http\Middleware\EnsureTerminalScope;
 use App\Modules\Access\Models\User;
 use App\Modules\Access\Services\RolePermissions;
 use Illuminate\Routing\Router;
@@ -18,6 +19,7 @@ class AccessServiceProvider extends ServiceProvider
     public function boot(Router $router): void
     {
         $router->aliasMiddleware('ability', EnsureAbility::class);
+        $router->aliasMiddleware('terminal.scope', EnsureTerminalScope::class);
 
         foreach (Ability::cases() as $ability) {
             Gate::define($ability->value, function (User $user) use ($ability): bool {
