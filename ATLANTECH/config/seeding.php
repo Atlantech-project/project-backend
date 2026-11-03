@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'demo_port' => env('SEED_DEMO_PORT', env('APP_ENV') !== 'production'),
+    'demo_port' => env('SEED_DEMO_PORT', env('APP_ENV', 'production') !== 'production'),
 
     'demo_user_password' => env('DEMO_USER_PASSWORD'),
 
