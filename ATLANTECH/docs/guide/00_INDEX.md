@@ -166,6 +166,7 @@ Give them the `Backend_Guide/` folder and this prompt:
 | `F03_api_base_errors_pagination_time.md` | Problem responses, error catalogue, pagination, UTC. |
 | `F04_openapi_contract.md` | The OpenAPI file, the drift test, publishing. |
 | `F05_database_schema_and_migrations.md` | 92 tables, constraints, generated columns, worker grants, schema publishing. |
+| `F05b_database_diagrams.md` | The same 92 tables as Mermaid diagrams, one business group at a time, plus a group overview. Generated from `schema.sql`. |
 | `F06_model_layer.md` | Model, enum and factory conventions, with the full catalogues. |
 | `F07_web_sign_in_and_session.md` | Sanctum SPA sign-in, profile, sign-out. |
 | `F08_password_change_gate.md` | The password-change gate and account state. |

@@ -390,6 +390,8 @@ MySQL allows many NULLs in a UNIQUE index. A stored generated column that is **N
 
 ### 3.6 Foreign keys, and why one is deferred
 
+> **To see the tables and their foreign keys as diagrams, group by group, read [F05b](F05b_database_diagrams.md).** It draws the 92 tables in 16 business groups (2 to 10 tables each) with an overview of how the groups depend on each other, and it is generated from the schema so it cannot drift.
+
 - **Naming.** `fk_<table abbreviation>_<target>`, for example `fk_ura_user`, `fk_ewp_window`, `fk_device_user`, `fk_p1r_request`, `fk_rrv_rec`. The names come from `PortSync.sql`, Report A and the edit sheet (CT-17 §2: names unchanged). Where the SQL source had no name, the first generator used Laravel's `<table>_<column>_foreign`; P1-B2 (M1: `user_devices`) and P1-B3 (M1, M2: `part1_runs`, `recommendation_reviews`) renamed the ones Report A names, and `SchemaTablesTest.php:101` now fails if any database FK still ends in `_foreign`.
 - **Composite foreign keys (38 in the create files).** They tie child rows to the same parent in two columns so the database enforces consistency. Example: `user_role_assignments (organization_unit_id, unit_type) → organization_units (id, unit_type)` (`fk_ura_unit`) keeps the role's `unit_type` equal to its unit's. Another: `entry_window_proposals (confirmed_window_id, id) → feasible_windows (id, proposal_id)` (`fk_ewp_window`) forces a confirmed window to belong to the same proposal.
 - **No cascades.** Every FK is `NO ACTION`: deleting a parent that has children is refused.
