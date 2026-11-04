@@ -153,7 +153,7 @@ Each entry lists the **main points** the file must teach, the **files** to read,
 
 Give them the `Backend_Guide/` folder and this prompt:
 
-> Read `Backend_Guide/00_INDEX.md`, then `A_orientation.md`, then the feature files in order, then `Z_findings_register.md` (known problems and traps). The code on `develop` is the source of truth: if a guide file disagrees with the code, trust the code and tell the lead. Before you change anything, find the feature that owns it, read its "Gotchas and invariants" and "How to extend it", and run the tests named in its "Tests" section.
+> Read `Backend_Guide/00_INDEX.md`, then `A_orientation.md`, then the feature files in order. The code on `develop` is the source of truth: if a guide file disagrees with the code, trust the code and tell the lead. Before you change anything, find the feature that owns it, read its "Gotchas and invariants" and "How to extend it", and run the tests named in its "Tests" section.
 
 ## 7. The files
 
@@ -176,7 +176,6 @@ Give them the `Backend_Guide/` folder and this prompt:
 | `F13_seeders_and_demo_port.md` | Reference data, the demo port, production guard. |
 | `F14_contract_and_documents_tooling.md` | Publishing commands, `docs/reference`, plan files, skills and agents. |
 | `F15_not_built_yet_and_next.md` | What is not built, what is planned, what comes next. |
-| `Z_findings_register.md` | Everything found that is wrong or risky, with the next step for each. |
 
 ## 8. Coverage check (completeness pass, 2026-11-04)
 
@@ -196,6 +195,6 @@ A script compared the guide text with the code on `develop` (`106b40e`): every i
 | Skills, agents, docker, CI and ops files, `docs/reference` tools | 15, 4, 12, 6, 4 | all (F02, F14, F01) |
 | Links between guide files | every `.md` link | none broken |
 
-Facts spot-checked against code in this pass: the throttle numbers (F07), the `VersionToken` and `AuditService` method lists (F10, F12), the seeder counts (F13) and the README seeding claim (corrected, see `Z_findings_register.md`, section Z4). Each writing session also ran the tests of its own features on its own database (122, 377, 156 and about 80 tests, all passing; the few it could not run are marked "expected, not run" in the files).
+Facts spot-checked against code in this pass: the throttle numbers (F07), the `VersionToken` and `AuditService` method lists (F10, F12), the seeder counts (F13) and the README seeding claim (found wrong and corrected). Each writing session also ran the tests of its own features on its own database (122, 377, 156 and about 80 tests, all passing; the few it could not run are marked "expected, not run" in the files).
 
 What this pass does **not** prove: that every sentence is right. Where a writer could not verify something, the file says "Unverified". Walk through the files with the lead, and treat a disagreement between a file and the code as a bug in the file.
