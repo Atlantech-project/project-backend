@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
 
 /*
  * Every table is read and written through its model, with enum casts equal to the database ENUM lists (P1-B5).
@@ -62,7 +63,8 @@ function domainModels(): array
     foreach (glob(dirname(__DIR__, 3).'/app/Modules/*/Models/*.php') as $file) {
         $class = 'App\\Modules\\'.basename(dirname($file, 2)).'\\Models\\'.basename($file, '.php');
 
-        if (is_subclass_of($class, Model::class)) {
+        // Framework tables are not CT-17 tables: Sanctum's token model (P1-C3) is tested with the mobile sign-in.
+        if (is_subclass_of($class, Model::class) && ! is_subclass_of($class, SanctumPersonalAccessToken::class)) {
             $classes[] = $class;
         }
     }

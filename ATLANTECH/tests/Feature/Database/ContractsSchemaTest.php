@@ -22,7 +22,7 @@ test('schema.sql carries the header, the full structure and the worker roles, an
 
         expect($schema)
             ->toStartWith('-- ATLANTECH port database schema (CT-17 v1.0).')
-            ->toContain('-- Last migration: 2026_11_03_183535_alter_port_settings_add_min_max')
+            ->toContain('-- Last migration: 2026_11_05_100000_create_personal_access_tokens_table')
             ->toContain('CREATE TABLE `yard_runs`')
             ->toContain('CONSTRAINT `chk_br_ports` CHECK')
             ->toContain('GENERATED ALWAYS AS')
@@ -33,7 +33,7 @@ test('schema.sql carries the header, the full structure and the worker roles, an
         DB::statement("CREATE DATABASE `{$rebuilt}`");
         DB::unprepared("USE `{$rebuilt}`;\n".$structureOnly);
 
-        expect(DB::table('information_schema.TABLES')->where('TABLE_SCHEMA', $rebuilt)->count())->toBe(100)
+        expect(DB::table('information_schema.TABLES')->where('TABLE_SCHEMA', $rebuilt)->count())->toBe(101)
             ->and(DB::table('information_schema.CHECK_CONSTRAINTS')->where('CONSTRAINT_SCHEMA', $rebuilt)->count())->toBe(129);
     } finally {
         DB::statement("DROP DATABASE IF EXISTS `{$rebuilt}`");
@@ -47,7 +47,7 @@ test('the generator never wipes a database that already exists', function () {
         ->expectsOutputToContain('already exists')
         ->assertFailed();
 
-    expect(DB::table('information_schema.TABLES')->where('TABLE_SCHEMA', 'atlantech_testing')->count())->toBe(100);
+    expect(DB::table('information_schema.TABLES')->where('TABLE_SCHEMA', 'atlantech_testing')->count())->toBe(101);
 })->group('schema');
 
 test('the generator stops when the output folder does not exist', function () {

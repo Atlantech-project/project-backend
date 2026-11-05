@@ -7,11 +7,13 @@ use App\Modules\Access\Enums\Ability;
 use App\Modules\Access\Http\Middleware\EnsureAbility;
 use App\Modules\Access\Http\Middleware\EnsureMinAppVersion;
 use App\Modules\Access\Http\Middleware\EnsureTerminalScope;
+use App\Modules\Access\Models\PersonalAccessToken;
 use App\Modules\Access\Models\User;
 use App\Modules\Access\Services\RolePermissions;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\Sanctum;
 
 /**
  * Access: users, roles, devices and terminal scope (P1, P2).
@@ -27,6 +29,12 @@ class AccessServiceProvider extends ServiceProvider
         $router->aliasMiddleware('ability', EnsureAbility::class);
         $router->aliasMiddleware('terminal.scope', EnsureTerminalScope::class);
         $router->aliasMiddleware('app.version', EnsureMinAppVersion::class);
+
+        // Mobile tokens (P1-C3): the token model with `revoked_at` and the slide; a revoked token answers 401 like an expired one.
+        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+        Sanctum::authenticateAccessTokensUsing(
+            fn (PersonalAccessToken $token, bool $isValid): bool => $isValid && ! $token->isRevoked(),
+        );
 
         foreach (Ability::cases() as $ability) {
             Gate::define($ability->value, function (User $user) use ($ability): bool {
