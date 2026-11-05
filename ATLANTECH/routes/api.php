@@ -11,10 +11,12 @@
 */
 
 use App\Modules\Access\Http\Controllers\AuthController;
+use App\Modules\MasterData\Http\Controllers\SystemInfoController;
 use App\Modules\Shared\Http\Controllers\AuditLogController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
+Route::get('system/info', SystemInfoController::class)->name('system.info');
 
 Route::middleware('port.api')->group(function () {
     Route::get('auth/me', [AuthController::class, 'me'])->name('auth.me');

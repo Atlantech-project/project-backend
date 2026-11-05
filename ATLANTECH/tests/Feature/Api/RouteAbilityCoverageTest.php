@@ -14,6 +14,8 @@ const ABILITY_FREE_ROUTES = [
     'auth.me',
     'auth.change-password',
     'auth.logout',
+    // Public by contract (CT-04): the tablet reads it before sign-in.
+    'system.info',
 ];
 
 /**
