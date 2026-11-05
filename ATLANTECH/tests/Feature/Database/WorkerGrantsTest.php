@@ -122,3 +122,11 @@ test('the worker-accounts command refuses to run without every password', functi
         ->expectsOutputToContain('WORKER_YARD_PASSWORD')
         ->assertFailed();
 })->group('schema');
+
+test('workers.sql carries no demo or placeholder line, because it is published into schema.sql', function () {
+    $lines = file(database_path('grants/workers.sql'), FILE_IGNORE_NEW_LINES);
+
+    foreach ($lines as $number => $line) {
+        expect($line)->not->toMatch('/\b(DEMO|do not merge)\b/i', 'line '.($number + 1));
+    }
+});

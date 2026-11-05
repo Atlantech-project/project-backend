@@ -231,3 +231,41 @@ it('does not touch the user row', function () {
 
     expect(User::query()->find($user->id)->getAttributes())->toBe($before);
 });
+
+it('answers 503 SERVICE_UNAVAILABLE while the stored min_app_version is not x.y.z, and issues no token', function (string $stored) {
+    PortSetting::query()->where('setting_key', 'min_app_version')->update(['setting_value' => $stored]);
+    makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k']);
+
+    mobileSignIn(mobileCredentials())->assertStatus(503)->assertJsonPath('code', 'SERVICE_UNAVAILABLE');
+
+    expect(PersonalAccessToken::query()->count())->toBe(0);
+})->with(['two parts' => '1.2', 'a suffix' => '1.2.0-rc1', 'text' => 'latest', 'empty' => '']);
+
+it('survives two first sign-ins racing on a new device: the loser takes the winner\'s row', function () {
+    makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k']);
+    $raced = false;
+    UserDevice::creating(function (UserDevice $device) use (&$raced) {
+        if ($raced) {
+            return;
+        }
+
+        $raced = true;
+        DB::table('user_devices')->insert([
+            'user_id' => $device->user_id,
+            'device_id' => $device->device_id,
+            'platform' => 'IOS',
+            'app_version' => '1.0.0',
+            'last_seen_at' => now(),
+        ]);
+    });
+
+    mobileSignIn(mobileCredentials())->assertOk();
+    UserDevice::flushEventListeners();
+
+    $device = UserDevice::query()->sole();
+
+    expect($raced)->toBeTrue()
+        ->and($device->platform->value)->toBe('ANDROID')
+        ->and($device->app_version)->toBe('1.2.0')
+        ->and(PersonalAccessToken::query()->sole()->user_device_id)->toBe($device->id);
+});

@@ -3,6 +3,7 @@
 use App\Modules\Access\Enums\Role;
 use App\Modules\Access\Models\PersonalAccessToken;
 use App\Modules\Access\Models\User;
+use App\Modules\Access\Models\UserDevice;
 use App\Modules\MasterData\Enums\PortSettingValueType;
 use App\Modules\MasterData\Models\PortSetting;
 use App\Modules\Shared\Enums\AuditLogAction;
@@ -137,7 +138,7 @@ it('answers 426 to a signed-in tablet whose app is below the minimum', function 
         ->assertJsonPath('min_app_version', '2.0.0');
 });
 
-it('applies the password gate to the token, and changes the password with it', function () {
+it('applies the password gate to the token, and changes the password with it; the other token is revoked (D-A)', function () {
     $user = makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k', 'must_change_password' => true]);
     $token = signInTablet($user);
     $otherDeviceToken = signInTablet($user, 'tablet-other');
@@ -155,7 +156,7 @@ it('applies the password gate to the token, and changes the password with it', f
     expect($user->fresh()->must_change_password)->toBeFalse();
 
     withTabletToken($token, 'GET', '/api/v1/auth/me')->assertOk();
-    withTabletToken($otherDeviceToken, 'GET', '/api/v1/auth/me', ['X-Device-Id' => 'tablet-other'])->assertOk();
+    withTabletToken($otherDeviceToken, 'GET', '/api/v1/auth/me', ['X-Device-Id' => 'tablet-other'])->assertUnauthorized();
 });
 
 it('refuses a wrong current password on the token route with 422', function () {
@@ -182,4 +183,66 @@ it('answers 403 ACCOUNT_DISABLED to a deactivated user and revokes the token', f
     $user->forceFill(['is_active' => true])->save();
 
     withTabletToken($token, 'GET', '/api/v1/auth/me')->assertUnauthorized();
+});
+
+it('answers 422 to a Bearer request without a well-formed X-App-Version, and lets a web request through without it', function (?string $version) {
+    $this->freezeSecond();
+    $user = makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k']);
+    $token = signInTablet($user);
+    $before = PersonalAccessToken::query()->sole()->only('last_used_at', 'expires_at');
+    $this->travel(5)->days();
+
+    withTabletToken($token, 'GET', '/api/v1/auth/me', ['X-App-Version' => $version])
+        ->assertStatus(422)
+        ->assertJsonPath('code', 'VALIDATION_FAILED')
+        ->assertJsonStructure(['errors' => ['X-App-Version']]);
+
+    expect(PersonalAccessToken::query()->sole()->only('last_used_at', 'expires_at'))->toEqual($before);
+
+    app('auth')->forgetGuards();
+    $this->flushHeaders()->actingAs($user, 'web')->getJson('/api/v1/auth/me')->assertOk();
+})->with(['missing' => [null], 'malformed' => ['1.2'], 'with a suffix' => ['1.2.0-beta']]);
+
+it('refuses a token whose device was revoked: 401, audited as device_revoked, and the token is revoked too', function () {
+    $this->freezeSecond();
+    $user = makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k']);
+    $token = signInTablet($user);
+    UserDevice::query()->sole()->forceFill(['revoked_at' => now()])->save();
+    $before = PersonalAccessToken::query()->sole()->only('last_used_at', 'expires_at');
+    $this->travel(5)->days();
+
+    withTabletToken($token, 'GET', '/api/v1/auth/me')
+        ->assertUnauthorized()
+        ->assertJsonPath('code', 'UNAUTHENTICATED');
+
+    $row = AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->sole();
+    $stored = PersonalAccessToken::query()->sole();
+
+    expect($stored->revoked_at)->not->toBeNull()
+        ->and($stored->only('last_used_at', 'expires_at'))->toEqual($before)
+        ->and($row->actor_id)->toBe($user->id)
+        ->and($row->after_state)->toMatchArray(['route' => 'GET /api/v1/auth/me', 'status' => 401, 'code' => 'UNAUTHENTICATED', 'reason' => 'device_revoked']);
+});
+
+it('revokes the other tokens of the user after a password change from a tablet, and keeps the current one and every row', function () {
+    $user = makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k']);
+    $other = makeUserWithRole(Role::TugMaster, ['username' => 'tug.master']);
+    $current = signInTablet($user, 'tablet-a');
+    $second = signInTablet($user, 'tablet-b');
+    $strangers = signInTablet($other, 'tablet-c');
+
+    withTabletToken($current, 'POST', '/api/v1/auth/change-password', ['X-Device-Id' => 'tablet-a'], [
+        'current_password' => 'password',
+        'new_password' => 'NewPass2026',
+        'new_password_confirmation' => 'NewPass2026',
+    ])->assertOk();
+
+    expect(PersonalAccessToken::query()->count())->toBe(3)
+        ->and(PersonalAccessToken::query()->where('name', 'tablet-a')->sole()->revoked_at)->toBeNull()
+        ->and(PersonalAccessToken::query()->where('name', 'tablet-b')->sole()->revoked_at)->not->toBeNull()
+        ->and(PersonalAccessToken::query()->where('name', 'tablet-c')->sole()->revoked_at)->toBeNull();
+
+    withTabletToken($current, 'GET', '/api/v1/auth/me', ['X-Device-Id' => 'tablet-a'])->assertOk();
+    withTabletToken($second, 'GET', '/api/v1/auth/me', ['X-Device-Id' => 'tablet-b'])->assertUnauthorized();
+    withTabletToken($strangers, 'GET', '/api/v1/auth/me', ['X-Device-Id' => 'tablet-c'])->assertOk();
 });

@@ -1,7 +1,9 @@
 <?php
 
 use App\Modules\Access\Http\Middleware\EnsureAccountUsable;
+use App\Modules\Access\Models\PersonalAccessToken;
 use App\Modules\Access\Models\User;
+use App\Modules\Access\Models\UserDevice;
 use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Models\AuditLog;
 use Illuminate\Support\Collection;
@@ -230,6 +232,42 @@ describe('POST auth/change-password', function () {
         changePassword()->assertOk();
 
         expect(session()->getId())->not->toBe($before);
+    });
+
+    it('closes the user\'s other web sessions and keeps the one that changed the password (D-A)', function () {
+        $user = gateUser();
+        $this->postJson('/api/v1/auth/login', ['username' => $user->username, 'password' => GATE_PASSWORD])->assertOk();
+        $this->getJson('/api/v1/auth/me')->assertOk();
+        $otherSessionHash = session('password_hash_web');
+
+        expect($otherSessionHash)->not->toBeNull();
+
+        changePassword()->assertOk();
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/api/v1/auth/me')->assertOk();
+
+        $this->flushSession();
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($user->fresh(), 'web')
+            ->withSession(['password_hash_web' => $otherSessionHash])
+            ->getJson('/api/v1/auth/me')
+            ->assertUnauthorized();
+    });
+
+    it('revokes every mobile token of the user after a change from the web, keeps the rows, and leaves other users alone', function () {
+        $user = gateUser();
+        $other = gateUser();
+        foreach ([$user, $user, $other] as $owner) {
+            $device = UserDevice::factory()->create(['user_id' => $owner->id]);
+            $owner->tokens()->create(['name' => $device->device_id, 'token' => hash('sha256', fake()->uuid()), 'abilities' => ['*'], 'expires_at' => now()->addDays(30), 'user_device_id' => $device->id]);
+        }
+        $this->actingAs($user, 'web');
+
+        changePassword()->assertOk();
+
+        expect(PersonalAccessToken::query()->count())->toBe(3)
+            ->and(PersonalAccessToken::query()->where('tokenable_id', $user->id)->whereNull('revoked_at')->count())->toBe(0)
+            ->and(PersonalAccessToken::query()->where('tokenable_id', $other->id)->whereNull('revoked_at')->count())->toBe(1);
     });
 
     it('refuses a bad body with 422 and the rule key', function (array $overrides, string $field, string $key) {

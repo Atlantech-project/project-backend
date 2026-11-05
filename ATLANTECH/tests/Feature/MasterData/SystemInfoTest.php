@@ -65,4 +65,8 @@ it('answers 503 SERVICE_UNAVAILABLE while the port is not provisioned', function
 })->with([
     'no profile row' => [fn () => PortSetting::factory()->create(['setting_key' => 'min_app_version', 'setting_value' => '1.0.0', 'value_type' => PortSettingValueType::String])],
     'no min_app_version setting' => [fn () => PortProfile::factory()->create()],
+    'malformed min_app_version' => [function () {
+        PortProfile::factory()->create();
+        PortSetting::factory()->create(['setting_key' => 'min_app_version', 'setting_value' => 'latest', 'value_type' => PortSettingValueType::String]);
+    }],
 ]);

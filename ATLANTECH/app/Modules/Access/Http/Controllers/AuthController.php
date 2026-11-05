@@ -58,13 +58,16 @@ class AuthController extends Controller
 
     /**
      * POST /api/v1/auth/change-password: saves the new password, clears the flag and answers with the profile and a
-     * new session id (P1-C2); 401, 403 ACCOUNT_DISABLED, 419, 422, 429.
+     * new session id (P1-C2); 401, 403 ACCOUNT_DISABLED, 419, 422, 429. The user's other mobile tokens
+     * are revoked and the token of this request stays (D-A, 2026-11-05).
      */
     public function changePassword(ChangePasswordRequest $request, PasswordChangeService $passwords): UserProfileResource
     {
         $user = $request->user();
 
-        $passwords->change($user, $request->string('new_password')->value());
+        $token = $user->currentAccessToken();
+
+        $passwords->change($user, $request->string('new_password')->value(), $token instanceof PersonalAccessToken ? $token : null);
 
         if ($request->hasSession()) {
             $request->session()->regenerate();
