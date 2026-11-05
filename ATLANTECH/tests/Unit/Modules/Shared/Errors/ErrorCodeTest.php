@@ -21,6 +21,7 @@ test('the catalogue holds exactly the agreed codes with their HTTP status', func
         'METHOD_NOT_ALLOWED' => 405,
         'ACCOUNT_DISABLED' => 403,
         'PASSWORD_CHANGE_REQUIRED' => 403,
+        'DEVICE_REVOKED' => 403,
         'APP_UPDATE_REQUIRED' => 426,
         'LICENSE_READ_ONLY' => 423,
         'PLAN_LIMIT_EXCEEDED' => 422,
