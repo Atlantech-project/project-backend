@@ -8,7 +8,7 @@
 openapi: 3.0.3
 info:
   title: ATLANTECH Port API
-  version: '1.2.0'
+  version: '1.3.0'
   description: |
     The port API used by the web app (Vue) and the mobile app (Flutter).
 
@@ -28,6 +28,8 @@ tags:
     description: Web sign-in with the Sanctum SPA session (CT-03). First call `GET /sanctum/csrf-cookie`.
   - name: Audit
     description: Audit log browsing for the Port Admin (FR-MD-16).
+  - name: System
+    description: Public port information for the mobile app (CT-04).
 paths:
   /api/v1/auth/login:
     post:
@@ -231,6 +233,26 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationFailed'
+  /api/v1/system/info:
+    get:
+      tags: [System]
+      operationId: systemInfo
+      summary: Port and minimum app version
+      description: >-
+        Public: needs no sign-in, and is never refused with 426, because the app reads `min_app_version` here (CT-04).
+        The app calls it on first launch and as the connectivity check at the start of a sync cycle (DEC-58).
+        Until the licence work (DEC-54), `license_mode` is always `FULL` and `token_warning_days_left` is always null.
+        503 while the port is not provisioned yet (no port profile or no `min_app_version` setting).
+      security: []
+      responses:
+        '200':
+          description: The port this server belongs to.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemInfo'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 components:
   securitySchemes:
     cookieAuth:
@@ -444,6 +466,38 @@ components:
           type: string
           maxLength: 255
           format: password
+    SystemInfo:
+      type: object
+      description: Public port information (CT-04 v1.1).
+      required: [port_id, port_code, port_name, license_mode, token_warning_days_left, min_app_version]
+      properties:
+        port_id:
+          type: string
+          format: uuid
+          description: '`port_profiles.public_id`.'
+          example: 0d9f6a52-7c1b-4b7e-9a3e-5a2f1c8d7e10
+        port_code:
+          type: string
+          nullable: true
+          description: UN/LOCODE; may be null.
+          example: EGDAM
+        port_name:
+          type: string
+          example: Damietta Port
+        license_mode:
+          type: string
+          enum: [SETUP, FULL, READ_ONLY]
+          description: Always `FULL` until the licence work (DEC-54).
+          example: FULL
+        token_warning_days_left:
+          type: integer
+          nullable: true
+          description: Always null until the licence work (DEC-54).
+          example: null
+        min_app_version:
+          type: string
+          description: The oldest mobile app version the port accepts (`x.y.z`); older apps get 426.
+          example: 1.0.0
     UserProfile:
       type: object
       description: The signed-in user (CT-03). One active role (DEC-36); `role` is null when the user has none.
