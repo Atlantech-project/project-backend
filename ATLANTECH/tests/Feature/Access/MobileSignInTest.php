@@ -117,6 +117,15 @@ it('answers 426 with min_app_version and no token, before the body and the passw
     'outdated body without platform' => [['username' => 'pilot.k', 'password' => 'password']],
 ]);
 
+it('answers 503 SERVICE_UNAVAILABLE while the port has no min_app_version', function () {
+    PortSetting::query()->where('setting_key', 'min_app_version')->delete();
+    makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k']);
+
+    mobileSignIn(mobileCredentials())->assertStatus(503)->assertJsonPath('code', 'SERVICE_UNAVAILABLE');
+
+    expect(PersonalAccessToken::query()->count())->toBe(0);
+});
+
 it('compares versions as numbers, not as text', function () {
     PortSetting::query()->where('setting_key', 'min_app_version')->update(['setting_value' => '1.9.0']);
     makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k']);

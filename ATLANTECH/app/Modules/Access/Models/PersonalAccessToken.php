@@ -7,8 +7,9 @@ use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
 use LogicException;
 
 /**
- * A mobile device token (P1-C3, CT-04). It slides: whenever Sanctum stamps `last_used_at`, `expires_at` moves to 30 days later
- * (FR-AC-06). It is never deleted: `revoked_at` is set instead (FR-GL-03), and Sanctum refuses a revoked token (AccessServiceProvider).
+ * A mobile device token (P1-C3, CT-04). It slides: each accepted use moves `expires_at` to 30 days later (FR-AC-06), stamped by
+ * `EnsureTokenDevice` once the device matches, not by Sanctum. It is never deleted: `revoked_at` is set instead (FR-GL-03), and
+ * Sanctum refuses a revoked token (AccessServiceProvider).
  */
 class PersonalAccessToken extends SanctumPersonalAccessToken
 {
@@ -29,13 +30,12 @@ class PersonalAccessToken extends SanctumPersonalAccessToken
         ];
     }
 
-    protected static function booted(): void
+    /**
+     * Record an accepted use: stamp it and move the expiry to 30 days from now, in one write.
+     */
+    public function markUsed(): void
     {
-        static::saving(function (self $token): void {
-            if ($token->isDirty('last_used_at') && $token->last_used_at !== null) {
-                $token->expires_at = $token->last_used_at->copy()->addDays(self::LIFETIME_DAYS);
-            }
-        });
+        $this->forceFill(['last_used_at' => now(), 'expires_at' => now()->addDays(self::LIFETIME_DAYS)])->save();
     }
 
     /**

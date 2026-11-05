@@ -5,6 +5,8 @@ use App\Modules\Access\Models\PersonalAccessToken;
 use App\Modules\Access\Models\User;
 use App\Modules\MasterData\Enums\PortSettingValueType;
 use App\Modules\MasterData\Models\PortSetting;
+use App\Modules\Shared\Enums\AuditLogAction;
+use App\Modules\Shared\Models\AuditLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 
@@ -66,8 +68,12 @@ it('reads the profile with the Bearer token', function () {
         ->assertJsonPath('role', 'MARINE_PILOT');
 });
 
-it('answers 422 without X-Device-Id and 401 for another device', function () {
-    $token = signInTablet(makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k']));
+it('answers 422 without X-Device-Id and 401 for another device, audited, without extending the token', function () {
+    $this->freezeSecond();
+    $user = makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k']);
+    $token = signInTablet($user);
+    $before = PersonalAccessToken::query()->sole()->only('last_used_at', 'expires_at');
+    $this->travel(5)->days();
 
     withTabletToken($token, 'GET', '/api/v1/auth/me', ['X-Device-Id' => null])
         ->assertStatus(422)
@@ -75,6 +81,12 @@ it('answers 422 without X-Device-Id and 401 for another device', function () {
     withTabletToken($token, 'GET', '/api/v1/auth/me', ['X-Device-Id' => 'another-tablet'])
         ->assertUnauthorized()
         ->assertJsonPath('code', 'UNAUTHENTICATED');
+
+    $row = AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->sole();
+
+    expect(PersonalAccessToken::query()->sole()->only('last_used_at', 'expires_at'))->toEqual($before)
+        ->and($row->actor_id)->toBe($user->id)
+        ->and($row->after_state)->toMatchArray(['route' => 'GET /api/v1/auth/me', 'status' => 401, 'code' => 'UNAUTHENTICATED', 'reason' => 'device_mismatch']);
 });
 
 it('moves the expiry to 30 days after each use', function () {
@@ -84,7 +96,10 @@ it('moves the expiry to 30 days after each use', function () {
     $this->travel(20)->days();
     withTabletToken($token, 'GET', '/api/v1/auth/me')->assertOk();
 
-    expect(PersonalAccessToken::query()->sole()->expires_at->equalTo(now()->addDays(30)))->toBeTrue();
+    $used = PersonalAccessToken::query()->sole();
+
+    expect($used->expires_at->equalTo(now()->addDays(30)))->toBeTrue()
+        ->and($used->last_used_at->equalTo(now()))->toBeTrue();
 
     $this->travel(25)->days();
     withTabletToken($token, 'GET', '/api/v1/auth/me')->assertOk();

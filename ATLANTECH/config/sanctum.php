@@ -54,6 +54,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Last Used Stamp
+    |--------------------------------------------------------------------------
+    |
+    | Off: Sanctum would stamp a token before the device check. EnsureTokenDevice
+    | stamps the use and slides the 30-day expiry only once X-Device-Id matches,
+    | so a refused request never extends a token (P1-C3, review 2).
+    |
+    */
+
+    'last_used_at' => false,
+
+    /*
+    |--------------------------------------------------------------------------
     | Token Prefix
     |--------------------------------------------------------------------------
     |
