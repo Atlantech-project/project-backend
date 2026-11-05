@@ -26,16 +26,31 @@ class EnsureMobileHeaders
     }
 
     /**
+     * Validate header values; the header name is the field in `errors` and in the message ("The X-Device-Id field is required.").
+     *
+     * @param  array<string, string|null>  $headers  Header name => value.
+     * @param  array<string, list<string>>  $rules  Header name => rules.
+     *
+     * @throws ValidationException 422 VALIDATION_FAILED.
+     */
+    public static function validateHeaders(array $headers, array $rules): void
+    {
+        $names = array_keys($headers);
+
+        Validator::make($headers, $rules, [], array_combine($names, $names))->validate();
+    }
+
+    /**
      * @param  Closure(Request): Response  $next
      *
      * @throws ValidationException 422 VALIDATION_FAILED.
      */
     public function handle(Request $request, Closure $next): Response
     {
-        Validator::make(
+        self::validateHeaders(
             ['X-App-Version' => $request->header('X-App-Version'), 'X-Device-Id' => $request->header('X-Device-Id')],
             ['X-App-Version' => AppVersion::rules(), 'X-Device-Id' => self::deviceIdRules()],
-        )->validate();
+        );
 
         return $next($request);
     }

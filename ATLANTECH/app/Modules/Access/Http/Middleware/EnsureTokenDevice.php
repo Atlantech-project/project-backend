@@ -7,7 +7,6 @@ use App\Modules\Shared\Errors\ApiProblemException;
 use App\Modules\Shared\Errors\ErrorCode;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -33,7 +32,7 @@ class EnsureTokenDevice
 
         $deviceId = $request->header('X-Device-Id');
 
-        Validator::make(['X-Device-Id' => $deviceId], ['X-Device-Id' => EnsureMobileHeaders::deviceIdRules()])->validate();
+        EnsureMobileHeaders::validateHeaders(['X-Device-Id' => $deviceId], ['X-Device-Id' => EnsureMobileHeaders::deviceIdRules()]);
 
         if ($token->device?->device_id !== $deviceId) {
             throw new ApiProblemException(ErrorCode::Unauthenticated);

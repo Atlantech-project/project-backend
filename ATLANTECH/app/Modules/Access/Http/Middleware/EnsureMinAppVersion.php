@@ -7,7 +7,6 @@ use App\Modules\Shared\Support\AppVersion;
 use App\Modules\Shared\Support\MinAppVersionSource;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -36,7 +35,7 @@ class EnsureMinAppVersion
             return $next($request);
         }
 
-        Validator::make(['X-App-Version' => $version], ['X-App-Version' => AppVersion::rules()])->validate();
+        EnsureMobileHeaders::validateHeaders(['X-App-Version' => $version], ['X-App-Version' => AppVersion::rules()]);
 
         $minimum = $this->versions->minAppVersion();
 

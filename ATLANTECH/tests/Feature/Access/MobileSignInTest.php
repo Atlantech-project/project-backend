@@ -88,7 +88,8 @@ it('answers 422 for a missing or malformed device header', function (array $head
     mobileSignIn(mobileCredentials(), $headers)
         ->assertStatus(422)
         ->assertJsonPath('code', 'VALIDATION_FAILED')
-        ->assertJsonStructure(['errors' => [$field]]);
+        ->assertJsonStructure(['errors' => [$field]])
+        ->assertJsonPath('detail', fn (string $detail) => str_contains($detail, "The {$field} field"));
 
     expect(PersonalAccessToken::query()->count())->toBe(0);
 })->with([
