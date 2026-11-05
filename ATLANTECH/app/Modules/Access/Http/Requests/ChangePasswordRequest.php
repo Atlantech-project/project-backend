@@ -22,7 +22,7 @@ class ChangePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'current_password' => ['required', 'string', 'current_password:web'],
+            'current_password' => ['required', 'string', 'current_password:sanctum'],
             'new_password' => ['required', 'string', 'max:255', 'confirmed', 'different:current_password', Password::min(8)->letters()->numbers()],
         ];
     }

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 
 const ABILITY_FREE_ROUTES = [
     'auth.login',
+    'auth.mobile.login',
     'auth.me',
     'auth.change-password',
     'auth.logout',

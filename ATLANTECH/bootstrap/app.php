@@ -3,7 +3,9 @@
 use App\Modules\Access\Http\Middleware\EnsureAbility;
 use App\Modules\Access\Http\Middleware\EnsureAccountUsable;
 use App\Modules\Access\Http\Middleware\EnsureMinAppVersion;
+use App\Modules\Access\Http\Middleware\EnsureMobileHeaders;
 use App\Modules\Access\Http\Middleware\EnsureTerminalScope;
+use App\Modules\Access\Http\Middleware\EnsureTokenDevice;
 use App\Modules\License\Http\Middleware\EnsureLicenseAllowsWrite;
 use App\Modules\Shared\Errors\ProblemRenderer;
 use App\Modules\Shared\Http\Middleware\EnsureRecordVersion;
@@ -40,9 +42,11 @@ return Application::configure(basePath: dirname(__DIR__))
          * (route binding) · version.token 409. Business rules (409 or 422) and plan limits (422) follow inside the
          * endpoint. Route binding runs after the scope checks so an unauthorised caller never gets a 404.
          * Signed-in routes use the `port.api` group and add `ability:<name>`, `terminal.scope`, `version.token`.
+         * `auth:sanctum` takes the web session first, then a mobile Bearer token, whose `X-Device-Id` is checked next (P1-C3).
          */
         $middleware->group('port.api', [
-            'auth:web',
+            'auth:sanctum',
+            EnsureTokenDevice::class,
             EnsureAccountUsable::class,
             EnsureMinAppVersion::class,
             EnsureLicenseAllowsWrite::class,
@@ -57,6 +61,8 @@ return Application::configure(basePath: dirname(__DIR__))
             ThrottleRequests::class,
             ThrottleRequestsWithRedis::class,
             AuthenticatesSessions::class,
+            EnsureTokenDevice::class,
+            EnsureMobileHeaders::class,
             EnsureAccountUsable::class,
             EnsureAbility::class,
             EnsureTerminalScope::class,

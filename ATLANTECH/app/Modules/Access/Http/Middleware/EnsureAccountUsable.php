@@ -2,6 +2,7 @@
 
 namespace App\Modules\Access\Http\Middleware;
 
+use App\Modules\Access\Models\PersonalAccessToken;
 use App\Modules\Access\Models\User;
 use App\Modules\Access\Services\SignInService;
 use App\Modules\Shared\Errors\ApiProblemException;
@@ -14,7 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Runs right after authentication on every signed-in route (P1-C2, Coding Notes §6.1).
  *
- * A deactivated user is refused and signed out on the next request (FR-AC-10). A user with `must_change_password`
+ * A deactivated user is refused and signed out on the next request (FR-AC-10): the web session ends, a mobile token is revoked
+ * (developer, 2026-11-05). A user with `must_change_password`
  * can only read their profile, change the password and log out until it is changed (FR-AC-03).
  */
 class EnsureAccountUsable
@@ -43,7 +45,7 @@ class EnsureAccountUsable
 
         if (! $user->is_active) {
             $this->audit($request, $user, ErrorCode::AccountDisabled, 'account_disabled');
-            $this->endSession($request);
+            $this->signOut($request, $user);
 
             throw new ApiProblemException(ErrorCode::AccountDisabled);
         }
@@ -62,8 +64,16 @@ class EnsureAccountUsable
         $this->signIn->recordRejectedAttempt($request->method().' /'.$request->path(), $code, $reason, $user->username, $user);
     }
 
-    private function endSession(Request $request): void
+    private function signOut(Request $request, User $user): void
     {
+        $token = $user->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->revoke();
+
+            return;
+        }
+
         Auth::guard('web')->logout();
 
         if ($request->hasSession()) {
