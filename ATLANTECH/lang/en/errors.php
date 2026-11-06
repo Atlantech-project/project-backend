@@ -23,6 +23,7 @@ return [
     'method_not_allowed' => 'This action is not supported at this address.',
     'account_disabled' => 'Your account has been disabled. Contact your port administrator.',
     'password_change_required' => 'You must change your password before you continue.',
+    'device_revoked' => 'This device has been revoked by your port administrator. Contact your port administrator to use it again.',
     'app_update_required' => 'This version of the app is no longer supported. Update the app to continue.',
     'license_read_only' => 'The port license is read-only: you can view data, but changes are blocked. Contact your port administrator.',
     'plan_limit_exceeded' => 'This would exceed a limit of the port plan. Contact your port administrator.',

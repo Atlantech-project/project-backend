@@ -22,6 +22,8 @@ enum ErrorCode: string
     case MethodNotAllowed = 'METHOD_NOT_ALLOWED';
     case AccountDisabled = 'ACCOUNT_DISABLED';
     case PasswordChangeRequired = 'PASSWORD_CHANGE_REQUIRED';
+    /** Mobile sign-in on a device the Port Admin revoked (P1-C3, lead 2026-11-01). Pending the CT-04 change that names it. */
+    case DeviceRevoked = 'DEVICE_REVOKED';
     case AppUpdateRequired = 'APP_UPDATE_REQUIRED';
     /** Reserved: the licence guard is future work (DEC-54). */
     case LicenseReadOnly = 'LICENSE_READ_ONLY';
@@ -44,7 +46,7 @@ enum ErrorCode: string
         return match ($this) {
             self::BadRequest => 400,
             self::Unauthenticated => 401,
-            self::Forbidden, self::AccountDisabled, self::PasswordChangeRequired => 403,
+            self::Forbidden, self::AccountDisabled, self::PasswordChangeRequired, self::DeviceRevoked => 403,
             self::NotFound => 404,
             self::MethodNotAllowed => 405,
             self::VersionConflict => 409,
@@ -89,6 +91,7 @@ enum ErrorCode: string
             self::MethodNotAllowed => 'Method not allowed',
             self::AccountDisabled => 'Account disabled',
             self::PasswordChangeRequired => 'Password change required',
+            self::DeviceRevoked => 'Device revoked',
             self::AppUpdateRequired => 'App update required',
             self::LicenseReadOnly => 'License is read-only',
             self::PlanLimitExceeded => 'Plan limit exceeded',

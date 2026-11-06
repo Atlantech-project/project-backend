@@ -11,11 +11,16 @@
 */
 
 use App\Modules\Access\Http\Controllers\AuthController;
+use App\Modules\Access\Http\Controllers\MobileAuthController;
+use App\Modules\Access\Http\Middleware\EnsureMobileHeaders;
 use App\Modules\MasterData\Http\Controllers\SystemInfoController;
 use App\Modules\Shared\Http\Controllers\AuditLogController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
+Route::post('auth/mobile/login', [MobileAuthController::class, 'login'])
+    ->middleware([EnsureMobileHeaders::class, 'app.version'])
+    ->name('auth.mobile.login');
 Route::get('system/info', SystemInfoController::class)->name('system.info');
 
 Route::middleware('port.api')->group(function () {

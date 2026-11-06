@@ -47,7 +47,7 @@ test('every CT-17 table exists with its plural name and no singular PortSync nam
 
 test('the Laravel framework tables sit next to the port tables', function () {
     expect(databaseTables())->toContain(
-        'migrations', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'sessions', 'password_reset_tokens',
+        'migrations', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'sessions', 'password_reset_tokens', 'personal_access_tokens',
     );
 })->group('schema');
 

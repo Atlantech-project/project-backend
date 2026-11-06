@@ -5,6 +5,8 @@ use App\Modules\Access\Http\Middleware\EnsureMinAppVersion;
 use App\Modules\Access\Models\OrganizationUnit;
 use App\Modules\Access\Models\User;
 use App\Modules\License\Http\Middleware\EnsureLicenseAllowsWrite;
+use App\Modules\MasterData\Enums\PortSettingValueType;
+use App\Modules\MasterData\Models\PortSetting;
 use App\Modules\Shared\Errors\ApiProblemException;
 use App\Modules\Shared\Errors\ErrorCode;
 use App\Modules\Shared\Http\Middleware\EnsureRecordVersion;
@@ -13,8 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
- * P2-D2 write chain order (FR-GL-01): 401, password gate, ability, 426, 423, 409 version. The three hook steps pass
- * through until P1-C3, P2-D5 and P2-D4 fill them, so the tests bind refusing fakes in their place; a fake refuses when
+ * P2-D2 write chain order (FR-GL-01): 401, password gate, ability, 426, 423, 409 version. The order tests bind refusing
+ * fakes in place of the three hook steps (the 426 one is real since P1-C3); a fake refuses when
  * the request header X-Fail names its status. Every test is rolled back.
  */
 
@@ -75,11 +77,12 @@ afterEach(function () {
     DB::disconnect();
 });
 
-it('passes a request through the app version and licence hooks while they are pass-through', function () {
+it('passes a request with a supported app version through the app version and licence hooks', function () {
     $user = makeUserWithRole(Role::PortGm);
+    PortSetting::factory()->create(['setting_key' => 'min_app_version', 'setting_value' => '1.0.0', 'value_type' => PortSettingValueType::String]);
 
     $this->actingAs($user, 'web')
-        ->withHeaders(['X-App-Version' => '0.0.1'])
+        ->withHeaders(['X-App-Version' => '1.0.0'])
         ->postJson('/api/v1/test/chain-hooks')
         ->assertOk();
 });
