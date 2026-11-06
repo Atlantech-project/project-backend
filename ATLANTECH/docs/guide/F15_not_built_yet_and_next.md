@@ -1,8 +1,10 @@
 # F15 · What is not built yet, and what comes next
 
-This is the **handover file**. It lists, as verified against the code, what does **not** exist on `develop` at `9559d35` (checked 2026-11-06; the first version was written on 2026-11-04 at `106b40e`, Sprint 2 merged), what is only a plan, what blocks what, and a recommended order for the next work. Where a statement could not be checked it says **Unverified** and what to check. Paths are inside `project-backend/ATLANTECH/` unless stated.
+This is the **handover file**. It lists, as verified against the code, what does **not** exist on `develop` at `58affe4` (checked 2026-11-06 after PR #62; the first version was written on 2026-11-04 at `106b40e`, Sprint 2 merged), what is only a plan, what blocks what, and a recommended order for the next work. Where a statement could not be checked it says **Unverified** and what to check. Paths are inside `project-backend/ATLANTECH/` unless stated.
 
-**What changed since the first version (2026-11-04 to 2026-11-06):** the mobile sign-in stack was merged into `develop`: `GET /api/v1/system/info` (P1-C5, PR 54), mobile sign-in `POST /api/v1/auth/mobile/login` with the `personal_access_tokens` table, `EnsureTokenDevice` and a **real** `EnsureMinAppVersion` (P1-C3, PR 55), mobile logout (P1-C4, PR 56) and the review fixes (PR 57: a Bearer request must send `X-App-Version`; a token of a revoked device is refused; a password change revokes the user's other tokens; `auth:sanctum` guards the whole `port.api` group). So P1-C3, P1-C4 and P1-C5 are **built** and are no longer in the "not built" list. P2-E1, P2-E2 and P2-E3 are still plans on a local branch. Everything marked "plan" below was read with `git show <branch>:ATLANTECH/docs/tasks/<file>` from a local branch; plans are intentions, not code.
+**What changed since the first version (2026-11-04 to 2026-11-06):** the mobile sign-in stack was merged into `develop`: `GET /api/v1/system/info` (P1-C5, PR 54), mobile sign-in `POST /api/v1/auth/mobile/login` with the `personal_access_tokens` table, `EnsureTokenDevice` and a **real** `EnsureMinAppVersion` (P1-C3, PR 55), mobile logout (P1-C4, PR 56) and the review fixes (PR 57: a Bearer request must send `X-App-Version`; a token of a revoked device is refused; a password change revokes the user's other tokens; `auth:sanctum` guards the whole `port.api` group). So P1-C3, P1-C4 and P1-C5 are **built** and are no longer in the "not built" list. P2-E1, P2-E2 and P2-E3 are still plans. Plans are intentions, not code.
+
+**What changed on 2026-11-06 after that (PR #62, `58affe4`):** (1) **IDEMP-01 is built**: the `Idempotency-Key` rule of CT-01 section 4 for every Bearer write (three middleware in the `port.api` group, F11 section 3.11; OpenAPI 1.8.0; CT-01 v1.5; the suite needs `memory_limit` 512M in `phpunit.xml`, F02). It was the Mobile Team's reply to the P1-C3 hand-off, which found that the server ignored the header. (2) **The three E plans are on `develop`** (`docs/tasks/P2-E1.md`, `P2-E2.md`, `P2-E3.md`), checked against the code of `8dcd151`; their "waits for P1-C3 / PR 51" lines are corrected. (3) **P2-E3 has a new action, "restore a revoked device"**: `POST /users/{user}/devices/{device}/restore` clears `user_devices.revoked_at` and leaves the revoked tokens revoked (the user signs in again); audited; Port Admin only; a normal write in READ_ONLY (plan default for the lead to confirm). (4) **CT-04 v1.2 is Approved** by the Mobile Team (reply of 2026-11-06, DEC-60; the contract is `Approved v1.2`). (5) `docs/reference` is in sync with the shared files again (`sync-check`: 68 in sync, none changed).
 
 ## 1. What it does
 
@@ -19,12 +21,12 @@ It does not describe anything that works: the other feature files do (F01 to F14
 
 Not a runtime feature. How this list was produced (repeat it to refresh the file):
 
-1. `git log -1` on `develop` (`9559d35`).
+1. `git log -1` on `develop` (`58affe4`).
 2. `php artisan route:list --except-vendor`: the real routes (section 3.1).
 3. `find app/Modules -name '*.php'` split into models, enums and everything else: which modules have code beyond models (section 3.3).
 4. `grep` of `app`, `routes`, `config`, `database` for names a plan promises (`UserAdministrationService`, `FirstPortAdminSeeder`, `Queue::`, `Redis::`, `Broadcast`, `Reverb`): none found in code. (On 2026-11-04 the same search also looked for `personal_access_tokens`, `AppVersionGate` and `MinimumAppVersionProvider`; `personal_access_tokens` exists now, and the 426 reader exists under the names `MinAppVersionSource` and `AppVersion`.)
 5. `node docs/reference/lookup.mjs <ID>` and `docs/reference/roadmap/roadmap-tasks.json` for each task's team, sprint, dependencies.
-6. `git branch -a` and `git show <branch>:ATLANTECH/docs/tasks/<ID>.md` for the plan files that are not on `develop`.
+6. `ls docs/tasks` for the plan files (all on `develop` since PR #62); `git branch -a` and `git show <branch>:ATLANTECH/docs/tasks/<ID>.md` only for a plan that is not there.
 
 ## 3. Every piece of code
 
@@ -45,7 +47,7 @@ Here "piece" means each thing that is **absent or empty**, with the evidence.
 | `AiBridge` job publisher, run rows, completion consumer, mock workers | `app/Modules/AiBridge/` | the provider's comment promises them ("job publisher (JSON envelope v1 on an unprefixed Redis connection), run rows, completion consumer and mock workers (P3)"); the module has **no model and no class** except the two commands `CreateWorkerAccounts` and `GenerateContractsSchema`. Nothing in `app/` calls `Queue::`, `Redis::`, `dispatch(` or `ShouldQueue` | `grep -rln "Queue::\|Redis::\|dispatch(\|ShouldQueue\|Broadcast\|Reverb" app routes` is empty | P3-I1 (Sprint 3, "Job publisher: JSON envelope v1 (RPUSH)…") and the P3 chain |
 | `Realtime` module | `app/Modules/Realtime/RealtimeServiceProvider.php` | empty provider. `BROADCAST_CONNECTION=log`; no Reverb, no SSE endpoint, no `ResourceChanged` event | `.env.example`; F01 | P5-N2 and the Sprint 3 to 5 realtime tasks (`P2-F7` defines the `ResourceChanged` event) |
 | Empty providers: `Environment`, `Berthing`, `Baplie`, `Recommendation`, `Plan`, `Yard`, `Dispatch`, `Execution`, `Learning`, `Realtime` | `app/Modules/<M>/<M>ServiceProvider.php` | empty classes (no routes, gates or commands). **`MasterData` is no longer in this list:** its provider binds `MinAppVersionSource` since P1-C3 | F01 section 3.9 | each module's later tasks |
-| Shared kernel promises | `SharedServiceProvider` comment | "the SM-4 transition service, the ResourceChanged event, status enums, terminal-scope filters" | the provider registers only `version.token` and two commands | SM-4 transition service: P3-G2; `ResourceChanged`: P2-F7 |
+| Shared kernel promises | `SharedServiceProvider` comment | "the SM-4 transition service, the ResourceChanged event, status enums, terminal-scope filters" | the provider registers only `version.token`, the three idempotency aliases (`idempotency`, `idempotency.key`, `idempotency.replay`, IDEMP-01) and two commands | SM-4 transition service: P3-G2; `ResourceChanged`: P2-F7 |
 
 Removed from this table on 2026-11-06 because they are built: `EnsureMinAppVersion` (real, F11), the mobile guard (`auth:sanctum` in the `port.api` group), `ApiProblemException::appUpdateRequired` (now thrown by `EnsureMinAppVersion`).
 
@@ -86,6 +88,7 @@ No `license_states` row, no real first Port Admin (only demo users in non-produc
 | P1-C5 | 54 | `GET /api/v1/system/info`, public, never 426: `port_id` (the profile's `public_id`), `port_code`, `port_name`, `license_mode` (fixed `FULL`), `token_warning_days_left` (fixed `null`), `min_app_version`; 503 while there is no `port_profiles` row 1 or no valid `min_app_version` | `MasterData/Http/Controllers/SystemInfoController.php`, `MasterData/Services/PortSettingMinAppVersion.php`, `Shared/Support/MinAppVersionSource.php`, `AppVersion.php` |
 | P1-C3 | 55, 57 | `POST /api/v1/auth/mobile/login` (headers `X-Device-Id`, `X-App-Version`; body `username`, `password`, `platform`); the `personal_access_tokens` migration (`2026_11_05_100000`): Sanctum columns plus `user_device_id` (FK to `user_devices`) and `revoked_at`; model `PersonalAccessToken` (sliding 30 days, `revoke()`, `delete()` refused); `EnsureTokenDevice`, `EnsureMobileHeaders`; a real `EnsureMinAppVersion`; `ErrorCode::DeviceRevoked` (403) | `Access/Http/Controllers/MobileAuthController.php`, `Access/Services/MobileSignInService.php`, `Access/Http/Middleware/*`, `Access/Models/PersonalAccessToken.php` |
 | P1-C4 | 56 | `POST /api/v1/auth/logout` revokes the Bearer token (204) and ends the web session for a cookie request | `AuthController::logout` |
+| IDEMP-01 | 62 | The `Idempotency-Key` rule for every Bearer write (POST, PUT, PATCH, DELETE): a retried write replays the first answer (`Idempotent-Replayed: true`), another request under the same key is 422 `IDEMPOTENCY_KEY_REUSED`, a missing or malformed key is 422, twins run once under a cache lock (503 + `Retry-After` while the first still runs); entries in the cache store for 24 h, encrypted, keyed by the token hash; `POST /sync/events` exempt by route name `sync.events.store`; web unaffected. No table, no migration. OpenAPI 1.8.0, CT-01 v1.5, error codes v1.4. 853 tests pass | `Shared/Http/Middleware/{IdempotentWrite,RequireIdempotencyKey,ReplayIdempotentWrite}.php`, `Shared/Support/IdempotencyStore.php`, `config/idempotency.php`, F11 section 3.11 |
 | Review fixes | 57 | `X-App-Version` required on every Bearer request; a token whose device was revoked answers 401 and is revoked; a password change revokes the user's other tokens and keeps the current one (decision D-A); a deactivated user's token is revoked; malformed stored `min_app_version` answers 503 | `EnsureTokenDevice`, `PasswordChangeService`, `EnsureAccountUsable`, `PortSettingMinAppVersion` |
 
 ## 4. Why this design
@@ -98,7 +101,7 @@ Why things are left empty on purpose:
 | Licence is only a pass-through | DEC-54 (Closed): licence, SaaS and READ_ONLY are future work. | `split/decisions/DEC-54.md` |
 | Empty module providers | The module layout and the layer test (`ModuleArchitectureTest`) are fixed first; a module cannot be added later without placing it. | P1-A1, F01 |
 | Plans written but code not written for P2-E | The lead decided to **implement the users, roles and devices endpoints by hand** ("plan only, the lead implements it by hand", scope change 2026-11-04 in the E1/E2/E3 plans). | P2-E1..E3 plans, section 8 |
-| The mobile chain merged although CT-04 v1.2 is not yet approved | A device revoked by the Port Admin must be refused at sign-in; the code follows DEC-60 (Closed), the contract text still says "Proposed v1.2". | DEC-60; `P1-C3.md` Q2 |
+| The mobile chain merged before CT-04 v1.2 was approved | A device revoked by the Port Admin must be refused at sign-in; the code followed DEC-60 (Closed) while the contract text said "Proposed v1.2". **Resolved 2026-11-06:** the Mobile Team approved v1.2. | DEC-60; `P1-C3.md` Q2 and its progress log |
 
 ## 5. How it connects
 
@@ -110,7 +113,8 @@ P2-E1 users ──► P2-E2 roles
 P2-D5 licence guard + plan limits (no plan) ──► fills EnsureLicenseAllowsWrite (423); P2-E1 plan limit uses a simple check first
 P2-D1..D4 (merged) ──► P2-E*, P2-F1..F5, every endpoint
 P1-C3/C4/C5 (merged) ──► MB-P52, MB-P53, MB-P58 (Mobile), P5-N2, P2-E3
-CT-04 v1.2 (Proposed) ──► Mobile Team's OK, then the contract header changes to Approved
+CT-04 v1.2: Approved by the Mobile Team on 2026-11-06 (nothing waits on it)
+IDEMP-01 (built) ──► every later Bearer write gets the idempotency rule from `port.api`; P5 sync (`POST /sync/events`) must be named `sync.events.store`
 ```
 
 ## 6. Data
@@ -120,9 +124,10 @@ Tables the unbuilt work will touch, and their state:
 | Table / column | State | Needed by |
 | --- | --- | --- |
 | `personal_access_tokens` | **Exists** (migration `2026_11_05_100000_create_personal_access_tokens_table`, 98th migration): `id`, `tokenable` morph, `user_device_id` (NOT NULL, FK `fk_pat_user_device`), `name` (the device id), `token` (unique 64), `abilities`, `last_used_at`, `expires_at` (indexed), `revoked_at`, timestamps. Never deleted. No worker grant. | P2-E3 (list devices, revoke) uses it |
-| `user_devices` | exists; written by mobile sign-in (`device_id`, `platform`, `app_version`, `last_seen_at`) and read by `EnsureTokenDevice`; the code **never sets `revoked_at`** itself, so a revoked device can only come from P2-E3 or a manual update | P2-E3 |
+| `user_devices` | exists; written by mobile sign-in (`device_id`, `platform`, `app_version`, `last_seen_at`) and read by `EnsureTokenDevice`; the code **never sets `revoked_at`** itself, so a revoked device can only come from P2-E3 or a manual update; P2-E3 will also **clear** it (the restore action, added to the plan on 2026-11-06) | P2-E3 |
 | `license_states` (`max_users` and others) | exists (model `LicenseState`); nothing reads it | P2-E1 plan limit, P2-D5, P2-D6, P6-Q |
 | `port_settings.min_app_version` | seeded `1.0.0` (F13); **read** by `PortSettingMinAppVersion` | built |
+| Cache keys `idempotency:*` and `idempotency-lock:*` | **Exist at run time** (cache store, 24 h, no table): the stored answers of Bearer writes, encrypted; flushing the cache loses them (a retry then runs the write again) | IDEMP-01 (built, F11 section 3.11) |
 | `port_profiles` id 1 | seeded only with the demo port; **read** by `GET system/info` | built; provisioning for production not built |
 | `users`, `user_role_assignments` | used by sign-in and scope; no write endpoints | P2-E1, P2-E2 |
 
@@ -131,41 +136,44 @@ Tables the unbuilt work will touch, and their state:
 There are no tests for unbuilt work, by definition. What exists that you must keep green while you build:
 
 - `RouteAbilityCoverageTest`, `RouteVersionCoverageTest`, `WriteChainOrderTest` (F09, F11, F12): the first new route trips them if it skips `port.api`, `ability:` or `version.token:` (PUT/PATCH). The ability allow-list now has six names (`auth.login`, `auth.mobile.login`, `auth.me`, `auth.change-password`, `auth.logout`, `system.info`).
-- `OpenApiDriftTest` (F04): a new route must be added to `openapi/port-api.yaml` (now 1.6.0) in the same PR.
+- `OpenApiDriftTest` (F04): a new route must be added to `openapi/port-api.yaml` (now 1.8.0) in the same PR; a new write that accepts a Bearer token must also list the `IdempotencyKey` parameter and a 422, or the seventh test fails.
 - `ModuleArchitectureTest` (F01): a new class must obey the layer order.
 - `SchemaTablesTest`, `SchemaConstraintsTest`, `WorkerGrantsTest`, `ContractsSchemaTest` (F05, F14): they name table counts and the last migration (101 tables, last `2026_11_05_100000_...` today); every new migration needs these updated.
 - `TokenPruneNotScheduledTest`: do not schedule `sanctum:prune-expired` (tokens are never deleted).
-- `MobileSignInTest`, `MobileTokenTest`, `MobileLogoutTest`, `SystemInfoTest`, `PasswordChangeTest` (81 tests, all passed on 2026-11-06 on an own database): the behaviour P2-E3 will extend.
+- `MobileSignInTest`, `MobileTokenTest`, `MobileLogoutTest`, `SystemInfoTest`, `PasswordChangeTest` (86 tests, all passed on 2026-11-06 on an own database): the behaviour P2-E3 will extend.
+- `IdempotencyTest`, `IdempotencyConcurrencyTest`, `IdempotencyStoreTest` (34 tests with the drift test: 41): the idempotency rule (F11 section 3.11). Every Bearer write in a test now needs a UUID v4 `Idempotency-Key`.
+- The whole suite: 853 tests, 5242 assertions pass with plain `php artisan test --compact` (2026-11-06, `58affe4`); it needs the `memory_limit` 512M that `phpunit.xml` now sets (F02).
 - The first test of `WriteChainOrderTest` changed when `EnsureMinAppVersion` was filled; it must change again when `EnsureLicenseAllowsWrite` gets a body (F11).
 - In tests, `tests/TestCase.php::be()` forgets the auth guards before each `actingAs`, because the `sanctum` guard keeps the first user it resolved (F11).
 
 ## 8. Gotchas and invariants
 
-- **A plan is not code.** `docs/tasks/P2-E1.md`, `P2-E2.md` and `P2-E3.md` exist only on the local branch `claude/p2-e-users-404561` (tip `9822b57`, cut from `develop` at `5c6d3d4`), not on `develop` and not on GitHub (`git ls-remote origin "claude/p2-e-users-404561"` printed nothing on 2026-11-06; if the network or access failed silently this is Unverified: re-run it). The C-chain plans are on `develop` now (`P1-C3.md`, `P1-C4.md`, `P1-C5.md`), but their Status is still `In review`. Do not tell another team that E endpoints exist.
-- **The E plans are older than the code they build on.** They say "P1-C3 ... not merged", "implementation waits for P1-C3 on `develop`" and "stacked on PR 51". P1-C3 and PR 51 are merged now, so those "waits" are satisfied. Re-read each plan's header, update the Depends/Blocked lines, and check the plan against the real classes before writing code: `PersonalAccessToken` (with `revoke()` and `device()`), `UserDevice`, `EnsureAccountUsable` (already revokes a deactivated user's mobile token), `PasswordChangeService` (already revokes other tokens).
-- **`EnsureTokenDevice` and device revocation:** a token of a revoked device is refused with 401 on its next use, but the code that **sets** `user_devices.revoked_at` is P2-E3 (not built). Revoking "all tokens" must set `revoked_at` on the token rows (never delete).
+- **A plan is not code.** `docs/tasks/P2-E1.md`, `P2-E2.md` and `P2-E3.md` are on `develop` since PR #62 (Status Ready, "plan only, the lead implements it by hand"); there is **no** `users`, `roles` or `devices` endpoint. The local branch `claude/p2-e-users-404561` still exists with the earlier copies; use the `develop` ones. The C-chain plans are on `develop` too (`P1-C3.md`, `P1-C4.md`, `P1-C5.md`), but their Status is still `In review`. Do not tell another team that E endpoints exist.
+- **The E plans were brought up to date on 2026-11-06** (PR #62): the "P1-C3 not merged / waits for PR 51" lines are corrected and the sources point to code on `develop` (`8dcd151`). Still check each plan against the real classes before writing code: `PersonalAccessToken` (with `revoke()` and `device()`), `UserDevice`, `EnsureAccountUsable` (already revokes a deactivated user's mobile token), `PasswordChangeService` (already revokes other tokens).
+- **`EnsureTokenDevice` and device revocation:** a token of a revoked device is refused with 401 on its next use, but the code that **sets** `user_devices.revoked_at` is P2-E3 (not built). Revoking "all tokens" must set `revoked_at` on the token rows (never delete) **in the same transaction**: a token is otherwise revoked only when it is next used, and a restore in between would bring it back. **Restore** (new in the E3 plan) only clears the device row and never brings a token back: sign-in on a revoked device is 403 `DEVICE_REVOKED` (`MobileSignInService`), after a restore it works and issues a new token.
+- **Every Bearer write needs an `Idempotency-Key`** (UUID v4; IDEMP-01, F11 section 3.11): P2-E3's routes are Port Admin web routes, but any Bearer caller of a new write gets 422 without the key, and its OpenAPI operation must list the parameter and the 422. `POST /sync/events` (P5) must be named `sync.events.store`.
 - **Every Bearer request needs `X-Device-Id` and `X-App-Version`** (422 otherwise); a new endpoint for tablets needs nothing special, the group does it.
 - **Terminal rules:** every new route with `{terminal}` needs `terminal.scope` (test-enforced); a body or query terminal id needs `TerminalScope::authorize` (F09).
 - **Roadmap vs backend task file:** `P2-D5` and `P2-D6` appear in `docs/reference/backend/atlantech_backend_tasks.md:73-74` but are **not in** `roadmap-tasks.json` (`lookup.mjs P2-D5` prints no team or sprint). The roadmap is the authority on sprint and order (README Source of truth rule 2), so D5/D6 have no sprint on the roadmap; ask the lead. Meanwhile Sprint 3 master-data tasks and Sprint 5/6 licence tasks (`P6-Q1`) refer to D5.
 - **Sprint 2 is "merged" but not complete:** by the roadmap, Sprint 2 backend tasks still open are P2-E1, P2-E2, P2-E3 and BE-PK2 (section 9.1). P1-C3, P1-C4 and P1-C5 are done. The open ones carry over.
-- **`docs/reference` is behind the shared files** (five files `CHANGED` in `sync-check`, no DEC-60 in the repo index): `lookup.mjs DEC-60` prints "not in the index". Run `sync-check --apply` on a branch before planning a task that cites DEC-60 or CT-01 v1.4.
+- **`docs/reference` is in sync again** (2026-11-06: `sync-check` says 68 in sync, none changed, CT-01 v1.5 and error codes v1.4 included; the earlier stale copies and the missing DEC-60 were fixed by PRs #58 and #61). Run `node docs/reference/sync-check.mjs` before planning a task anyway.
 
 ## 9. How to extend it
 
-### 9.1 Status of every planned, unbuilt task (as of `develop` `9559d35`)
+### 9.1 Status of every planned, unbuilt task (as of `develop` `58affe4`)
 
-Team BE, Sprint 2 unless stated. "Plan" = a plan file on a local unmerged branch. Dependencies are from `lookup.mjs` and the plans.
+Team BE, Sprint 2 unless stated. "Plan" = a plan file in `docs/tasks` (on `develop` since PR #62). Dependencies are from `lookup.mjs` and the plans.
 
 | Task | What (title) | Sprint / feature | Plan file and status | Waits for | Unblocks |
 | --- | --- | --- | --- | --- | --- |
-| **P2-E1** | `POST /users` (server-generated one-time password shown once, `PLAN_LIMIT_EXCEEDED` 422), `POST /users/{user}/deactivate` and `/activate` under a row lock (409 `CONFLICT` for self or last Port Admin), `GET /users`, `GET /users/{user}`; `FirstPortAdminSeeder` from `.env`; new `ErrorCode::Conflict` (`CONFLICT`, 409); `UserAdministrationService` | 2 / FT-03, effort 1 (+0.5) | `P2-E1.md` on `claude/p2-e-users-404561`: **Ready** (plan only; **the lead implements it by hand**). Lead's answers: generic `CONFLICT` code; simple plan check now (Shared interface, License implementation); first admin by seeder; password generated by the server; list endpoints included; activate included | P2-D1, P2-D3, P2-D2/D4 (all merged) | P2-E2, P2-E3, FE-045 (P-23, P-24) |
+| **P2-E1** | `POST /users` (server-generated one-time password shown once, `PLAN_LIMIT_EXCEEDED` 422), `POST /users/{user}/deactivate` and `/activate` under a row lock (409 `CONFLICT` for self or last Port Admin), `GET /users`, `GET /users/{user}`; `FirstPortAdminSeeder` from `.env`; new `ErrorCode::Conflict` (`CONFLICT`, 409); `UserAdministrationService` | 2 / FT-03, effort 1 (+0.5) | `P2-E1.md` on `develop`: **Ready** (plan only; **the lead implements it by hand**). Lead's answers: generic `CONFLICT` code; simple plan check now (Shared interface, License implementation); first admin by seeder; password generated by the server; list endpoints included; activate included | P2-D1, P2-D3, P2-D2/D4 (all merged) | P2-E2, P2-E3, FE-045 (P-23, P-24) |
 | **P2-E2** | `POST /users/{user}/roles` (assign a role, unit checked; ends the current one in the same transaction, DEC-36) and `POST /users/{user}/roles/end` (`active_to`), both with the user's `version`; role history stays | 2 / FT-03, effort 0.75 | `P2-E2.md`: **Ready** (plan only). Answers: a Port Admin may change or end their own role and assign to a deactivated user; the last-admin rule still applies | P2-E1 code, DEC-36 (Closed) | FE-045 (P-24 role history) |
-| **P2-E3** | List a user's devices; revoke one device or all mobile tokens (web sessions are not touched; allowed in READ_ONLY) | 2 / FT-03, effort 0.5 | `P2-E3.md`: **Ready** (plan only). Its text says the implementation "waits for P1-C3 on `develop`": that wait is over | P2-E1; P1-C3 is **built** | FE-046 (P-25 Registered Devices) |
+| **P2-E3** | List a user's devices; revoke one device or all mobile tokens (web sessions are not touched; allowed in READ_ONLY); **restore a revoked device** (`POST /users/{user}/devices/{device}/restore`, `devices.manage` = Port Admin only; clears `revoked_at`, revoked tokens stay revoked, audited; added 2026-11-06 after the Mobile Team showed "sign-in stays available in case the admin restores the device") | 2 / FT-03, effort 0.75 | `P2-E3.md`: **Ready** (plan only; brought up to date on 2026-11-06). Plan defaults for the lead to confirm: restore does not restore tokens; restore is blocked in READ_ONLY once P2-D5 fills the hook | P2-E1; P1-C3 is **built** | FE-046 (P-25 Registered Devices) |
 | **BE-PK2** | API readiness pack for FRR 3 (CT-23): endpoints, examples, demo data, live events and known gaps, written to `PortHub/contracts/readiness/FT-xx.md` with skill `api-readiness-pack` | 2 / FT-13 | **No plan file** (BE-PK1 is Done and in `docs/tasks`; PortHub has `readiness/FT-02.md` and the template only) | BE-PK1 (done). The mobile sign-in endpoints it would document are merged; E1..E3 are not | PL-FRR3 (Sprint 3 Feature Readiness Review), BE-PK3 |
 | **P2-D5** | Licence guard on `license_states` (READ_ONLY and SETUP allow-lists as route tags, 423) and the plan-limit service (422) | not on the roadmap (`atlantech_backend_tasks.md:73`, effort 1, depends on P2-D2, AIBD-023) | **no plan file** | P2-D2 (merged); DEC-54 treats licence as future work; open integration decision D-11 (weather pulls and Part 3 in READ_ONLY) blocks P6-Q1 | fills `EnsureLicenseAllowsWrite`; P2-D6 |
 | **P2-D6** | `GET /license/state` for the banner | not on the roadmap (`:74`, effort 0.25, depends on P2-D5) | no plan | P2-D5 | the web banner |
 
-Done since the first version (no longer "not built"): **P1-C5**, **P1-C3**, **P1-C4** (PRs 54 to 57). Their unblocked Mobile tasks: MB-P53 (port identification), MB-P52 (tablet login), MB-P58 (settings and session), and P5-N2 (mobile WebSocket) per `lookup.mjs`.
+Done since the first version (no longer "not built"): **P1-C5**, **P1-C3**, **P1-C4** (PRs 54 to 57) and **IDEMP-01** (PR 62, a task outside the roadmap list, named by the lead). Their unblocked Mobile tasks: MB-P53 (port identification), MB-P52 (tablet login), MB-P58 (settings and session), and P5-N2 (mobile WebSocket) per `lookup.mjs`.
 
 ### 9.2 What Sprint 2 unblocked for Sprint 3 and later
 
@@ -191,7 +199,7 @@ Every one of these must use `port.api`, `ability:`, `terminal.scope` where there
 
 | Item | State (shared master files and PortHub `main`, 2026-11-06) | Blocks |
 | --- | --- | --- |
-| **CT-04 v1.2 (revoked device)** | **Proposed v1.2 (DEC-60), "waiting for Mobile Team approval"**; Approved v1.1 is the last approved version (the same line is in the shared `Code Notes` file and in PortHub). DEC-60 is Closed. `error-codes.md` v1.3 already lists `DEVICE_REVOKED` (introduced by P1-C3); CT-01 is v1.4 and CT-03 v1.1. The Backend wrote a hand-over note for the Mobile Team (`Code Notes/Mobile_Team_CT-04_v1.2_Handoff.md`, a draft "the lead sends"). The P1-C3 plan said not to merge before approval; the code merged anyway (PRs 55, 57). | Nothing in the code. The contract text stays "Proposed" until the Mobile Team agrees. |
+| **CT-04 v1.2 (revoked device)** | **Approved v1.2 (DEC-60)**: the Mobile Team replied on 2026-11-06 with no objection and confirmed the `DEVICE_REVOKED` handling (recorded in the P1-C3 progress log; PortHub #46 moved the status). `error-codes.md` is v1.4, CT-01 v1.5, CT-03 v1.1. | Nothing. (Until 2026-11-06 the code had merged ahead of the contract text.) |
 | **DEC-30 numeric thresholds register** | Open, owner AI Team, close-by Sprint 2 (overdue), `Code Notes/ATLANTECH_Decisions.md:50` (line was 43 on 2026-11-04; the file grew). Depends on QA-AI1; decides CT-25; affects AI-008, AI-072 | the port-wide default values of `safety_constraints` that the AI seed spec carries (P2-F9, P2-F5 defaults) |
 | **DEC-59** | **Closed 2026-11-04** (Option 1); the `docs/reference` copy still says Open (stale, run `sync-check --apply`) | nothing now |
 | **DEC-60** | Closed (decision of 2026-11-01); not in the `docs/reference` index yet (stale copy) | nothing now |
@@ -202,9 +210,9 @@ Every one of these must use `port.api`, `ability:`, `terminal.scope` where there
 
 ### 9.4 Recommended next steps (this guide's recommendation; the lead decides)
 
-1. **Close out the merged mobile work** (small, no code): set `Status` to Done in `docs/tasks/P1-C3.md`, `P1-C4.md`, `P1-C5.md`; run `node docs/reference/sync-check.mjs --apply` on a branch to bring in the five changed documents (CT-01 v1.4, error-codes v1.3, CT-03 v1.1, Contracts, Decisions with DEC-59 and DEC-60 Closed); push or merge the E plan branch into `develop` so it is not lost on a local machine.
-2. **Get the Mobile Team's OK on CT-04 v1.2** (send the hand-over note) and then change the CT-04 header from Proposed to Approved v1.2; confirm the assumed defaults D3 to D11 of P1-C3, especially D11 (audit of 426).
-3. **P2-E1, then E2, then E3** (the lead implements these by hand according to the plans). First update each plan's header and facts to the merged state (section 8). E1 first because E2 and E3 reuse its `UserAdministrationService`, `CONFLICT` code and last-Port-Admin rule. E1 is also the first endpoint that exercises the version token: add the two-connection race test the P2-D4 review asked for (F12). E3 needs no more waiting: its table and model exist.
+1. **Close out the merged mobile work** (small, no code): set `Status` to Done in `docs/tasks/P1-C3.md`, `P1-C4.md`, `P1-C5.md`; run `node docs/reference/sync-check.mjs --apply` on a branch to bring in the five changed documents (CT-01 v1.4, error-codes v1.3, CT-03 v1.1, Contracts, Decisions with DEC-59 and DEC-60 Closed); (the five documents were synced on 2026-11-06 and the E plans are on `develop`, so only the `Status` changes remain).
+2. **Done 2026-11-06: the Mobile Team approved CT-04 v1.2.** Still open: confirm the assumed defaults D3 to D11 of P1-C3, especially D11 (audit of 426).
+3. **P2-E1, then E2, then E3** (the lead implements these by hand according to the plans). The plans were updated to the merged state on 2026-11-06 (section 8); E3 now also contains the restore action. E1 first because E2 and E3 reuse its `UserAdministrationService`, `CONFLICT` code and last-Port-Admin rule. E1 is also the first endpoint that exercises the version token: add the two-connection race test the P2-D4 review asked for (F12). E3 needs no more waiting: its table and model exist; confirm its two plan defaults (restore does not bring tokens back; restore blocked in READ_ONLY).
 4. **BE-PK2**: write the readiness pack for FRR 3 with the `api-readiness-pack` skill after E1..E3 are merged (or list them as "Known gaps"); the mobile endpoints it can document now.
 5. **Decide P2-D5/D6** with the lead (not on the roadmap): whether the 423 guard and plan-limit service are scheduled; P2-E1 uses a simple plan check meanwhile.
 6. **Sprint 3 starts** (P2-F1..F5, P2-F9, P3-G1/G2, P3-I1): follow the route checklist in F11 section 9. Close or chase DEC-30 and DEC-38 before P2-F5 and P2-F9 need them.
@@ -222,7 +230,7 @@ All read-only, from `project-backend/ATLANTECH`, run on 2026-11-06.
 git log --oneline -1
 php artisan route:list --except-vendor
 ```
-Real: `9559d35 Merge pull request #57 from Atlantech-project/claude/p1-c-review-fixes-949f5a`; eight routes (section 3.1), including `POST api/v1/auth/mobile/login` and `GET api/v1/system/info`.
+Real: `58affe4 Merge pull request #62 from Atlantech-project/claude/idempotency-and-e-plans-e5b324` (earlier in the day `9559d35`, PR #57); eight routes (section 3.1), including `POST api/v1/auth/mobile/login` and `GET api/v1/system/info`.
 
 ```powershell
 node docs/reference/lookup.mjs P1-C3 P1-C5 P2-E1 P2-E3 BE-PK2 P2-D5 DEC-60
@@ -233,7 +241,7 @@ Real (extract, from the repo copy of the index): `P1-C3 … team: BE · sprint: 
 git -C ..\ branch -a
 git -C ..\ show claude/p2-e-users-404561:ATLANTECH/docs/tasks/P2-E3.md
 ```
-Real: the local branch `claude/p2-e-users-404561` (tip `9822b57`, plans only: `git diff --stat` against `develop` shows three files, 482 lines); `P2-E3.md` header `Status | Ready (plan only; the lead implements it by hand, scope change 2026-11-04)` and `Depends on … P1-C3 … not merged` (outdated). `claude/p1-c-mobile-signin-097e28` still exists as a local branch; its content is on `develop`.
+Real (until 2026-11-06): the local branch `claude/p2-e-users-404561` (tip `9822b57`, plans only) held the three plans. They are on `develop` now: `Get-Content docs/tasks/P2-E3.md -TotalCount 12` shows `Status | Ready (plan only; … checked against develop 8dcd151 …, when the action "restore a revoked device" was added)` and `Depends on … P1-C3 (merged, PR 55)`. `claude/p1-c-mobile-signin-097e28` still exists as a local branch; its content is on `develop`.
 
 ```powershell
 Select-String -Path (Get-ChildItem -Recurse app,routes,config,database -Include *.php).FullName -Pattern "UserAdministrationService|FirstPortAdminSeeder|Queue::|Redis::" | Select-Object -First 5
@@ -244,14 +252,17 @@ Expected (this exact command was run on 2026-11-04 with a wider pattern list; th
 $env:DB_DATABASE="atlantech_testing_g4"; $env:DB_SCHEMA_TEST_DATABASE="atlantech_testing_g4"
 vendor/bin/pest tests/Feature/Access/MobileSignInTest.php tests/Feature/Access/MobileTokenTest.php tests/Feature/Access/MobileLogoutTest.php tests/Feature/MasterData/SystemInfoTest.php tests/Feature/Access/PasswordChangeTest.php
 ```
-Real: `81 passed (392 assertions)` in about 40 s.
+Real (2026-11-06, `58affe4`, own database `atlantech_testing_g5`): `86 passed (430 assertions)` in about 36 s.
 
-`php artisan test` of the whole suite: not run (instructions forbade it). The P1-C3 plan reports 794 tests passed on its branch before the review fixes; not re-checked here.
+`php artisan test --compact` of the whole suite, without a database override: **853 tests passed, 5242 assertions** (2026-11-06, the PR #62 branch before the merge; it needs the 512M `memory_limit` from `phpunit.xml`). Run by the IDEMP-01 session, not by this guide's pass.
 
 ## 11. Open points
 
-- **Plan branch is local only:** `git ls-remote origin` for `claude/p2-e-users-404561` printed nothing on 2026-11-06 (empty output; re-run to be sure). Push it or move the plan files to `develop` before the machine is lost.
-- **CT-04 v1.2 approval** by the Mobile Team is open; the contract header still says Proposed (section 9.3).
+- **Plan branch:** closed on 2026-11-06 (the plans are on `develop`). The old local branch `claude/p2-e-users-404561` can be deleted when the lead agrees.
+- **CT-04 v1.2** is Approved (2026-11-06, section 9.3).
+- **The Mobile Team must send `Idempotency-Key`** on every Bearer write (logout, change-password and everything later); a client that does not gets 422.
+- **E3 plan defaults to confirm:** restore does not bring tokens back; restore is not allowed in READ_ONLY (the lead may add it to the allow-list when P2-D5 is planned).
+- **Idempotency known limits** (F11 section 3.11): a 5xx after the endpoint's commit is not stored; no cap on stored bodies; an `APP_KEY` change without `previous_keys` loses the entries; the refusals of the idempotency steps are not audited.
 - **Plan statuses not closed out:** `P1-C3.md`, `P1-C4.md`, `P1-C5.md` say `In review`.
 - **Unverified:** whether the `docs/reference` copy of the decisions has other stale statuses beyond DEC-59 and the missing DEC-60 (run `sync-check`, then `lookup.mjs` on the IDs you need).
 - **Unverified:** whether the E plans assume anything else that changed with PRs 54 to 57 (for example how `EnsureAccountUsable` ends a mobile session now, or the `X-App-Version` requirement for Bearer tests). Read them against `F11` before implementing.

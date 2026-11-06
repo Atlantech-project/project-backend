@@ -1,6 +1,6 @@
 # F04 · The OpenAPI contract
 
-Task origin: P1-A4 (Sprint 1), kept current by every endpoint task since (P1-C1, P1-C2, P2-F8). Facts first checked against `develop` at `106b40e` (file at 1.2.0, 5 paths), **updated on 2026-11-06 against `9559d35`: the file is at `info.version` 1.6.0 with 7 paths** (P1-C5 system info, P1-C3 mobile sign-in and Bearer security, P1-C4 sign-out, P1-C3 review fixes). Paths are inside `project-backend/ATLANTECH/` unless stated. Contracts involved: **CT-02** (Port API OpenAPI file, Approved v1.0.0 on 2026-10-30), **CT-01** (the conventions it describes, see F03) and **DEC-13** (Closed 2026-10-29, Option 1).
+Task origin: P1-A4 (Sprint 1), kept current by every endpoint task since (P1-C1, P1-C2, P2-F8). Facts first checked against `develop` at `106b40e` (file at 1.2.0, 5 paths), **updated on 2026-11-06 against `9559d35`: the file was at `info.version` 1.6.0 with 7 paths**, and again against `58affe4`: **1.8.0, still 7 paths** (1.7.0: `X-XSRF-TOKEN` is web only on logout and change-password, backend #60; 1.8.0: `Idempotency-Key` on the Bearer writes, IDEMP-01, backend #62 and PortHub #51) (P1-C5 system info, P1-C3 mobile sign-in and Bearer security, P1-C4 sign-out, P1-C3 review fixes). Paths are inside `project-backend/ATLANTECH/` unless stated. Contracts involved: **CT-02** (Port API OpenAPI file, Approved v1.0.0 on 2026-10-30), **CT-01** (the conventions it describes, see F03) and **DEC-13** (Closed 2026-10-29, Option 1).
 
 ## 1. What it does
 
@@ -37,7 +37,7 @@ The pairing matters because PortHub holds the copy the other teams read, while o
 | Key | Content |
 | --- | --- |
 | `openapi` | `3.0.3` (the drift test accepts any `3.0.x`). |
-| `info` | `title: ATLANTECH Port API`, `version: '1.2.0'`, a description that restates the CT-01 rules (prefix, UTC times, problem format, paging, opaque version token), `contact: ATLANTECH Backend Team`. |
+| `info` | `title: ATLANTECH Port API`, `version: '1.8.0'`, a description that restates the CT-01 rules (prefix, UTC times, problem format, paging, opaque version token), `contact: ATLANTECH Backend Team`. |
 | `servers` | One entry, `url: /` ("paths carry the full /api/v1 prefix"). Paths therefore read `/api/v1/auth/login`, exactly as in the CT-02 example. |
 | `tags` | `Auth` (web sign-in with the Sanctum SPA session, and mobile sign-in with a device token; signed-in routes take either the cookie or `Authorization: Bearer`), `Audit` and `System` (public port information for the mobile app). A new area adds its tag. |
 | `paths` | Seven paths (section 3.2). |
@@ -52,12 +52,14 @@ The file starts with a comment block stating the source-of-truth rule, the drift
 | `POST /api/v1/auth/login` | `authLogin` | `security: []` (open) | 400, 401, 403 `AccountDisabled`, 419, 422, 429 | F07 |
 | `POST /api/v1/auth/mobile/login` | `authMobileLogin` | `security: []`; parameters `AppVersion`, `DeviceId` | 200 `MobileSignIn`; 401; 403 described inline with two examples (`ACCOUNT_DISABLED`, `DEVICE_REVOKED`); 422; 426 `AppUpdateRequired`; 429 | F07 |
 | `GET /api/v1/auth/me` | `authMe` | `cookieAuth` **or** `bearerAuth` | 401, 403 `AccountDisabled`, 422, 426 | F07 |
-| `POST /api/v1/auth/change-password` | `authChangePassword` | `cookieAuth` or `bearerAuth`; `XsrfToken` | 401, 403 `AccountDisabled`, 419, 422, 426, 429 | F08 |
-| `POST /api/v1/auth/logout` | `authLogout` (204) | `cookieAuth` or `bearerAuth`; `XsrfToken` | 401, 403 `AccountDisabled`, 419, 422, 426 | F07 |
+| `POST /api/v1/auth/change-password` | `authChangePassword` | `cookieAuth` or `bearerAuth`; `XsrfTokenWebOnly`, `IdempotencyKey` | 401, 403 `AccountDisabled`, 419, 422 described inline (`VALIDATION_FAILED` or `IDEMPOTENCY_KEY_REUSED`), 426, 429, 503 inline (with `Retry-After`); the 200 declares the response header `Idempotent-Replayed` | F08 |
+| `POST /api/v1/auth/logout` | `authLogout` (204) | `cookieAuth` or `bearerAuth`; `XsrfTokenWebOnly`, `IdempotencyKey` | 401, 403 `AccountDisabled`, 419, 422 inline (as above), 426, 503 inline; the 204 declares `Idempotent-Replayed` | F07 |
 | `GET /api/v1/audit-logs` | `auditLogsList` | `cookieAuth` or `bearerAuth` | 401, 403 `Forbidden`, 422, 426 | F10 |
 | `GET /api/v1/system/info` | `systemInfo` | `security: []` (public, never 426) | 200 `SystemInfo`; 503 `ServiceUnavailable` (no port profile or no `min_app_version` setting) | F11 and MasterData |
 
 On the signed-in paths the `security` list has two alternatives (`- cookieAuth: []` and `- bearerAuth: []`), which OpenAPI reads as "either one". The `422` and `426` responses on those paths come from the Bearer rules: a Bearer request must send `X-App-Version` (`x.y.z`) and `X-Device-Id`; a missing or malformed value is 422 and a version older than `min_app_version` is 426 (1.6.0 added the 422). A web request may omit `X-App-Version`. Behaviour of the mobile paths themselves is in F07, F08 and F11.
+
+Since 1.8.0 every write that accepts a Bearer token (today these two) also lists the parameter `IdempotencyKey` and a `422` that is written **inline** and not as a `$ref`: its schema is `anyOf` `ValidationProblem` and `Problem`, with one example for `VALIDATION_FAILED` (the `Idempotency-Key` header missing or malformed) and one for `IDEMPOTENCY_KEY_REUSED`. It is inline because OpenAPI allows one response per status and the test below keeps `components.responses` to exactly one entry per `ErrorCode`, so a combined 422 cannot be a shared component. The same two operations declare a 503 (a request with the same key still running, with `Retry-After`) and the response header `Idempotent-Replayed` (component `headers/IdempotentReplayed`, "true on a replay, also of a stored 4xx"). Behaviour: F11 section 3.11.
 
 Conventions in an operation: `operationId` is the route name in camelCase; `tags`; `summary`; a `description` that tells the **behaviour a client needs** (throttle limits, the allow-list while `must_change_password` is set, filters); `parameters` with `$ref` to shared parameters; `requestBody` with a `$ref` schema; `responses` keyed by status, each error a `$ref` to `#/components/responses/<ErrorCode case>`. `GET /api/v1/audit-logs` is the model for a **list** endpoint: `$ref` parameters `Page` and `PerPage`, its own query parameters inline, and a `200` with `{ data: [AuditLogEntry], meta: PageMeta }`.
 
@@ -70,7 +72,7 @@ Conventions in an operation: `operationId` is the route name in camelCase; `tags
 | `cookieAuth` | `type: apiKey`, `in: cookie`, `name: atlantech_session` | The Laravel session cookie of the Sanctum SPA flow (CT-03). The name must equal `config('session.cookie')` (env `SESSION_COOKIE`, default `atlantech_session`); a drift test checks it. Writes also send `X-XSRF-TOKEN`. |
 | `bearerAuth` | `type: http`, `scheme: bearer` | Mobile personal access token (CT-04). Listed as an alternative on every signed-in path since 1.4.0; its description states the header rules (422, 401, 426). |
 
-**`parameters`**: `Page` (query, integer 1 to 1 000 000, default 1), `PerPage` (query, integer 1 to 100, default 25), `XsrfToken` (header `X-XSRF-TOKEN`, required, for web writes), and three mobile headers (`AppVersion` and `DeviceId` are used by the mobile sign-in path since 1.4.0, `IdempotencyKey` by no path yet): `AppVersion` (`X-App-Version`), `DeviceId` (`X-Device-Id`), `IdempotencyKey` (`Idempotency-Key`, UUID, described with the replay rule and `IDEMPOTENCY_KEY_REUSED`).
+**`parameters`**: `Page` (query, integer 1 to 1 000 000, default 1), `PerPage` (query, integer 1 to 100, default 25), `XsrfToken` (header `X-XSRF-TOKEN`, required, for web writes; used by `auth/login`), `XsrfTokenWebOnly` (the same header, **not required**: logout and change-password take it from the web client only, since 1.7.0), and three mobile headers (`AppVersion` and `DeviceId` are used by the mobile sign-in path since 1.4.0, `IdempotencyKey` by logout and change-password since 1.8.0): `AppVersion` (`X-App-Version`), `DeviceId` (`X-Device-Id`), `IdempotencyKey` (`Idempotency-Key`, UUID, `required: false` because a web request does not send it; its description holds the whole rule: required on every Bearer write except `POST /sync/events`, UUID v4 per logical write, kept 24 hours per token, what is replayed and what is not stored).
 
 **`headers`**: `Allow` (methods the path supports; used by `MethodNotAllowed`) and `RetryAfter` (seconds; used by `TooManyAttempts` and `ServiceUnavailable`).
 
@@ -96,7 +98,7 @@ Conventions in an operation: `operationId` is the route name in camelCase; `tags
 
 ### 3.4 `tests/Feature/Api/OpenApiDriftTest.php`: exactly what makes it fail
 
-It parses the file with `Symfony\Component\Yaml\Yaml::parseFile` (the `symfony/yaml` package is a `require-dev` dependency added for this) and has six tests. Helper functions `openApi()`, `openApiOperations(array $spec)` and `apiRouteOperations()` are declared in the file.
+It parses the file with `Symfony\Component\Yaml\Yaml::parseFile` (the `symfony/yaml` package is a `require-dev` dependency added for this) and has seven tests (the seventh, added by IDEMP-01, checks the Idempotency-Key parameter and 422 on every Bearer write). Helper functions `openApi()`, `openApiOperations(array $spec)` and `apiRouteOperations()` are declared in the file.
 
 | Test | Fails when |
 | --- | --- |
@@ -106,6 +108,7 @@ It parses the file with `Symfony\Component\Yaml\Yaml::parseFile` (the `symfony/y
 | `has one problem response per ErrorCode ...` | A case has no `components.responses.<CaseName>`; or its `application/problem+json` example differs from the enum in `status`, `code`, `message_key`, `title` or `type`; or there is a response that is not a case name (the key list is compared with `toEqualCanonicalizing`). |
 | `describes the pagination bounds PageRequest enforces` | `Page` minimum, maximum or default is not 1, `PageRequest::MAX_PAGE`, 1; `PerPage` minimum, maximum or default is not 1, `MAX_PER_PAGE`, `DEFAULT_PER_PAGE`; or `PageMeta.required` is not `[page, per_page, total]`. |
 | `names the session cookie the server really sets` | `cookieAuth.in` is not `cookie` or `cookieAuth.name` differs from `config('session.cookie')`. |
+| `documents Idempotency-Key and its 422 on every write that accepts a Bearer token (IDEMP-01)` | A POST, PUT, PATCH or DELETE in the file whose `security` lists `bearerAuth` does not reference `#/components/parameters/IdempotencyKey`, or has no `422` response; or `logout` / `change-password` is missing from that set. Added with 1.8.0 (the list is keyed by method **and** path: a first version of the test kept one operation per method and was fixed in the final review). |
 
 **What it does not check** (so a reviewer must): that `info.version` was bumped; per-operation `security`, parameters, request bodies and response schemas against the code; `description` text of responses; the PortHub copy; the order of paths; that `required` lists match the Form Request rules.
 
@@ -145,7 +148,7 @@ Semver, kept by hand (nothing automatic enforces it). Decided in P1-A4 Q6 and re
 
 - **Minor bump** (`1.2.0` to `1.3.0`) for each PR that adds or changes an endpoint without breaking a client.
 - **Major bump** is a breaking change and means a new base path `/api/v2` served beside `/api/v1`.
-- `0.x` was the draft phase (0.1.0 shared components, 0.2.0 sign-in); `1.0.0` was set when CT-01 and CT-02 were approved (2026-10-30, commit `762f515`). History of the file in git: 0.1.0 (P1-A4), 0.2.0 (P1-C1), 1.0.0 (CT-02), 1.1.0 (P1-C2 change-password, logout), 1.2.0 (P2-F8 audit-logs), 1.3.0 (P1-C5 `system/info`), 1.4.0 (P1-C3 mobile sign-in, Bearer on signed-in paths, `DEVICE_REVOKED`), 1.5.0 (P1-C4 sign-out for web and mobile), 1.6.0 (P1-C3 review 3: `X-App-Version` on Bearer requests, password change revokes the user's other tokens). PortHub history shows copy commits for 1.5.0 and 1.6.0 (and 1.2.0 before them); I did not see separate publishes of 1.3.0 and 1.4.0.
+- `0.x` was the draft phase (0.1.0 shared components, 0.2.0 sign-in); `1.0.0` was set when CT-01 and CT-02 were approved (2026-10-30, commit `762f515`). History of the file in git: 0.1.0 (P1-A4), 0.2.0 (P1-C1), 1.0.0 (CT-02), 1.1.0 (P1-C2 change-password, logout), 1.2.0 (P2-F8 audit-logs), 1.3.0 (P1-C5 `system/info`), 1.4.0 (P1-C3 mobile sign-in, Bearer on signed-in paths, `DEVICE_REVOKED`), 1.5.0 (P1-C4 sign-out for web and mobile), 1.6.0 (P1-C3 review 3: `X-App-Version` on Bearer requests, password change revokes the user's other tokens). 1.7.0 (backend #60: `X-XSRF-TOKEN` is web only on logout and change-password; PortHub #48 published it) and 1.8.0 (IDEMP-01: `Idempotency-Key` on the Bearer writes; backend #62 and PortHub #51). PortHub history shows copy commits for 1.5.0, 1.6.0, 1.7.0 and 1.8.0 (and 1.2.0 before them); I did not see separate publishes of 1.3.0 and 1.4.0.
 - Each version is published to PortHub in its own paired PR (for example `P2-F8: publish OpenAPI 1.2.0`).
 
 ### 3.8 What `PortHub/contracts/openapi/port-api.yaml` is
@@ -189,7 +192,7 @@ None. The file is text in the repository; the PortHub copy is text in another re
 
 | Test | Proves | Run |
 | --- | --- | --- |
-| `tests/Feature/Api/OpenApiDriftTest.php` (6 tests) | Section 3.4 | `vendor/bin/pest tests/Feature/Api/OpenApiDriftTest.php` |
+| `tests/Feature/Api/OpenApiDriftTest.php` (7 tests) | Section 3.4 | `vendor/bin/pest tests/Feature/Api/OpenApiDriftTest.php` |
 | `tests/Feature/Console/PublishOpenApiTest.php` (2 tests) | Byte-identical copy, folder creation; refusal when the contracts folder is missing | `vendor/bin/pest tests/Feature/Console/PublishOpenApiTest.php` |
 | CI job `openapi` (Spectral) | The file is a valid OpenAPI document with no warnings from `spectral:oas` | `npx --yes @stoplight/spectral-cli@6.17.0 lint openapi/port-api.yaml --fail-severity=warn` |
 | `tests/Feature/Api/RouteVersionCoverageTest.php` | Not this feature (section 3.9, see F12) | |
@@ -207,7 +210,7 @@ I ran the first two files on my own database (F02 section 3.13): all passed; tog
 - **Example values are asserted.** `status`, `code`, `message_key`, `title` and `type` in each response example must equal the enum. `detail` is not asserted but should be the English text from `lang/en/errors.php`.
 - **`cookieAuth.name`** follows `SESSION_COOKIE`. Changing the env or `config/session.php` without changing the file fails the drift test.
 - **Spectral warnings fail CI** (`--fail-severity=warn`). A new operation needs `operationId`, `tags` that exist, a `summary`, and valid `$ref`s.
-- **`oas3-unused-component` is off.** Do not switch it on until the components listed in section 3.6 are used or removed (`IdempotencyKey` and nine error responses today). The `openapi-sync` skill still says to turn it on "with the first path": that instruction is out of date (finding F4-2).
+- **`oas3-unused-component` is off.** Do not switch it on until the components listed in section 3.6 are used or removed (nine error responses today; `IdempotencyKey` is used since 1.8.0). The `openapi-sync` skill still says to turn it on "with the first path": that instruction is out of date (finding F4-2).
 - **Bump `info.version` by hand.** Nothing checks it.
 - **The file is large and shared:** edit only your task's operations and schemas and reuse the components (skill rule).
 - **Treat `version` as opaque** in schemas: it is `$ref DateTime` for documentation, but clients must not parse it (F03, F12).
@@ -298,7 +301,7 @@ Output (first line each): `DEC-13 · decision · Who keeps the OpenAPI file curr
 - **F4-3 · Version bump is manual.** Nothing fails if `info.version` is not bumped.
 - **F4-4 · Pairing is manual.** Nothing checks that the PortHub copy equals the source (a stale PortHub copy is possible). A CI step or a PortHub check could do it. The two files match today.
 - **F4-5 · Spectral runs on a downloaded package.** Pinned, but a deleted npm version would turn the job red; P1-A4 review note 8 lists deprecated transitive packages (`glob@7`, `inflight`).
-- **F4-6 · Mobile parts: mostly real now, two still drafts.** Since P1-C3 `bearerAuth`, `AppVersion`, `DeviceId` and `AppUpdateRequired` describe implemented behaviour (`EnsureMinAppVersion`, mobile sign-in). `IdempotencyKey` and `IdempotencyKeyReused` still describe behaviour no code has (mobile writes come later).
+- **F4-6 · Mobile parts: all real now.** Since P1-C3 `bearerAuth`, `AppVersion`, `DeviceId` and `AppUpdateRequired` describe implemented behaviour (`EnsureMinAppVersion`, mobile sign-in), and since IDEMP-01 (1.8.0) so do `IdempotencyKey` and `IdempotencyKeyReused` (F11 section 3.11). The stale-draft finding is closed.
 - **F4-7 · Reserved responses.** `LicenseReadOnly` and `PlanLimitExceeded` are documented as reserved (DEC-54).
 - **F4-8 · Review by Frontend and Mobile.** CT-02 v1.0.0 was approved by the Backend lead without team review (DEC-57: critical changes only). P1-A4 notes that PortHub PR #16 had no Frontend or Mobile review at merge.
 - **F4-11 · `DeviceRevoked` response is unreferenced.** The mobile sign-in 403 is written inline with two named examples (`accountDisabled`, `deviceRevoked`) because one status carries two codes. The `DeviceRevoked` component exists (the drift test requires it) but no path points at it.

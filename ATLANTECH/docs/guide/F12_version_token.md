@@ -16,7 +16,7 @@ Two checks use the same comparison:
 
 Every refusal of this step is also written to the audit log as `REJECTED_ATTEMPT` (FR-GL-02).
 
-It does **not**: create versions for records that have no `updated_at`, apply to creates (a new record has no version), handle mobile idempotency (`Idempotency-Key`, CT-01 section 4) or mobile sync conflicts (CT-07, task P5-O2), and it is **not used by any real endpoint yet**: the first update endpoints are P2-E1..E3 and P2-F1..F5 (F15). Only the tests exercise it, through throw-away routes over the `Tugboat` model. No API resource returns `version` yet either (`UserProfileResource` has none).
+It does **not**: create versions for records that have no `updated_at`, apply to creates (a new record has no version), handle mobile idempotency (`Idempotency-Key`, CT-01 section 4: that is IDEMP-01, F11 section 3.11, a separate set of middleware; its replay step sits **before** `EnsureRecordVersion`, because the first write moved the version) or mobile sync conflicts (CT-07, task P5-O2), and it is **not used by any real endpoint yet**: the first update endpoints are P2-E1..E3 and P2-F1..F5 (F15). Only the tests exercise it, through throw-away routes over the `Tugboat` model. No API resource returns `version` yet either (`UserProfileResource` has none).
 
 ## 2. Request or data flow
 
