@@ -8,7 +8,7 @@
 openapi: 3.0.3
 info:
   title: ATLANTECH Port API
-  version: '1.4.0'
+  version: '1.5.0'
   description: |
     The port API used by the web app (Vue) and the mobile app (Flutter).
 
@@ -205,9 +205,11 @@ paths:
     post:
       tags: [Auth]
       operationId: authLogout
-      summary: Web sign-out
+      summary: Sign out
       description: >-
-        Ends the web session. It stays open while `must_change_password` is set. The next signed-in request is 401.
+        Web: ends the session. Mobile: revokes the Bearer token the request carries (`revoked_at` is set, the row stays);
+        the user's other devices keep their tokens (CT-04). It stays open while `must_change_password` is set. The next
+        signed-in request with the same session or token is 401.
       security:
         - cookieAuth: []
         - bearerAuth: []

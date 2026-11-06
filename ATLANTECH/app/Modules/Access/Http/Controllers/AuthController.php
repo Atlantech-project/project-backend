@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Access\Http\Requests\ChangePasswordRequest;
 use App\Modules\Access\Http\Requests\LoginRequest;
 use App\Modules\Access\Http\Resources\UserProfileResource;
+use App\Modules\Access\Models\PersonalAccessToken;
 use App\Modules\Access\Services\PasswordChangeService;
 use App\Modules\Access\Services\SignInService;
 use App\Modules\Shared\Errors\ApiProblemException;
@@ -73,10 +74,19 @@ class AuthController extends Controller
     }
 
     /**
-     * POST /api/v1/auth/logout: ends the web session; 204, 401, 403 ACCOUNT_DISABLED, 419. The mobile token is P1-C4.
+     * POST /api/v1/auth/logout: ends the web session, or revokes the mobile token the request carries (P1-C4, FR-AC-08); 204, 401,
+     * 403 ACCOUNT_DISABLED, 419. The token row stays (FR-GL-03) and the user's other devices keep theirs.
      */
     public function logout(Request $request): Response
     {
+        $token = $request->user()->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->revoke();
+
+            return response()->noContent();
+        }
+
         Auth::guard('web')->logout();
 
         if ($request->hasSession()) {
