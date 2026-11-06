@@ -9,6 +9,7 @@ use App\Modules\Access\Models\UserDevice;
 use App\Modules\Shared\Audit\AuditService;
 use App\Modules\Shared\Errors\ApiProblemException;
 use App\Modules\Shared\Errors\ErrorCode;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\NewAccessToken;
 
@@ -29,18 +30,14 @@ class MobileSignInService
     public function issueToken(User $user, string $deviceId, DevicePlatform $platform, string $appVersion, string $route): NewAccessToken
     {
         $result = DB::transaction(function () use ($user, $deviceId, $platform, $appVersion): NewAccessToken|UserDevice {
-            $device = UserDevice::query()
-                ->where('user_id', $user->id)
-                ->where('device_id', $deviceId)
-                ->lockForUpdate()
-                ->first();
+            $device = $this->lockedDevice($user, $deviceId);
 
             if ($device?->revoked_at !== null) {
                 // Refused after the transaction, so the audit row is not rolled back with it.
                 return $device;
             }
 
-            $device ??= new UserDevice(['user_id' => $user->id, 'device_id' => $deviceId]);
+            $device ??= $this->registerDevice($user, $deviceId, $platform, $appVersion);
             $device->fill(['platform' => $platform, 'app_version' => $appVersion, 'last_seen_at' => now()])->save();
 
             PersonalAccessToken::query()
@@ -58,6 +55,28 @@ class MobileSignInService
         }
 
         return $result;
+    }
+
+    private function lockedDevice(User $user, string $deviceId): ?UserDevice
+    {
+        return UserDevice::query()
+            ->where('user_id', $user->id)
+            ->where('device_id', $deviceId)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    /**
+     * First sign-in on this device. Two requests can race to insert the row; the loser hits `uq_user_device` and takes the winner's row
+     * (MySQL keeps the transaction open after a duplicate key). The row is not revoked: it was just created.
+     */
+    private function registerDevice(User $user, string $deviceId, DevicePlatform $platform, string $appVersion): UserDevice
+    {
+        try {
+            return UserDevice::query()->create(['user_id' => $user->id, 'device_id' => $deviceId, 'platform' => $platform, 'app_version' => $appVersion, 'last_seen_at' => now()]);
+        } catch (UniqueConstraintViolationException) {
+            return $this->lockedDevice($user, $deviceId) ?? throw new ApiProblemException(ErrorCode::ServiceUnavailable);
+        }
     }
 
     private function newToken(User $user, UserDevice $device): NewAccessToken
