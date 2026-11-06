@@ -179,6 +179,7 @@ Contract artefacts: OpenAPI (CT-02) yes, 1.7.0 → 1.8.0 · CT-01 wording (exemp
 | --- | --- | --- |
 | 2026-11-06 | 1 | E1, E2, E3 plans brought in and fixed; restore added to E3; P1-C3 log row; this plan. Commit `cd12f9f`. |
 | 2026-11-06 | 2 | `config/idempotency.php`, `IdempotencyStore`, `IdempotencyStoreTest` (27 tests pass on `atlantech_testing_id`). Docker Desktop was stopped; started it. Test file moved from Unit to Feature (Unit tests do not extend the app test case). Waiting for the lead's OK (mode C). |
+| 2026-11-06 | 3 | `IdempotentWrite` (alias `idempotency`, first in `port.api` and before `AuthenticatesRequests` in the priority list) and `RequireIdempotencyKey` (alias `idempotency.key`, right after `EnsureTokenDevice`); aliases in `SharedServiceProvider`. The existing Bearer write tests (`MobileLogoutTest`, `MobileTokenTest`) now send a fresh key per call. Access, Api and Unit suites: 356 pass. The chain-order cases for Bearer writes go in `IdempotencyTest` (step 4), not in `WriteChainOrderTest`, whose setup is web-only. Waiting for the lead's OK (mode C). |
 
 ## 10. Review
 

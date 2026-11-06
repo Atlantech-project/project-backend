@@ -9,6 +9,8 @@ use App\Modules\Access\Http\Middleware\EnsureTokenDevice;
 use App\Modules\License\Http\Middleware\EnsureLicenseAllowsWrite;
 use App\Modules\Shared\Errors\ProblemRenderer;
 use App\Modules\Shared\Http\Middleware\EnsureRecordVersion;
+use App\Modules\Shared\Http\Middleware\IdempotentWrite;
+use App\Modules\Shared\Http\Middleware\RequireIdempotencyKey;
 use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Contracts\Session\Middleware\AuthenticatesSessions;
@@ -38,15 +40,18 @@ return Application::configure(basePath: dirname(__DIR__))
 
         /*
          * The write chain of FR-GL-01 (P2-D2), in this order whatever order a route lists its middleware in:
-         * auth 401 · password gate 403 · ability 403 · terminal.scope 403 · app.version 426 · license.write 423 ·
+         * idempotency replay (mobile writes, IDEMP-01) · auth 401 · device and app-version headers 422 · idempotency key 422 ·
+         * password gate 403 · ability 403 · terminal.scope 403 · app.version 426 · license.write 423 ·
          * (route binding) · version.token 409. Business rules (409 or 422) and plan limits (422) follow inside the
          * endpoint. Route binding runs after the scope checks so an unauthorised caller never gets a 404.
          * Signed-in routes use the `port.api` group and add `ability:<name>`, `terminal.scope`, `version.token`.
          * `auth:sanctum` takes the web session first, then a mobile Bearer token, whose `X-Device-Id` is checked next (P1-C3).
          */
         $middleware->group('port.api', [
+            IdempotentWrite::class,
             'auth:sanctum',
             EnsureTokenDevice::class,
+            RequireIdempotencyKey::class,
             EnsureAccountUsable::class,
             EnsureMinAppVersion::class,
             EnsureLicenseAllowsWrite::class,
@@ -57,11 +62,13 @@ return Application::configure(basePath: dirname(__DIR__))
             AddQueuedCookiesToResponse::class,
             StartSession::class,
             ShareErrorsFromSession::class,
+            IdempotentWrite::class,
             AuthenticatesRequests::class,
             ThrottleRequests::class,
             ThrottleRequestsWithRedis::class,
             AuthenticatesSessions::class,
             EnsureTokenDevice::class,
+            RequireIdempotencyKey::class,
             EnsureMobileHeaders::class,
             EnsureAccountUsable::class,
             EnsureAbility::class,

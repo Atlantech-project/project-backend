@@ -5,6 +5,8 @@ namespace App\Modules\Shared;
 use App\Modules\Shared\Console\PublishOpenApi;
 use App\Modules\Shared\Console\PublishStatusVocabulary;
 use App\Modules\Shared\Http\Middleware\EnsureRecordVersion;
+use App\Modules\Shared\Http\Middleware\IdempotentWrite;
+use App\Modules\Shared\Http\Middleware\RequireIdempotencyKey;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 
@@ -16,6 +18,8 @@ class SharedServiceProvider extends ServiceProvider
     public function boot(Router $router): void
     {
         $router->aliasMiddleware('version.token', EnsureRecordVersion::class);
+        $router->aliasMiddleware('idempotency', IdempotentWrite::class);
+        $router->aliasMiddleware('idempotency.key', RequireIdempotencyKey::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([PublishOpenApi::class, PublishStatusVocabulary::class]);

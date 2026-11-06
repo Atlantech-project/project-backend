@@ -7,6 +7,7 @@ use App\Modules\Access\Models\UserDevice;
 use App\Modules\MasterData\Enums\PortSettingValueType;
 use App\Modules\MasterData\Models\PortSetting;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 
 /*
@@ -38,12 +39,12 @@ function logoutTestToken(User $user, string $deviceId): string
         ->json('token');
 }
 
-function logoutTestRequest(string $token, string $deviceId, string $method, string $uri): TestResponse
+function logoutTestRequest(string $token, string $deviceId, string $method, string $uri, ?string $idempotencyKey = null): TestResponse
 {
     app('auth')->forgetGuards();
 
     return test()->flushHeaders()
-        ->withHeaders(['Authorization' => 'Bearer '.$token, 'X-App-Version' => '1.0.0', 'X-Device-Id' => $deviceId])
+        ->withHeaders(['Authorization' => 'Bearer '.$token, 'X-App-Version' => '1.0.0', 'X-Device-Id' => $deviceId, 'Idempotency-Key' => $idempotencyKey ?? (string) Str::uuid()])
         ->json($method, $uri);
 }
 

@@ -9,6 +9,7 @@ use App\Modules\MasterData\Models\PortSetting;
 use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Models\AuditLog;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 
 /*
@@ -52,7 +53,7 @@ function signInTablet(User $user, string $deviceId = TOKEN_DEVICE_ID): string
 function withTabletToken(string $token, string $method, string $uri, array $headers = [], array $body = []): TestResponse
 {
     $headers = array_filter(
-        [...['Authorization' => 'Bearer '.$token, 'X-App-Version' => '1.2.0', 'X-Device-Id' => TOKEN_DEVICE_ID], ...$headers],
+        [...['Authorization' => 'Bearer '.$token, 'X-App-Version' => '1.2.0', 'X-Device-Id' => TOKEN_DEVICE_ID, 'Idempotency-Key' => (string) Str::uuid()], ...$headers],
         fn ($value) => $value !== null,
     );
     app('auth')->forgetGuards();

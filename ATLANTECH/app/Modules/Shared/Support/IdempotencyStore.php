@@ -51,6 +51,11 @@ final class IdempotencyStore
         return hash('sha256', implode("\n", [$request->method(), $request->getRequestUri(), $request->getContent()]));
     }
 
+    public static function isWriteMethod(string $method): bool
+    {
+        return in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true);
+    }
+
     public static function isExemptRoute(?string $routeName): bool
     {
         return $routeName !== null && Str::is(config('idempotency.exempt_routes', []), $routeName);
