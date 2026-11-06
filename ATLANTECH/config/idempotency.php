@@ -20,9 +20,11 @@ return [
     /*
     | A request holds the lock for its key while it runs: at most `lock_seconds`. A second request with the same key waits up
     | to `lock_wait_seconds` for it, then replays the result, or answers 503 with Retry-After when the first is still running.
+    | `lock_seconds` must not be shorter than the longest a request may run (the web server's hard limit, for example PHP-FPM
+    | `request_terminate_timeout`): if the lock expires first, a retry could run the write a second time.
     */
 
-    'lock_seconds' => 30,
+    'lock_seconds' => 120,
 
     'lock_wait_seconds' => 5,
 

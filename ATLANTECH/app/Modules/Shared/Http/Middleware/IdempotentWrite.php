@@ -68,7 +68,7 @@ class IdempotentWrite
             $response = $next($request);
 
             if ($request->attributes->get(IdempotencyStore::STORABLE_ATTRIBUTE) === true && IdempotencyStore::isStorable($response)) {
-                $this->store->put($scope, $key, $requestHash, $response, preauth: self::revokedItsOwnToken($request));
+                $this->store->put($scope, $key, $requestHash, $response, preauth: self::revokedItsOwnToken($request) && (string) $response->getContent() === '');
             }
 
             return $response;
@@ -98,7 +98,8 @@ class IdempotentWrite
     }
 
     /**
-     * Whether the endpoint just revoked the token this request came with (mobile logout).
+     * Whether the endpoint just revoked the token this request came with (mobile logout). Only an empty answer (204) may then be given
+     * before authentication: a body, say a new token, is never handed to a caller that has not been authenticated.
      */
     private static function revokedItsOwnToken(Request $request): bool
     {

@@ -116,3 +116,17 @@ it('refuses a logout without a key with 422 and leaves the token alive', functio
 
     expect(PersonalAccessToken::query()->sole()->revoked_at)->toBeNull();
 });
+
+it('refuses a logout retry that reuses the key for another request, before authentication', function () {
+    $token = logoutTestToken(makeUserWithRole(Role::PortGm, ['username' => 'pilot.k']), 'tablet-a');
+    $key = (string) Str::uuid();
+
+    logoutTestRequest($token, 'tablet-a', 'POST', '/api/v1/auth/logout', $key)->assertNoContent();
+
+    app('auth')->forgetGuards();
+    test()->flushHeaders()
+        ->withHeaders(['Authorization' => 'Bearer '.$token, 'X-App-Version' => '1.0.0', 'X-Device-Id' => 'tablet-a', 'Idempotency-Key' => $key])
+        ->postJson('/api/v1/auth/logout', ['other' => 'body'])
+        ->assertUnprocessable()
+        ->assertJsonPath('code', 'IDEMPOTENCY_KEY_REUSED');
+});

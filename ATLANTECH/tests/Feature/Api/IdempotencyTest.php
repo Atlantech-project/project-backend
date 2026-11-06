@@ -5,10 +5,13 @@ use App\Modules\Access\Models\User;
 use App\Modules\Access\Models\UserDevice;
 use App\Modules\MasterData\Enums\PortSettingValueType;
 use App\Modules\MasterData\Models\PortSetting;
+use App\Modules\Shared\Errors\ApiProblemException;
+use App\Modules\Shared\Errors\ErrorCode;
 use App\Modules\Shared\Support\IdempotencyStore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 
 /*
@@ -31,6 +34,7 @@ beforeEach(function () {
     Route::middleware(['api', 'port.api'])->prefix('api/v1')->group(function () use ($probe) {
         Route::post('test/idem', $probe);
         Route::put('test/idem', $probe);
+        Route::patch('test/idem', $probe);
         Route::delete('test/idem', $probe);
         Route::get('test/idem', $probe);
         Route::post('test/idem-status/{status}', fn (int $status): JsonResponse => response()->json(['run' => ++$GLOBALS['idem_runs']], $status));
@@ -38,12 +42,17 @@ beforeEach(function () {
             throw new RuntimeException('boom');
         });
         Route::post('test/idem-exempt', $probe)->name('sync.events.store');
+        Route::post('test/idem-problem', function (): never {
+            $GLOBALS['idem_runs']++;
+
+            throw new ApiProblemException(ErrorCode::NotFound);
+        });
     });
 
     Route::middleware(['api', 'port.api', 'ability:users.manage'])->prefix('api/v1')->post('test/idem-ability', $probe);
 
     // The steps listed the wrong way round: the priority list must still order them.
-    Route::middleware(['api', 'ability:users.manage', 'idempotency.key', 'port.api', 'idempotency'])->prefix('api/v1')->post('test/idem-reversed', $probe);
+    Route::middleware(['api', 'idempotency.replay', 'ability:users.manage', 'idempotency.key', 'port.api', 'idempotency'])->prefix('api/v1')->post('test/idem-reversed', $probe);
 });
 
 afterEach(function () {
@@ -82,16 +91,18 @@ function idemRequest(string $token, string $method, string $uri, ?string $key, a
     return test()->flushHeaders()->withHeaders($headers)->json($method, $uri, $body);
 }
 
-it('refuses a Bearer write without a well-formed key with 422 on the Idempotency-Key field', function (?string $key) {
+it('refuses a Bearer write without a well-formed key with 422 on the Idempotency-Key field', function () {
     $token = idemToken(makeUserWithRole(Role::PortGm));
 
-    idemRequest($token, 'POST', '/api/v1/test/idem', $key)
-        ->assertUnprocessable()
-        ->assertJsonPath('code', 'VALIDATION_FAILED')
-        ->assertJsonValidationErrors('Idempotency-Key');
+    foreach ([null, 'not-a-uuid', '6ba7b810-9dad-11d1-80b4-00c04fd430c8'] as $key) {
+        idemRequest($token, 'POST', '/api/v1/test/idem', $key)
+            ->assertUnprocessable()
+            ->assertJsonPath('code', 'VALIDATION_FAILED')
+            ->assertJsonValidationErrors('Idempotency-Key');
+    }
 
     expect($GLOBALS['idem_runs'])->toBe(0);
-})->with([[null], ['not-a-uuid'], ['6ba7b810-9dad-11d1-80b4-00c04fd430c8']]);
+});
 
 it('answers 401 before 422 when the token is not valid and the key is missing', function () {
     idemRequest('999|not-a-real-token', 'POST', '/api/v1/test/idem', null)
@@ -110,17 +121,31 @@ it('asks for the key after authentication and before the password gate and the a
     idemRequest($staff, 'POST', $path, IDEM_KEY, deviceId: 'tablet-b')->assertForbidden()->assertJsonPath('code', 'FORBIDDEN');
 })->with(['/api/v1/test/idem-ability', '/api/v1/test/idem-reversed']);
 
-it('runs the first request and replays status, body and content type for the same key and request', function (string $method) {
+it('runs the first request and replays status, body and content type for the same key and request', function () {
     $token = idemToken(makeUserWithRole(Role::PortGm));
 
-    $first = idemRequest($token, $method, '/api/v1/test/idem', IDEM_KEY, ['a' => 1])->assertOk()->assertJson(['run' => 1]);
-    $second = idemRequest($token, $method, '/api/v1/test/idem', strtoupper(IDEM_KEY), ['a' => 1])->assertOk()->assertJson(['run' => 1]);
+    foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $run => $method) {
+        $key = (string) Str::uuid();
+        $first = idemRequest($token, $method, '/api/v1/test/idem', $key, ['a' => 1])->assertOk()->assertJson(['run' => $run + 1]);
+        $second = idemRequest($token, $method, '/api/v1/test/idem', strtoupper($key), ['a' => 1])->assertOk()->assertJson(['run' => $run + 1]);
 
-    expect($first->headers->has('Idempotent-Replayed'))->toBeFalse()
-        ->and($second->headers->get('Idempotent-Replayed'))->toBe('true')
-        ->and($second->headers->get('Content-Type'))->toBe($first->headers->get('Content-Type'))
+        expect($first->headers->has('Idempotent-Replayed'))->toBeFalse()
+            ->and($second->headers->get('Idempotent-Replayed'))->toBe('true')
+            ->and($second->headers->get('Content-Type'))->toBe($first->headers->get('Content-Type'))
+            ->and($GLOBALS['idem_runs'])->toBe($run + 1);
+    }
+});
+
+it('replays a stored refusal as application/problem+json', function () {
+    $token = idemToken(makeUserWithRole(Role::PortGm));
+
+    idemRequest($token, 'POST', '/api/v1/test/idem-problem', IDEM_KEY)->assertNotFound();
+    $replay = idemRequest($token, 'POST', '/api/v1/test/idem-problem', IDEM_KEY)->assertNotFound()->assertJsonPath('code', 'NOT_FOUND');
+
+    expect($replay->headers->get('Content-Type'))->toContain('application/problem+json')
+        ->and($replay->headers->get('Idempotent-Replayed'))->toBe('true')
         ->and($GLOBALS['idem_runs'])->toBe(1);
-})->with(['POST', 'PUT', 'DELETE']);
+});
 
 it('refuses the same key with another body, path or method', function () {
     $token = idemToken(makeUserWithRole(Role::PortGm));
@@ -159,20 +184,24 @@ it('does not replay to a token that was never signed in, even with a stored key'
     idemRequest('999|guess', 'POST', '/api/v1/test/idem', IDEM_KEY)->assertUnauthorized();
 });
 
-it('keeps the response of the deterministic refusals and runs the write again after the transient ones', function (int $status, bool $replayed) {
+it('keeps the response of the deterministic refusals and runs the write again after the transient ones', function () {
     $token = idemToken(makeUserWithRole(Role::PortGm));
-    $uri = '/api/v1/test/idem-status/'.$status;
+    $expectedRuns = 0;
 
-    idemRequest($token, 'POST', $uri, IDEM_KEY)->assertStatus($status);
-    idemRequest($token, 'POST', $uri, IDEM_KEY)->assertStatus($status);
+    foreach ([201 => true, 403 => true, 404 => true, 409 => true, 422 => true, 401 => false, 408 => false, 423 => false, 426 => false, 429 => false, 500 => false, 503 => false] as $status => $replayed) {
+        $key = (string) Str::uuid();
+        $uri = '/api/v1/test/idem-status/'.$status;
 
-    expect($GLOBALS['idem_runs'])->toBe($replayed ? 1 : 2);
-})->with([
-    [201, true], [403, true], [404, true], [409, true], [422, true],
-    [408, false], [423, false], [426, false], [429, false], [500, false], [503, false],
-]);
+        idemRequest($token, 'POST', $uri, $key)->assertStatus($status);
+        idemRequest($token, 'POST', $uri, $key)->assertStatus($status);
 
-it('does not store a 401 and releases the lock when the request fails', function () {
+        $expectedRuns += $replayed ? 1 : 2;
+
+        expect($GLOBALS['idem_runs'])->toBe($expectedRuns, "status {$status}");
+    }
+});
+
+it('stores nothing and releases the lock when the request fails', function () {
     $token = idemToken(makeUserWithRole(Role::PortGm));
 
     idemRequest($token, 'POST', '/api/v1/test/idem-boom', IDEM_KEY)->assertStatus(500);
@@ -266,5 +295,26 @@ it('does not replay to a caller who may no longer make the write: deactivated, p
     $user->forceFill(['is_active' => false])->save();
     idemRequest($token, 'POST', '/api/v1/test/idem-ability', IDEM_KEY)->assertForbidden()->assertJsonPath('code', 'ACCOUNT_DISABLED');
 
+    expect($GLOBALS['idem_runs'])->toBe(1);
+});
+
+it('leaves a web session request alone even when it carries a stray Authorization header', function () {
+    $user = makeUserWithRole(Role::PortGm);
+    $headers = ['Origin' => 'http://localhost:5173', 'Referer' => 'http://localhost:5173/', 'Authorization' => 'Bearer 999|stray', 'Idempotency-Key' => IDEM_KEY];
+
+    $this->actingAs($user, 'web')->withHeaders($headers)->postJson('/api/v1/test/idem')->assertOk()->assertJson(['run' => 1]);
+    $this->actingAs($user, 'web')->withHeaders($headers)->postJson('/api/v1/test/idem')->assertOk()->assertJson(['run' => 2]);
+});
+
+it('replays only after the ability check, also on a route that lists its steps in reverse', function () {
+    $user = makeUserWithRole(Role::PortGm);
+    $token = idemToken($user);
+
+    idemRequest($token, 'POST', '/api/v1/test/idem-reversed', IDEM_KEY)->assertOk()->assertJson(['run' => 1]);
+    idemRequest($token, 'POST', '/api/v1/test/idem-reversed', IDEM_KEY)->assertOk()->assertHeader('Idempotent-Replayed', 'true');
+
+    $user->activeRoleAssignment()->update(['role' => Role::PortStaff->value]);
+
+    idemRequest($token, 'POST', '/api/v1/test/idem-reversed', IDEM_KEY)->assertForbidden()->assertJsonPath('code', 'FORBIDDEN');
     expect($GLOBALS['idem_runs'])->toBe(1);
 });

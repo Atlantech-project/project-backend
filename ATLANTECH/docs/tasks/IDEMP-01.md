@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | Ready (all questions answered by the lead, 2026-11-06) |
+| Status | In review (all questions answered by the lead, 2026-11-06) |
 | Phase / package | Cross-cutting, outside the roadmap task list: a gap found by the Mobile Team in P1-C3's review. No ID in `backend/atlantech_backend_tasks.md` (the lookup has no entry); the lead named the task `IDEMP-01` |
 | Sprint · feature | Sprint 2 · FT-02 (mobile sign-in) and every later mobile write |
 | Effort (plan) | 1 day |
@@ -71,9 +71,9 @@ No new endpoint. Behaviour added to every Bearer write route in `port.api`; toda
 ### Data
 
 - **No table, no migration** (so no `ai-impact`, no CT-17 bump). Storage is the cache store named by `config('idempotency.store')`, default the application's cache store (`CACHE_STORE=redis` in `.env.example`; `array` in tests, which supports atomic locks).
-- Entry key: `idempotency:{sha256(bearer token)}:{key}`. Value (encrypted with `Crypt::encryptString`, because a response body can hold a one-time secret, for example the P2-E1 one-time password): `request_hash`, `status`, `content_type`, `body`. TTL 24 hours (`config('idempotency.ttl_hours')` = 24).
-- `request_hash` = SHA-256 of `METHOD`, the path with its query string, and the raw body, joined with a separator.
-- Lock key `idempotency-lock:{same scope}`; lock lifetime 30 s, wait 5 s (config).
+- Entry key: `idempotency:{sha256(bearer token)}:{key}`. Value (encrypted with `Crypt::encryptString`, because a response body can hold a one-time secret, for example the P2-E1 one-time password): `request_hash`, `status`, `content_type`, `body`, `preauth`. TTL 24 hours (`config('idempotency.ttl_hours')` = 24).
+- `request_hash` = SHA-256 of `METHOD`, the path with its query string, and the body: the raw content, or for a multipart request (PHP leaves the raw content empty) the key-sorted fields plus the name, size and SHA-256 of each uploaded file.
+- Lock key `idempotency-lock:{same scope}`; lock lifetime 120 s (not shorter than the longest a request may run, else a retry could run the write twice), wait 5 s (config).
 - Config `config/idempotency.php`: `store`, `ttl_hours`, `lock_seconds`, `lock_wait_seconds`, `exempt_routes` (route names, `Str::is` patterns; default `['sync.events.store']`), `unstored_statuses` (`[401, 408, 423, 426, 429]`).
 - Enums and status vocabulary (CT-21): none. Error codes: none new.
 
@@ -89,11 +89,11 @@ Three small classes in `app/Modules/Shared/Http/Middleware` (a mobile write need
 2. **`RequireIdempotencyKey`** (alias `idempotency.key`), right after `EnsureTokenDevice` in the group (same place as the other header 422s). Applies when the caller is authenticated by a Sanctum token that is not transient, the method is a write and the route is not exempt: validates the header (422 `VALIDATION_FAILED`) and records the key on the request. A web session request never reaches the rule, even with a stray `Authorization` header, so nothing about it is stored or required.
 3. **`ReplayIdempotentWrite`** (alias `idempotency.replay`), after `EnsureLicenseAllowsWrite` and before route binding and the version token. Looks for a stored entry of that token and key: found with the same request hash → replays it (`Idempotent-Replayed: true`) and the endpoint does not run; found with another hash → 422 `IDEMPOTENCY_KEY_REUSED`; not found → marks the request storable. It sits before `version.token` because the first write moved the record's version and the retry still carries the old one.
 4. **Why this split (two security reviews, 2026-11-06).** Answering every replay before authentication would hand a stored body to a token revoked later, and skip the device check. Answering it right after the device check would still skip the account state, the password gate, the ability and the licence (a deactivated user, or one whose role changed, would get the old body). So the only early answer is for a write that revoked its own token (logout, 204); every other replay is answered after all the checks that depend on who the caller is today. The `preauth` entry is found by the hash of that exact token plus the secret UUID, so finding it proves the caller sent both.
-4. **Replay response:** status, `Content-Type` and body of the first response, plus `Idempotent-Replayed: true`. Other headers (`Set-Cookie`, rate-limit counters) are not replayed.
-5. **Write-chain order (FR-GL-01):** logout replay · authentication 401 · device and app-version headers 422 · **key 422** · password gate 403 · account state 403 · ability 403 · scope · 426 · 423 · **replay** · binding · version token 409 · endpoint. A request refused inside the chain (403, 409, 422) is stored like any other deterministic 4xx and replays the same refusal, but a caller who fails an earlier step today gets that refusal, not the stored body.
-6. **Transaction boundary / audit:** none of its own. The stored response is written after the endpoint's transaction committed. Refusals of this feature (422, 503) are not audited: before authentication there is no user, and a bad header carries no state change (same as Form Request 422s).
-7. **Licence mode:** not affected; a replayed write does not reach the licence step, a stored 423 is never replayed.
-8. **Events and messages:** none.
+5. **Replay response:** status, `Content-Type` and body of the first response, plus `Idempotent-Replayed: true`. Other headers (`Set-Cookie`, rate-limit counters) are not replayed.
+6. **Write-chain order (FR-GL-01):** logout replay · authentication 401 · throttle · device and app-version headers 422 · **key 422** · password gate 403 · account state 403 · ability 403 · scope · 426 · 423 · **replay** · binding · version token 409 · endpoint. Only a response produced after the replay step is stored, so a refusal from an earlier step (403, 426, 423, the key 422) is never stored and a caller who fails one today gets that refusal, not a stored body; a 409 from the version token, a 404 from binding and the endpoint's own 4xx are stored. A replay does not re-run checks inside the endpoint (terminal id in the body, in-endpoint policies).
+7. **Transaction boundary / audit:** none of its own. The stored response is written after the endpoint's transaction committed. Refusals of this feature (422, 503) are not audited: before authentication there is no user, and a bad header carries no state change (same as Form Request 422s).
+8. **Licence mode:** not affected; a replayed write does not reach the licence step, a stored 423 is never replayed.
+9. **Events and messages:** none.
 
 ### Exemption
 
@@ -119,7 +119,7 @@ Each step has a mode (see the `backend-task-execute` skill):
 | Test | Covers |
 | --- | --- |
 | `tests/Feature/Api/IdempotencyStoreTest.php` (Unit tests do not boot the app here) | Key built from the token hash (the token is not in the key or value); request hash covers method, path+query, body; stored value is encrypted; TTL 24 h |
-| `tests/Feature/Api/IdempotencyTest.php` | Missing and malformed key → 422 after 401 (bad token with no key is 401); same key and body replays status, body, content type and `Idempotent-Replayed`, the counter route ran once; different body, path and method → `IDEMPOTENCY_KEY_REUSED`; key of another token (same user and other user) does not replay and runs; 5xx, 401, 423, 426, 429 not stored (second call runs); 2xx and 422/403/409 stored; web session request with and without the header untouched, also with a stray `Authorization` header; exempt route `sync.events.store` runs without a key; GET/HEAD/OPTIONS pass |
+| `tests/Feature/Api/IdempotencyTest.php` (datasets are loops inside one test: the suite sits at PHP's 128M limit, see the log) | Missing and malformed key → 422 after 401 (bad token with no key is 401); same key and body replays status, body, content type and `Idempotent-Replayed`, the counter route ran once; different body, path and method → `IDEMPOTENCY_KEY_REUSED`; key of another token (same user and other user) does not replay and runs; 5xx, 401, 423, 426, 429 not stored (second call runs); 2xx and 422/403/409 stored; web session request with and without the header untouched, also with a stray `Authorization` header; exempt route `sync.events.store` runs without a key; GET/HEAD/OPTIONS pass |
 | `tests/Feature/Api/IdempotencyConcurrencyTest.php` | Lock held by the first request and not released within the wait → 503 + `Retry-After`, the write never runs, and it runs once the lock is free; the first response stored while this request waited for the lock is replayed (a store subclass saves it at that moment); two sequential requests run the write once. The lock released when the request throws, and the stored-nothing cases, are in `IdempotencyTest` |
 | `tests/Feature/Access/MobileLogoutTest.php` (added) | Logout twice with one key: 204 then replayed 204 (token revoked, header set); logout twice with two keys: 204 then 401; another user's token with the same key is not answered from the first user's entry; logout without a key is 422 and the token stays alive |
 | `tests/Feature/Access/MobileTokenTest.php` (added) | Change-password twice with one key: 200 then the same 200 replayed (no 422); the password hash is unchanged by the retry; same key with another body → `IDEMPOTENCY_KEY_REUSED` |
@@ -149,7 +149,7 @@ Contract artefacts: OpenAPI (CT-02) yes, 1.7.0 → 1.8.0 · CT-01 wording (exemp
 - Every later Bearer write (P2-E3 device actions if called from mobile, P5 writes) gets the rule from the group; its OpenAPI operation must list `Idempotency-Key` and the 422.
 - P5 sync (`POST /sync/events`) must be named `sync.events.store` or added to `idempotency.exempt_routes`.
 - The guide files that describe this after the merge: `docs/guide` F03, F04, F11, F15 and the `Code Notes/Backend_Guide` copy (not edited in this task).
-- Do not break: `EnsureTokenDevice`, the password gate, the throttle on change-password (a replay is answered before the throttle; the throttle still counts real attempts).
+- Do not break: `EnsureTokenDevice`, the password gate, the throttle on change-password (a replay passes the throttle, so it counts and can answer 429).
 
 ## 7. Conflicts and risks
 
@@ -159,10 +159,15 @@ Contract artefacts: OpenAPI (CT-02) yes, 1.7.0 → 1.8.0 · CT-01 wording (exemp
 | C2: logout replay must be found before `auth:sanctum` while the 422 for a missing key must come after it | Lead's brief (hard case 1, "after authentication") | Two steps: lookup/lock/store first, key validation after `EnsureTokenDevice` | Plan |
 | C3: no 409 code for "first request still running" (`CONFLICT` is only planned in P2-E1) | CT-01 error catalogue | 503 `SERVICE_UNAVAILABLE` + `Retry-After: 1`; no new code | Marwan, 2026-11-06 (Q2) |
 | C4: a replay before authentication would return a stored body to a token revoked later, and skip the device check; a replay right after the device check would skip the account state, password gate, ability and licence (two findings of the automated security review of step 3) | — | Only a write that revoked its own token (logout, 204) is answered before authentication; every other replay is answered by `ReplayIdempotentWrite` after the licence step. Bodies are encrypted at rest | Plan, 2026-11-06 |
-| C5: a replay is answered before the throttle on change-password (the throttle sits after the group's first steps) | `throttle:5,1` | Accepted: a replay runs no write and the throttle still counts real attempts | Plan |
+| C5 (resolved): the throttle on change-password | `throttle:5,1` | The throttle sorts after authentication and before the replay, so a replay counts as an attempt and can answer 429 (not stored, so a later retry runs) | Plan |
 | C6: a cache flush loses the entries, so a retry would run twice | — | Accepted for this contract (a cache, 24 h); the store is Redis in production. If the lead wants durable keys, a table is the alternative (migration, `ai-impact`, CT-17) | Plan |
 | C7: refusals of this feature are not audited | FR-GL-02 | No user before authentication, no state change; same as Form Request 422s | Plan |
 | C8: the key 422 is placed with the other header 422s, so a locked or password-gated user without a key sees 422 before 403 | FR-GL-01 | Same as `X-Device-Id`/`X-App-Version` today (P1-C3 review D-B) | Plan |
+| C9: the lock could expire while a long request still runs | Opus review 2026-11-06, finding 2 | `lock_seconds` 120, with the rule written in the config | Plan |
+| C10: multipart requests have an empty raw body, so two different ones would hash alike | Opus review, finding 3 | The hash covers the sorted fields and the files' name, size and SHA-256 | Plan |
+| C11: any endpoint that revokes its own token would get `preauth` | Opus review, finding 4 | `preauth` only for an empty answer (204); a body is never handed out before authentication | Plan |
+| C12: CT-01 claimed a replay is given only to a caller who may make the write | Opus review, finding 5 | Reworded: all checks before the replay step are re-run; checks inside the endpoint are not | Plan |
+| C13: residual risks, accepted | Opus review, finding 11 | A 5xx raised after the endpoint's commit is not stored, so a retry runs the write again; a killed worker keeps the lock until it expires and twins get 503; no cap on stored body size (24 h in Redis); an APP_KEY change without `previous_keys` makes every entry unreadable, so retried writes run again; each unauthenticated Bearer write with a well-formed key costs two cache reads and a lock before its 401; only `Content-Type` is replayed (no `Location`, `Cache-Control`; nothing uses them). A Bearer Port Admin who revokes their own device (P2-E3) revokes tokens by query, so `preauth` is false and a retry gets 401 | Plan |
 
 ## 8. Open questions
 
@@ -186,7 +191,31 @@ Contract artefacts: OpenAPI (CT-02) yes, 1.7.0 → 1.8.0 · CT-01 wording (exemp
 | 2026-11-06 | 4 | `IdempotencyTest`, `IdempotencyConcurrencyTest`, additions to `MobileLogoutTest` and `MobileTokenTest`: 83 tests pass across the idempotency, logout and token files. |
 | 2026-11-06 | 5 | OpenAPI 1.7.0 to 1.8.0: component `IdempotencyKey` is now optional in the schema (web does not send it) with the full rule in its description; used by `authLogout` and `authChangePassword`; their 422 is inline (`anyOf` VALIDATION_FAILED / IDEMPOTENCY_KEY_REUSED, because `components.responses` must hold exactly one entry per ErrorCode); 503 with `Retry-After`; response header `Idempotent-Replayed`. New drift test: every Bearer write lists the parameter and a 422. Drift test 7 pass; Spectral 6.17.0 clean. Waiting for the lead's OK (mode C). |
 | 2026-11-06 | 6 | The lead approved steps 3 to 5. PortHub worktree `E:\collage\GRADUATION PROGECT\PortHub-wt-idemp`, branch `feature/IDEMP-01-idempotency` from `origin/main` (not pushed): CT-01 `api-conventions.md` v1.4 to v1.5 (section 4 rewritten: Bearer writes only, token scope, `Idempotent-Replayed`, what is stored, replay only for a caller who may still write, concurrent twins and 503, exemptions; section 3 table row; change-log line), `error-codes.md` v1.3 to v1.4 (wording of two rows), and `contracts/openapi/port-api.yaml` replaced by the 1.8.0 file (identical to the source). A clarification of a rule that already existed, so a minor bump and a change-log line, no DEC and no team review (README, port API contracts). The copy under `docs/reference/contracts` comes with `sync-check --apply` after the PortHub merge. Waiting for the lead's OK (mode C). |
+| 2026-11-06 | 7 | `develop` merged in (PR 61 was merged: one conflict in the P1-C3 log, both rows kept). Final review by Opus (read-only subagent): 0 Blocker, 1 Must fix, 6 Should fix, 5 Note; all fixed or recorded, see section 10. |
+| 2026-11-06 | 7 · full suite | `vendor/bin/pest` with no database override on `atlantech_testing`: 853 passed (baseline `origin/develop`: 813). Memory: `origin/develop` peaks at 128 MB allocated, exactly PHP's 128M limit on this machine (Herd `php.ini`), so the suite already had no headroom; this branch peaks at 130 MB allocated (111.9 MB used) and `php artisan test` stops with "Allowed memory size of 134217728 bytes exhausted" unless `memory_limit` is raised (256M passes). Datasets were folded into loops (880 to 853 tests) and still do not fit; the lead decides: `<ini name="memory_limit" value="512M"/>` in `phpunit.xml`, or leave as it is. |
 
 ## 10. Review
 
-<Filled by `backend-task-review`.>
+
+### Final review · 2026-11-06 · Opus (read-only subagent, then fixes by Sonnet)
+
+Checked: the real middleware order (resolved with the router for `auth.logout`, `auth.change-password` and a route that lists every step in reverse): `IdempotentWrite` · `auth:sanctum` · throttle · `EnsureTokenDevice` · `RequireIdempotencyKey` · `EnsureAccountUsable` · ability · terminal scope · app version · licence · `ReplayIdempotentWrite` · binding · version token. Token never stored, entries encrypted, `hash_equals`, cross-token and cross-user isolation, no lock squatting (locks are scoped by the token hash), the lock is released after the response is stored, the E1, E2 and E3 plans against the code (all accurate; restore is coherent).
+
+| # | Severity | Finding | Result |
+| --- | --- | --- | --- |
+| 1 | Must fix | The OpenAPI drift test checked one operation per HTTP method (`flatMap` merge) | Fixed: keyed by method and path; asserts both Bearer writes are covered |
+| 2 | Should fix | Lock of 30 s can end before a long request | Fixed: 120 s, rule in the config |
+| 3 | Should fix | Multipart requests hash to the same value (empty raw body) | Fixed: fields and files are hashed; test added |
+| 4 | Should fix | Any endpoint that revokes its own token would get a pre-authentication replay | Fixed: only an empty (204) answer |
+| 5 | Should fix | CT-01 said a replay needs the same checks "at that moment" but the endpoint's own checks are not repeated | Fixed: CT-01 v1.5 reworded; logout exception stated |
+| 6 | Should fix | Plan text stale (throttle, what is stored, `preauth`, numbering) | Fixed |
+| 7 | Should fix | Test gaps (a to f) | Fixed: web with stray `Authorization`, 401 in the status list, logout reuse of the key, `problem+json` on a replayed 4xx, PATCH, replay after the ability check on a reversed route |
+| 8 | Note | error-codes change-log claimed a row change | Fixed (the row already allowed `Retry-After`) |
+| 9 | Note | OpenAPI wording (replayed 4xx header, logout 422, path and query) | Fixed |
+| 10 | Note | `.env.example` change not committed | Committed |
+| 11 | Note | Residual risks | Recorded as C13 |
+| 12 | Note | Bearer Port Admin revoking their own device | Added to P2-E3 section 6 |
+
+Conflicts: none left. Decisions needed from the lead before the PR: the memory limit (log, 7 · full suite).
+
+Verdict: **Ready for PR** once the lead has decided the memory question.

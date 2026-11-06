@@ -71,13 +71,18 @@ it('hashes the method, the path with its query and the body', function () {
         ->and($hash('POST', '/api/v1/auth/logout', '{"a":2}'))->not->toBe($base);
 });
 
-it('stores every non-5xx response except the ones that pass with time', function (int $status, bool $stored) {
-    expect(IdempotencyStore::isStorable(new Response('', $status)))->toBe($stored);
-})->with([
-    [200, true], [201, true], [204, true], [403, true], [404, true], [409, true], [422, true],
-    [401, false], [408, false], [423, false], [426, false], [429, false],
-    [500, false], [503, false],
-]);
+it('stores every non-5xx response except the ones that pass with time', function () {
+    $stored = [200, 201, 204, 403, 404, 409, 422];
+    $unstored = [401, 408, 423, 426, 429, 500, 503];
+
+    foreach ($stored as $status) {
+        expect(IdempotencyStore::isStorable(new Response('', $status)))->toBeTrue("status {$status}");
+    }
+
+    foreach ($unstored as $status) {
+        expect(IdempotencyStore::isStorable(new Response('', $status)))->toBeFalse("status {$status}");
+    }
+});
 
 it('knows the exempt route names', function () {
     expect(IdempotencyStore::isExemptRoute('sync.events.store'))->toBeTrue()
@@ -90,18 +95,24 @@ it('knows the exempt route names', function () {
         ->and(IdempotencyStore::isExemptRoute('sync.events.store'))->toBeFalse();
 });
 
-it('accepts a UUID v4 in either case and refuses anything else', function (?string $value, bool $valid) {
-    $passes = Validator::make(['k' => $value], ['k' => IdempotencyStore::keyRules()])->passes();
+it('accepts a UUID v4 in either case and refuses anything else', function () {
+    $valid = [IDEMPOTENCY_TEST_KEY, '5D6F3B6E-8A4C-4F0E-9B1D-2C7A1E9F0A11'];
+    $invalid = ['6ba7b810-9dad-11d1-80b4-00c04fd430c8', 'not-a-uuid', '', null];
 
-    expect($passes)->toBe($valid);
-})->with([
-    [IDEMPOTENCY_TEST_KEY, true],
-    ['5D6F3B6E-8A4C-4F0E-9B1D-2C7A1E9F0A11', true],
-    ['6ba7b810-9dad-11d1-80b4-00c04fd430c8', false],
-    ['not-a-uuid', false],
-    ['', false],
-    [null, false],
-]);
+    foreach ([...$valid, ...$invalid] as $value) {
+        $passes = Validator::make(['k' => $value], ['k' => IdempotencyStore::keyRules()])->passes();
+
+        expect($passes)->toBe(in_array($value, $valid, true), (string) $value);
+    }
+});
+
+it('hashes a multipart request by its fields, since PHP leaves the raw content empty', function () {
+    $hash = fn (array $fields) => IdempotencyStore::requestHash(Request::create('/api/v1/x', 'POST', $fields, server: ['CONTENT_TYPE' => 'multipart/form-data']));
+
+    expect($hash(['a' => '1', 'b' => ['x' => '2']]))->toBe($hash(['b' => ['x' => '2'], 'a' => '1']))
+        ->and($hash(['a' => '1']))->not->toBe($hash(['a' => '2']))
+        ->and($hash(['a' => '1']))->not->toBe($hash([]));
+});
 
 it('lets a second holder wait for the lock and then take it', function () {
     $store = new IdempotencyStore;

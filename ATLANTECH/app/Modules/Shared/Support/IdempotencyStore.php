@@ -9,6 +9,8 @@ use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
@@ -47,11 +49,22 @@ class IdempotencyStore
     }
 
     /**
-     * Covers the method, the path with its query string and the raw body (JSON for the mobile app; an upload is not covered by it).
+     * Covers the method, the path with its query string and the body: the raw content, or for a multipart request (PHP leaves the raw
+     * content empty) the sorted fields and the name, size and SHA-256 of every uploaded file.
      */
     public static function requestHash(Request $request): string
     {
-        return hash('sha256', implode("\n", [$request->method(), $request->getRequestUri(), $request->getContent()]));
+        $body = $request->getContent();
+
+        if ($body === '') {
+            $files = array_map(
+                fn (UploadedFile $file): array => [$file->getClientOriginalName(), $file->getSize(), hash_file('sha256', $file->getPathname())],
+                Arr::flatten($request->allFiles()),
+            );
+            $body = json_encode([Arr::sortRecursive($request->post()), $files], JSON_THROW_ON_ERROR);
+        }
+
+        return hash('sha256', implode("\n", [$request->method(), $request->getRequestUri(), $body]));
     }
 
     public static function isWriteMethod(string $method): bool

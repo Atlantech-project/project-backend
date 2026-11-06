@@ -125,12 +125,12 @@ it('documents Idempotency-Key and its 422 on every write that accepts a Bearer t
     $writes = collect(openApi()['paths'])
         ->flatMap(fn (array $path, string $uri) => collect($path)
             ->only(['post', 'put', 'patch', 'delete'])
-            ->map(fn (array $operation, string $method) => [$method.' '.$uri, $operation]))
-        ->filter(fn (array $entry) => collect($entry[1]['security'] ?? [])->contains(fn (array $scheme) => array_key_exists('bearerAuth', $scheme)));
+            ->mapWithKeys(fn (array $operation, string $method) => [$method.' '.$uri => $operation]))
+        ->filter(fn (array $operation) => collect($operation['security'] ?? [])->contains(fn (array $scheme) => array_key_exists('bearerAuth', $scheme)));
 
-    expect($writes)->not->toBeEmpty();
+    expect($writes->keys()->all())->toContain('post /api/v1/auth/change-password', 'post /api/v1/auth/logout');
 
-    foreach ($writes as [$name, $operation]) {
+    foreach ($writes as $operation) {
         expect(collect($operation['parameters'] ?? [])->pluck('$ref')->all())
             ->toContain('#/components/parameters/IdempotencyKey')
             ->and($operation['responses'])->toHaveKey('422');
