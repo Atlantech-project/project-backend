@@ -1,6 +1,6 @@
 # F09 · Roles, abilities and scope
 
-Task origin: P2-D1 (Sprint 2, backend PR #49), built on the profile of P1-C1 (F07). Facts checked against `develop` at `106b40e`. Paths are inside `project-backend/ATLANTECH/` unless stated. The write chain that orders these checks is F11; the audit writer is F10.
+Task origin: P2-D1 (Sprint 2, backend PR #49), built on the profile of P1-C1 (F07); updated for the mobile stack (P1-C3, PR #55 and #57), which made the signed-in routes accept a Bearer token. Facts re-checked against `develop` at `9559d35` (first written at `106b40e`). Paths are inside `project-backend/ATLANTECH/` unless stated. The write chain that orders these checks is F11; the audit writer is F10.
 
 ## 1. What it does
 
@@ -26,7 +26,7 @@ It does **not**: manage users or assign roles (P2-E1/E2), check the terminal *ty
 
 ### 2.1 A route with `ability:` and `terminal.scope`
 
-1. The request reaches a route inside `port.api` (F11): `auth:web` → 401 without a session; `EnsureAccountUsable` (F08) → 403 if disabled or the password change is pending.
+1. The request reaches a route inside `port.api` (F11): `auth:sanctum` → 401 without a valid session or Bearer token; `EnsureTokenDevice` (Bearer requests only, F07) → 422/401 for the device headers; `EnsureAccountUsable` (F08) → 403 if disabled or the password change is pending. From here on the web user and the mobile user are the same thing: `$request->user()` is an `Access\Models\User`, and the ability, scope and own-task checks below do not look at how the user signed in.
 2. **`EnsureAbility::handle($request, $next, 'users.manage')`** (`EnsureAbility.php:30-49`):
    1. user is not an `Access\Models\User` → throw 401 `UNAUTHENTICATED`;
    2. `$role = $user->accessScope()->role` (the `AccessScope` is built once per user instance, see 3.5);
@@ -151,7 +151,8 @@ Reading the table:
 - `port-state.read` is the general port picture for **office** roles (lead answer Q4): GM, STAFF, both pilotage, both tug office roles, terminal admin and terminal officer. Field roles do not hold it.
 - The admin area (`users`, `devices`, `audit`, `license`, `ai-model`) is Port Admin only.
 - `PORT_STAFF` holds the berthing/plan workflow (8 abilities plus `port-state.read`); the GM does not (no inheritance).
-- Field roles hold **only** own-task abilities (the supervisor also `terminal-status.update`), so on the web every other endpoint is 403 and the web shows "use the mobile app" (DEC-48, screen P-20). Sign-in and `auth/me` still answer 200 for them.
+- Field roles hold **only** own-task abilities (the supervisor also `terminal-status.update`), so on the web every other endpoint is 403 and the web shows "use the mobile app" (DEC-48, screen P-20). Web sign-in and `auth/me` still answer 200 for them.
+- **How `auth:sanctum` and field roles meet.** Pilots, tug masters and terminal supervisors use the tablet: `POST auth/mobile/login` gives them a token, and every later request is authenticated by `auth:sanctum` as the same `User`. The ability check is identical for a session and for a token: the token's Sanctum abilities are always `['*']` and are **not** consulted; authorisation is only the role matrix. Checked with a throw-away probe on `develop` at `9559d35` (a `MARINE_PILOT` token calling `GET /api/v1/audit-logs` answered `403 FORBIDDEN` with one `REJECTED_ATTEMPT` row; a `PORT_GM` token answered `200`). The mobile sign-in itself does not look at the role: any role can get a token (`MobileSignInTest` "lets an office role sign in on a tablet"). Today only `audit-logs` carries an ability, so the field-role task routes (`tasks.own.*`) are exercised by test routes only (`OwnTasksTest`).
 - Terminal roles' abilities are *own terminal*: the ability allows the call, `terminal.scope` or the endpoint limits it to their terminal.
 
 ### 3.4 `AccessServiceProvider` (`app/Modules/Access/AccessServiceProvider.php`)
@@ -160,9 +161,10 @@ Reading the table:
 
 | Lines | What it registers |
 | --- | --- |
-| `:128-130` | in the console only, the command `PublishRoleMatrix` |
-| `:132-134` | middleware aliases `ability` → `EnsureAbility`, `terminal.scope` → `EnsureTerminalScope`, `app.version` → `EnsureMinAppVersion` (F11) |
-| `:136-142` | **one `Gate` per ability**: `Gate::define($ability->value, fn (User $user) => $role !== null && RolePermissions::allows($role, $ability))` where `$role = $user->accessScope()->role` |
+| console | in the console only, the command `PublishRoleMatrix` |
+| middleware aliases | `ability` → `EnsureAbility`, `terminal.scope` → `EnsureTerminalScope`, `app.version` → `EnsureMinAppVersion` (F11; now a real 426 check, F07) |
+| token model | `Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class)` and `Sanctum::authenticateAccessTokensUsing(fn ($token, $isValid) => $isValid && ! $token->isRevoked())` (F07 3.12). This is the mobile token plumbing and not part of the permission logic. |
+| gates | **one `Gate` per ability**: `Gate::define($ability->value, fn (User $user) => $role !== null && RolePermissions::allows($role, $ability))` where `$role = $user->accessScope()->role` |
 
 The Gates are for code that asks `Gate::allows('users.manage')` or `$user->can(...)`; they follow the same matrix. The **middleware does not call the Gates**; `EnsureAbility` calls `RolePermissions` directly because it must also audit and distinguish "no role" from "role not allowed". Test: `AbilityMiddlewareTest` "defines one Gate per ability that follows the matrix".
 
@@ -233,9 +235,9 @@ Signature `atlantech:contracts-role-matrix {--output=}`; Composer script `contra
 
 `document()` builds: a header table (Version, Status "Draft: for review by Frontend and QA", Owner, Reviewers, Source); the matrix table (rows = abilities, columns = roles, `yes` or empty); the per-role lists ("`MARINE_SAFETY_OFFICER`: none"); the rules block (open routes, terminal scope, field roles, MSO, check order, terminal type is the endpoint's job, every refusal audited); and the change log. Constants: `VERSION = 'v1.0'`, `CHANGE_LOG` (one row: `v1.0`, `2026-11-03`, "First version: 12 roles, 27 abilities (P2-D1). `MARINE_SAFETY_OFFICER` and `storage.manage` wait for the Non-Container work."). **When the matrix changes, bump `VERSION` and add a line to `CHANGE_LOG`.** I ran the command with a temporary `--output` and compared it with `PortHub/contracts/role-matrix.md`: **identical**. (`PublishRoleMatrixTest` also checks the output is stable.)
 
-### 3.11 Middleware stub next door: `EnsureMinAppVersion`
+### 3.11 `EnsureMinAppVersion` next door
 
-Registered here as alias `app.version` but it is a pass-through hook for P1-C3 (F11 owns it).
+Registered here as alias `app.version`. Since P1-C3 it is a real check, not a hook: it passes a request with no `X-App-Version`, otherwise validates the header and answers **426** when the version is older than `port_settings.min_app_version` (F07 3.11, F11 for the position in the chain). It is not an ability.
 
 ## 4. Why this design
 
@@ -259,7 +261,7 @@ Registered here as alias `app.version` but it is a pass-through hook for P1-C3 (
 
 - **Calls:** `RolePermissions`, `AccessScope`, `AccessRefusal` → `AuditService::rejectedAttempt` (F10) and `ApiProblemException`/`ErrorCode::Forbidden` (F03).
 - **Called by:** every route that declares `ability:` (today `audit-logs`, F10); `UserProfileResource` (F07) reads `AccessScope`; future endpoint tasks (P2-F*, P3-*) call `TerminalScope` and `visibleTo`.
-- **Position in the write chain (F11):** `auth:web` → password gate (F08) → **`ability:`** → **`terminal.scope`** → `app.version` → `license.write` → route binding → `version.token`. The order is fixed by the priority list, not by how a route lists its middleware (`WriteChainOrderTest`).
+- **Position in the write chain (F11):** `auth:sanctum` → device check (`EnsureTokenDevice`, F07) → password gate (F08) → **`ability:`** → **`terminal.scope`** → `app.version` → `license.write` → route binding → `version.token`. The order is fixed by the priority list, not by how a route lists its middleware (`WriteChainOrderTest`).
 - **Depends on:** F07 (user, assignment, unit), F08 (gate first), F10, F03.
 - **Layer rules:** Access uses only Shared. `PlanComponent` (Plan) uses the Access trait; Access never names Plan.
 - **Other teams:** Frontend (menus from `role-matrix.md`), QA (cross-role tests), AI team indirectly (terminal isolation is requirement AIBD-024).
@@ -287,24 +289,25 @@ Run any file with `vendor/bin/pest <path>` (own database, see A7). All except `R
 | `tests/Feature/Access/OwnTasksTest.php` | `visibleTo` returns only the field user's components; own task opens; another's task 403 `not_own_task`; unassigned task 403; supervisor held to own tasks and own terminal (`terminal_out_of_scope`); office roles unrestricted; local scope only; no role sees nothing; a role without the ability is refused before the scope runs |
 | `tests/Feature/Access/RefusalAuditTest.php` | each of the four reasons writes exactly one audit row with the user as actor; successes write none |
 | `tests/Feature/Access/CrossRoleSecurityTest.php` | one test route per ability, every role calls every route: holders 200, all others 403 `FORBIDDEN` and exactly that many audit rows (at least 30 denials); every role keeps `auth/me` (MSO included); field roles get 403 on every ability they do not hold |
-| `tests/Feature/Api/RouteAbilityCoverageTest.php` | every `api/v1/` route has `ability:` or is on the allow-list `auth.login`, `auth.me`, `auth.change-password`, `auth.logout`; the allow-list has no dead names; every `ability:` names a real ability; every route with an ability runs inside `port.api`; every route with a `{terminal}` parameter has `terminal.scope` |
+| `tests/Feature/Api/RouteAbilityCoverageTest.php` | every `api/v1/` route has `ability:` or is on the allow-list `ABILITY_FREE_ROUTES` = `auth.login`, `auth.mobile.login`, `auth.me`, `auth.change-password`, `auth.logout`, `system.info` (the last one is public by contract CT-04: the tablet reads it before sign-in); the allow-list has no dead names; every `ability:` names a real ability; every route with an ability runs inside `port.api`; every route with a `{terminal}` parameter has `terminal.scope` |
 | `tests/Feature/Console/PublishRoleMatrixTest.php` | the file lists every ability row and role column; says MSO holds none; same output twice; fails with a non-existent folder |
 
-Real run for this guide: `tests/Feature/Access`, `tests/Feature/Audit`, `tests/Unit/Modules/Access`, `RouteAbilityCoverageTest` and `PublishRoleMatrixTest` together: **156 passed (1685 assertions), 41 s**. `WriteChainOrderTest` and `ModuleArchitectureTest` were not run (F11, F01).
+Real run for this guide on `develop` at `9559d35`: `tests/Feature/Access`, `tests/Feature/Audit`, `tests/Unit/Modules/Access`, `RouteAbilityCoverageTest`, `PublishRoleMatrixTest`, `WriteChainOrderTest`, `SystemInfoTest` and `TokenPruneNotScheduledTest` together: **217 passed (2017 assertions), 68 s**. `ModuleArchitectureTest` was not run (F01). No existing test calls an ability route with a Bearer token and expects 403; the probe mentioned in section 3.3 did that once (not kept).
 
 ## 8. Gotchas and invariants
 
-- **Every new route needs `ability:<name>` and must be inside `port.api`**, or `RouteAbilityCoverageTest` fails. Adding a name to `ABILITY_FREE_ROUTES` in that test is a security decision: say why in the PR.
+- **Every new route needs `ability:<name>` and must be inside `port.api`**, or `RouteAbilityCoverageTest` fails. Adding a name to `ABILITY_FREE_ROUTES` in that test is a security decision: say why in the PR. The list has six names today; two are not sign-in: `system.info` (public by contract CT-04) and `auth.mobile.login` (a guest route like `auth.login`). A public route must also sit outside `port.api`, or it would demand a token.
 - **A route with a `{terminal}` parameter must also carry `terminal.scope`** (the test enforces it). The parameter must be literally named `terminal`.
 - **`terminal.scope` only sees the route.** A `terminal_id` in a JSON body or query is not checked; call `TerminalScope::authorize` in the controller. A list endpoint must call `TerminalScope::restrict`. Nothing flags a forgotten call (Open point).
 - **Terminal *type* is the endpoint's job** (equipment and yard only for container terminals, Q3).
 - **Order matters and is set centrally.** Never reorder `bootstrap/app.php`'s `priority` list to "fix" a route; F11.
 - **Changing the matrix means changing four things:** `RolePermissions`, the expected table in `RolePermissionsTest`, the version and change log in `PublishRoleMatrix`, and then run `composer contracts:role-matrix` and open the paired PortHub PR.
 - **Adding an `Ability` case without giving it to a role** fails `RolePermissionsTest` ("grants every ability to at least one role"), and the published matrix gains a row with no `yes`.
-- **403 everywhere for a role-less user** except the four open routes. This is by design (lead answer N2 of P1-C1); a user whose role was ended in the database still signs in.
+- **403 everywhere for a role-less user** except the open routes (sign-in on either channel, `auth/me`, `auth/change-password`, `auth/logout`, and the public `system/info`). This is by design (lead answer N2 of P1-C1); a user whose role was ended in the database still signs in, on the web and on a tablet.
 - **Gates and middleware are two paths to the same answer.** Change the matrix only in `RolePermissions`; never add a second source.
 - **`User::accessScope()` is memoised per instance.** In tests that change an assignment after the first call, use `$user->fresh()`.
 - **Never raw-query field-user data.** `visibleTo` only helps when the endpoint uses it; a worker query is intentionally unrestricted.
+- **The token's Sanctum `abilities` (`['*']`) mean nothing here.** Never use `tokenCan()` for authorisation; the matrix is the only source.
 - **`isFieldRole` and `isTerminalScoped` are independent.** The supervisor is both: own tasks *and* own terminal.
 - **`PORT_GM` is not a superuser.** It lacks every workflow ability (`berthing-requests.manage`, `plans.confirm`, ...). `plans.safety-exception` is the only plan power it holds.
 
@@ -337,7 +340,7 @@ Run for this guide:
 ```bash
 php artisan route:list --except-vendor
 ```
-Real output: six routes; only `audit-logs.index` carries an `ability:`; the four `auth.*` routes are the allow-list.
+Real output at `9559d35`: eight routes; only `audit-logs.index` carries an `ability:`; the allow-list is `auth.login`, `auth.mobile.login`, `auth.me`, `auth.change-password`, `auth.logout` and `system.info`.
 
 ```bash
 php artisan atlantech:contracts-role-matrix --output=$env:TEMP\rm_g3.md
@@ -348,7 +351,7 @@ Real output: `Wrote <temporary file>.` The content was identical to `PortHub/con
 $env:DB_DATABASE='atlantech_testing_g3'; $env:DB_SCHEMA_TEST_DATABASE='atlantech_testing_g3'
 vendor/bin/pest tests/Unit/Modules/Access/RolePermissionsTest.php tests/Feature/Access/CrossRoleSecurityTest.php
 ```
-Real result: part of the 156-test run, all passed. `RolePermissionsTest` does not need MySQL for its logic but runs in the same process.
+Real result: part of the 217-test run, all passed. `RolePermissionsTest` does not need MySQL for its logic but runs in the same process.
 
 The matrix in 3.3 came from a read-only PHP script that loads `vendor/autoload.php` and calls `RolePermissions::allows` for each of the 12×27 pairs (no application boot, no database).
 

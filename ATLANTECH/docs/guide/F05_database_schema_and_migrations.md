@@ -1,6 +1,6 @@
 # F05 · Database schema and migrations
 
-Task origin: P1-B1 (migrations, grants, `schema.sql`), P1-B2 and P1-B3 (reviews and fixes), P1-B4 (constraint tests), DEC-59 (`port_settings` min and max, 2026-11-03). Facts checked against `develop` at `106b40e`. Paths are inside `project-backend/ATLANTECH/` unless stated. The reader should know `A_orientation.md` (modules in A4, vocabulary in A5) and `F01` (strict MySQL and UTC in `config/database.php`).
+Task origin: P1-B1 (migrations, grants, `schema.sql`), P1-B2 and P1-B3 (reviews and fixes), P1-B4 (constraint tests), DEC-59 (`port_settings` min and max, 2026-11-03), P1-C3 (`personal_access_tokens`, 2026-11-05). Facts first checked against `develop` at `106b40e` (2026-11-04) and **updated on 2026-11-06 against `develop` at `9559d35`** (the new table, the removal of the DEMO line from `workers.sql`, the republished `schema.sql`). Paths are inside `project-backend/ATLANTECH/` unless stated. The reader should know `A_orientation.md` (modules in A4, vocabulary in A5) and `F01` (strict MySQL and UTC in `config/database.php`).
 
 ## 1. What it does
 
@@ -8,14 +8,14 @@ This feature is the **database of the port**: 92 tables, built only by Laravel m
 
 It gives you:
 
-- **92 port tables** (plus the framework tables) created by 97 migration files: 3 Laravel framework files, 92 one-per-table files, `add_deferred_foreign_keys` and `alter_port_settings_add_min_max`. A fresh database has 100 tables: 92 port tables + `migrations`, `sessions`, `password_reset_tokens`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`.
-- **Names and types that never vary:** plural table names (CT-17 `table-names.md`), `BIGINT UNSIGNED` ids and foreign keys, explicit names for all 156 foreign keys, InnoDB, `utf8mb4_0900_ai_ci`.
+- **92 port tables** (plus the framework tables) created by 98 migration files: 3 Laravel framework files, 92 one-per-table files, `add_deferred_foreign_keys`, `alter_port_settings_add_min_max` and `create_personal_access_tokens_table`. A fresh database has 101 tables: 92 port tables + 9 framework tables (`migrations`, `sessions`, `password_reset_tokens`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs` and `personal_access_tokens`).
+- **Names and types that never vary:** plural table names (CT-17 `table-names.md`), `BIGINT UNSIGNED` ids and foreign keys, explicit names for all 157 foreign keys (156 on the port tables and `fk_pat_user_device` on the token table), InnoDB, `utf8mb4_0900_ai_ci`.
 - **Rules inside the database:** 129 named CHECK constraints on 60 tables, 17 stored generated columns (12 of them unique keys over 8 distinct column names), 103 strict ENUM columns, and a microsecond `updated_at` on 24 tables that the API uses as its **version token** (F12).
 - **A security boundary for the AI workers:** `database/grants/workers.sql` defines six MySQL roles (one per AI worker, DEC-08) and `php artisan atlantech:worker-accounts` creates the six accounts from `.env` passwords.
 - **A published copy of the schema:** `php artisan atlantech:contracts-schema` (`composer contracts:schema`) rebuilds the schema on a scratch database, dumps it and writes `contracts/db/schema.sql` in PortHub for the AI team (CT-17).
 - **Tests** that fail if a table, constraint, generated column, grant or the published schema drifts.
 
-It does **not** give you: Eloquent models, enums and factories (F06), seed rows (F13), the `personal_access_tokens` table (not built yet, F15), the AI worker code, or a rule that MySQL cannot hold. Rules like "a berth has at least one terminal" or "the BAPLIE worker fills only the NULL vessel columns" live in application code (later features).
+It does **not** give you: Eloquent models, enums and factories (F06), seed rows (F13), the mobile sign-in code that uses `personal_access_tokens` (Sanctum, `Access/Services/MobileSignInService.php`, `Access/Http/Middleware/EnsureTokenDevice.php`: added after the first version of this guide and not described in F07 to F15 as of 2026-11-04; Unverified whether a later guide file covers them), the AI worker code, or a rule that MySQL cannot hold. Rules like "a berth has at least one terminal" or "the BAPLIE worker fills only the NULL vessel columns" live in application code (later features).
 
 ## 2. Request or data flow
 
@@ -32,13 +32,13 @@ There is no HTTP request here. Two flows matter.
 
 **B. What happens when the schema is built** (`php artisan migrate`, `migrate:fresh`, or `useSchemaDatabase()` in tests):
 
-1. Laravel runs the migrations in file-name order: `0001_01_01_00000x` framework files first, then `2026_10_28_100001` … `100092` (92 port tables, ordered so every foreign key points to a table that already exists), then `2026_10_28_200000_add_deferred_foreign_keys`, then `2026_11_03_183535_alter_port_settings_add_min_max`.
+1. Laravel runs the migrations in file-name order: `0001_01_01_00000x` framework files first, then `2026_10_28_100001` … `100092` (92 port tables, ordered so every foreign key points to a table that already exists), then `2026_10_28_200000_add_deferred_foreign_keys`, then `2026_11_03_183535_alter_port_settings_add_min_max`, then `2026_11_05_100000_create_personal_access_tokens_table`.
 2. Inside each table file, `Schema::create` makes the columns, keys and foreign keys; then `DB::statement('ALTER TABLE … ADD CONSTRAINT chk_… CHECK (…)')` adds the CHECK constraints (3.2).
 3. The connection is strict MySQL with session time zone `+00:00` (`config/database.php:60,62`), so a wrong ENUM value is an error, not an empty string.
 
 ## 3. Every piece of code
 
-### 3.1 The 97 migration files
+### 3.1 The 98 migration files
 
 | Group | Files | What they make |
 | --- | --- | --- |
@@ -46,8 +46,28 @@ There is no HTTP request here. Two flows matter.
 | Port tables | `2026_10_28_100001` … `2026_10_28_100092`, one file per table, named `create_<table>_table` | The 92 tables of the catalogue in 3.3. Numbers `100001-100090` were generated from `PortSync.sql` (one-off Node script, then edited by hand, P1-B1 answer 2); `100091` (`yard_runs`) and `100092` (`baplie_parse_runs`) were written by hand from CT-11 and CT-12. |
 | Deferred foreign key | `2026_10_28_200000_add_deferred_foreign_keys` | One foreign key, `feasible_windows.proposal_id → entry_window_proposals.id`, named `fk_fw_proposal` (`…200000…php:15`). See 3.6. |
 | Later change | `2026_11_03_183535_alter_port_settings_add_min_max` | Adds nullable `decimal(18,6)` `min_value` and `max_value` after `value_type` on `port_settings` (`…183535…php:19-20`); DEC-59 Option 1, CT-18 v1.1. `down()` drops both columns. This is the **model for a post-release change**: additive, nullable, no data rewrite. |
+| Framework table added later | `2026_11_05_100000_create_personal_access_tokens_table` | Sanctum's mobile device tokens, with the device and `revoked_at` added (3.1b). A **framework table** like `sessions`: not in `table-names.md`, no worker grant. |
 
 Every port-table migration has the same shape: `up()` creates the table and adds the CHECKs; `down()` is `Schema::dropIfExists('<table>')`.
+
+### 3.1b The framework table `personal_access_tokens` (P1-C3)
+
+`2026_11_05_100000_create_personal_access_tokens_table.php` (45 lines) makes Laravel Sanctum's token table with two project additions. It is the only framework table that has a foreign key into a port table.
+
+| Column | Type | Notes (file lines 19-34) |
+| --- | --- | --- |
+| `id` | `bigint unsigned` auto-increment | `$table->id()` |
+| `tokenable_type`, `tokenable_id` | `varchar(255)`, `bigint unsigned` | `$table->morphs('tokenable')`: Sanctum's polymorphic owner. There is **no foreign key** on it, so the database does not check that the owner exists; the plain index `personal_access_tokens_tokenable_type_tokenable_id_index` is Laravel's name. |
+| `user_device_id` | `bigint unsigned` NOT NULL | The device the token was issued to (lead's answer of 2026-11-01, used to revoke a device). **FK `fk_pat_user_device` → `user_devices.id`**, the only foreign key of the table (`:32`). |
+| `name` | `text` | The device id (`X-Device-Id`) sent at sign-in. |
+| `token` | `varchar(64)` | Unique key `uq_pat_token` (the hashed token). |
+| `abilities` | `text` NULL | Sanctum default. |
+| `last_used_at` | `datetime` NULL | Sanctum default. `config/sanctum.php` sets `'last_used_at' => false`, so Sanctum does not stamp it; `EnsureTokenDevice` stamps it only after the device matches. |
+| `expires_at` | `datetime` NULL, index `idx_pat_expires_at` | "30 days after the last use (sliding)". |
+| `revoked_at` | `datetime` NULL | "Never deleted: set to revoke" (FR-GL-03, Coding Notes section 6.3). |
+| `created_at`, `updated_at` | `datetime` NULL | Second precision. **Not a version token**: the table is not among the 24 `DATETIME(6)` tables. |
+
+The table carries no CHECK and no generated column, so the totals of 3.4 and 3.5 (129 and 17) did not change. Why it is a framework table and not a port table: CT-17 section 3 lists `personal_access_tokens` with `sessions` and `cache` as Backend-only Laravel tables; the migration header says "A framework table like `sessions`: workers get no grant", and `workers.sql` has no line for it (checked: the file names no `personal_access_tokens`). It is not in `contracts/db/table-names.md`, so `SchemaTablesTest` does not count it among the 92 (the 92-name tests read that list); `ModelLayerTest` excludes its model (F06). The model is `App\Modules\Access\Models\PersonalAccessToken` (F06 3.8b), registered with `Sanctum::usePersonalAccessTokenModel(...)` in `AccessServiceProvider.php:34`; `User` uses `HasApiTokens`. Consequence for the counts: the database has **157 foreign keys** (156 on port tables + `fk_pat_user_device`) and 101 tables, but the port schema is still 92 tables and 156 foreign keys.
 
 ### 3.2 How a migration is written here (conventions)
 
@@ -69,7 +89,7 @@ Take `2026_10_28_100005_create_users_table.php` (lines 15-27) and `…100011_cre
 
 ### 3.3 Catalogue of the 92 tables
 
-Grouped by the module that owns the model (F06; `A_orientation.md` A4). **Migration** is the file number after `2026_10_28_`. **Token** = has the `updated_at DATETIME(6)` version token. **FKs / CHECKs** are the counts declared in that file; **Generated** lists stored generated columns. The purpose lines come from the table and column comments in the migrations and the class diagrams; counts were produced by a script over the migration files and then checked against the live database (100 tables, 156 foreign keys, 129 CHECKs, 17 generated columns, 103 ENUM columns, 24 `datetime(6)` tokens).
+Grouped by the module that owns the model (F06; `A_orientation.md` A4). **Migration** is the file number after `2026_10_28_`. **Token** = has the `updated_at DATETIME(6)` version token. **FKs / CHECKs** are the counts declared in that file; **Generated** lists stored generated columns. The purpose lines come from the table and column comments in the migrations and the class diagrams; counts were produced by a script over the migration files and then checked against the live database (101 tables, 157 foreign keys of which 156 are on the 92 port tables, 129 CHECKs, 17 generated columns, 103 ENUM columns, 24 `datetime(6)` tokens).
 
 **Shared** (1 tables)
 
@@ -395,7 +415,7 @@ MySQL allows many NULLs in a UNIQUE index. A stored generated column that is **N
 - **Naming.** `fk_<table abbreviation>_<target>`, for example `fk_ura_user`, `fk_ewp_window`, `fk_device_user`, `fk_p1r_request`, `fk_rrv_rec`. The names come from `PortSync.sql`, Report A and the edit sheet (CT-17 §2: names unchanged). Where the SQL source had no name, the first generator used Laravel's `<table>_<column>_foreign`; P1-B2 (M1: `user_devices`) and P1-B3 (M1, M2: `part1_runs`, `recommendation_reviews`) renamed the ones Report A names, and `SchemaTablesTest.php:101` now fails if any database FK still ends in `_foreign`.
 - **Composite foreign keys (38 in the create files).** They tie child rows to the same parent in two columns so the database enforces consistency. Example: `user_role_assignments (organization_unit_id, unit_type) → organization_units (id, unit_type)` (`fk_ura_unit`) keeps the role's `unit_type` equal to its unit's. Another: `entry_window_proposals (confirmed_window_id, id) → feasible_windows (id, proposal_id)` (`fk_ewp_window`) forces a confirmed window to belong to the same proposal.
 - **No cascades.** Every FK is `NO ACTION`: deleting a parent that has children is refused.
-- **Why one FK is deferred.** `feasible_windows.proposal_id` points to `entry_window_proposals`, and `entry_window_proposals.confirmed_window_id` points back to `feasible_windows`. Each table needs the other to exist, so neither `create` file can carry both keys. `entry_window_proposals` (migration `100037`) is created after `feasible_windows` (`100036`) with its key to the windows, and the key from `feasible_windows` to proposals is added last in `2026_10_28_200000_add_deferred_foreign_keys` (the only cycle in the design, P1-B1 progress log step 1). So the database has 155 FKs from the create files + 1 deferred = 156.
+- **Why one FK is deferred.** `feasible_windows.proposal_id` points to `entry_window_proposals`, and `entry_window_proposals.confirmed_window_id` points back to `feasible_windows`. Each table needs the other to exist, so neither `create` file can carry both keys. `entry_window_proposals` (migration `100037`) is created after `feasible_windows` (`100036`) with its key to the windows, and the key from `feasible_windows` to proposals is added last in `2026_10_28_200000_add_deferred_foreign_keys` (the only cycle in the design, P1-B1 progress log step 1). So the port tables have 155 FKs from the create files + 1 deferred = 156; with `fk_pat_user_device` of the token table (3.1b) the database has 157.
 
 ### 3.7 Strict ENUMs
 
@@ -407,7 +427,7 @@ MySQL allows many NULLs in a UNIQUE index. A stored generated column that is **N
 
 ### 3.9 `database/grants/workers.sql` (DEC-08)
 
-592 lines of plain SQL, no secrets. It creates six **roles** with `CREATE ROLE IF NOT EXISTS` (`workers.sql:13-18`). Each role section starts with `REVOKE ALL PRIVILEGES, GRANT OPTION FROM '<role>'` (so the file can be run again and always ends in the same state) and then lists grants. Rules (header, `workers.sql:9-11`): SELECT on every port table except `audit_logs`, `notification_logs`, `user_devices`, `recommendation_reviews`; `users` and `license_states` by column only; no DELETE; no DDL; workers insert new rows and the Backend retires old ones. Each role gets SELECT on 86 tables (checked by script) plus `SELECT (id, name, is_active) ON users` and `SELECT (mode, read_only_reason) ON license_states`; `users.password_hash` and the licence token are not readable.
+590 lines of plain SQL, no secrets (the `-- DEMO (do not merge)` line that ended the file on 2026-11-04 was removed in P1-C3, and a test now forbids such a line, 7). It creates six **roles** with `CREATE ROLE IF NOT EXISTS` (`workers.sql:13-18`). Each role section starts with `REVOKE ALL PRIVILEGES, GRANT OPTION FROM '<role>'` (so the file can be run again and always ends in the same state) and then lists grants. Rules (header, `workers.sql:9-11`): SELECT on every port table except `audit_logs`, `notification_logs`, `user_devices`, `recommendation_reviews`; `users` and `license_states` by column only; no DELETE; no DDL; workers insert new rows and the Backend retires old ones. Each role gets SELECT on 86 tables (checked by script) plus `SELECT (id, name, is_active) ON users` and `SELECT (mode, read_only_reason) ON license_states`; `users.password_hash` and the licence token are not readable.
 
 | Role | Account | SELECT | INSERT | UPDATE (columns) |
 | --- | --- | --- | --- | --- |
@@ -482,6 +502,7 @@ Output on success: `Wrote <path> (last migration <name>).`
 | No DELETE and no DDL for workers; column-level UPDATE | A worker can report its result but cannot rewrite history or secrets. The Backend alone writes audit rows and statuses. | DEC-08; CT-15 |
 | Strict mode and UTC on the connection | The ENUM and time rules depend on them (F01). | CT-17 §2 |
 | Tests prove a sample of CHECKs plus a name guard, not all 129 | Cost and value: one case per kind and per module, and any removed or renamed rule fails the guard. A test for `chk_yr_retry` was proposed to the AI team, not added. | P1-B4 answers 1, 2, 3 |
+| The mobile token table is Sanctum's own, extended with `user_device_id` and `revoked_at`, and is a framework table | Sanctum needs its column set; a token must be tied to a device so a device can be revoked, and is never deleted. Workers have no business with it, so it gets no grant and no port-table status | P1-C3 migration header; CT-17 section 3; FR-GL-03 |
 | Label `ai-impact` by file path | Cheap and automatic; the AI lead reviews anything that can change what workers read or write. | CT-17 §6 |
 
 Rejected alternatives that appear in the plan files: keeping `tinyint` singletons (P1-B2 C2), making `single_key` signed as the DDL fixes file says (M2, kept unsigned to match the other seven id keys), adding `FAILED`/`TIMEOUT` to `solver_runs.status` (P1-B3 answer 5: use `ERROR` with the reason in `result_detail`).
@@ -490,6 +511,7 @@ Rejected alternatives that appear in the plan files: keeping `tinyint` singleton
 
 - **F06** builds one model per table and one enum per ENUM value set on this schema; `ModelLayerTest` reads `information_schema` and `workers.sql` to check models against it.
 - **F09, F10, F12** depend on columns here: `user_role_assignments` and its generated key (roles), `audit_logs` (append-only audit), `updated_at` (version token).
+- **Mobile sign-in (P1-C3)** writes `personal_access_tokens` through the `PersonalAccessToken` model (F06); its code is outside the 11 guide features written on 2026-11-04.
 - **F13** seeds these tables; the `port_settings` min and max columns exist for it.
 - **F14** lists `GenerateContractsSchema` among the four publishing commands; **F02** owns the `labeler` workflow, CI and the test database variables; **F01** owns `config/database.php` and Docker.
 - **Module layer rule.** Tables have no module in MySQL. The module of a table is decided by the model that maps it (F06, plan P1-B5 section 3), so a foreign key may point at a table whose model sits in a *later* module; the relation is then defined on the later side only.
@@ -504,19 +526,19 @@ The feature **is** the data definition. Ownership (CT-15, `contracts/ai/table-ow
 - update only listed columns on 7 tables: the run tables `part1_runs`, `solver_runs`, `yard_runs`, `baplie_parse_runs`, plus `terminal_recommendations`, `baplie_files` and two columns of `vessels` (`call_sign`, `flag_state`);
 - never read `audit_logs`, `notification_logs`, `user_devices`, `recommendation_reviews`, `users.password_hash`, the licence token.
 
-Framework tables (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `password_reset_tokens`, `migrations`) are Backend-only; no worker has a grant on them.
+Framework tables (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `password_reset_tokens`, `migrations`, `personal_access_tokens`) are Backend-only; no worker has a grant on them. `personal_access_tokens` is the only one with a foreign key into a port table (`user_devices`).
 
 ## 7. Tests
 
-All five files are in `tests/Feature/Database/`, group `schema`, and need **MySQL** (SQLite cannot run CHECK regex, generated columns or ENUM). Each calls `useSchemaDatabase()`.
+All five files are in `tests/Feature/Database/`, group `schema` (one test of `WorkerGrantsTest` has no group, see below), and need **MySQL** (SQLite cannot run CHECK regex, generated columns or ENUM). Each calls `useSchemaDatabase()`.
 
 | Test file | Proves | Key tests |
 | --- | --- | --- |
-| `SchemaTablesTest` (11 tests) | 92 plural tables from `table-names.md`, no singular name left; framework tables present; InnoDB and `utf8mb4_0900_ai_ci`; no signed `bigint`; every `id` is `bigint unsigned` including the singletons; `user_devices` FK is `fk_device_user`; no FK ends in `_foreign`, and `part1_runs`/`recommendation_reviews` keep their Report A names; 129 CHECKs and the 17 generated columns by name; no `email` column (DEC-35); 24 tables with `datetime(6)`, NOT NULL, default and on-update; session time zone `+00:00`. | `:39`, `:67`, `:101`, `:118`, `:164`, `:186` |
+| `SchemaTablesTest` (11 tests) | 92 plural tables from `table-names.md`, no singular name left; framework tables present (now including `personal_access_tokens`, `:48-52`); InnoDB and `utf8mb4_0900_ai_ci`; no signed `bigint`; every `id` is `bigint unsigned` including the singletons; `user_devices` FK is `fk_device_user`; no FK ends in `_foreign`, and `part1_runs`/`recommendation_reviews` keep their Report A names; 129 CHECKs and the 17 generated columns by name; no `email` column (DEC-35); 24 tables with `datetime(6)`, NOT NULL, default and on-update; session time zone `+00:00`. | `:39`, `:67`, `:101`, `:118`, `:164`, `:186` |
 | `SchemaConstraintsTest` (8 tests, rolled back, FK checks off) | Username lowercase and length; role matches unit; one active role per user and allowed after the first ends (DEC-36); UN/LOCODE case; one active tide set; a generated column cannot be written; a revoked device keeps no push token. | `:35`, `:50`, `:63`, `:79`, `:90`, `:96` |
 | `DatabaseRulesTest` | A valid base row of each of the 16 sampled tables is accepted; 17 sampled CHECKs refuse their broken row with `Check constraint '<name>' is violated` (range, singleton, state, mutually exclusive, cross-column, regex, sum, conditional); 11 generated values/columns compute as designed; 11 unique indexes refuse a second active row and allow it once the first is inactive; strict mode; 3 ENUM columns refuse `NOT_IN_THE_LIST`; **the 129 names guard**. | `:125`, `:129`, `:136`, `:184`, `:199`, `:203`, `:212` |
-| `ContractsSchemaTest` (3 tests) | `schema.sql` starts with the CT-17 v1.0 header, ends with the worker roles, has no `AUTO_INCREMENT=n`, and loading its structure into an empty database rebuilds 100 tables and 129 CHECKs; the generator refuses an existing database and keeps its 100 tables; it fails when the output folder is missing. | `:13`, `:45`, `:53` |
-| `WorkerGrantsTest` (7 tests) | Loads `workers.sql` under `t_r_*` role names, signs in as a test account and checks rights: reads port state but not secrets, audit or devices; yard worker writes only its results (and cannot DELETE or CREATE TABLE); BAPLIE and yard workers may update `retry_count`; a worker with column grants still moves the version token; `r_validate` has no write; the command refuses to run without every password. | `:48`, `:58`, `:70`, `:78`, `:89`, `:111`, `:118` |
+| `ContractsSchemaTest` (3 tests) | `schema.sql` starts with the CT-17 v1.0 header, ends with the worker roles, has no `AUTO_INCREMENT=n`, and loading its structure into an empty database rebuilds 101 tables and 129 CHECKs; the header names the last migration `2026_11_05_100000_create_personal_access_tokens_table`; the generator refuses an existing database and keeps its 101 tables; it fails when the output folder is missing. | `:13`, `:45`, `:53` |
+| `WorkerGrantsTest` (8 tests) | Loads `workers.sql` under `t_r_*` role names, signs in as a test account and checks rights: reads port state but not secrets, audit or devices; yard worker writes only its results (and cannot DELETE or CREATE TABLE); BAPLIE and yard workers may update `retry_count`; a worker with column grants still moves the version token; `r_validate` has no write; the command refuses to run without every password; **new:** `workers.sql` contains no line matching `DEMO` or `do not merge`, because the file is appended to `schema.sql` (this last test has no `->group('schema')`, so `--group=schema` skips it, but it still calls `useSchemaDatabase()` through `beforeEach`). | `:48`, `:58`, `:70`, `:78`, `:89`, `:111`, `:118`, `:126` |
 
 How to run (needs Docker MySQL; use your **own empty database** when other sessions share the server):
 
@@ -531,12 +553,12 @@ vendor/bin/pest tests/Feature/Database/SchemaTablesTest.php tests/Feature/Databa
 vendor/bin/pest --group=schema
 ```
 
-Measured while writing this guide (database `atlantech_testing_g2`, 2026-11-04): `SchemaTablesTest`, `SchemaConstraintsTest`, `DatabaseRulesTest` and `ModelLayerTest` together: **377 passed, 1156 assertions, about 60 s**. `ContractsSchemaTest` and `WorkerGrantsTest` were **not run** (see 10).
+Measured while updating this guide (database `atlantech_testing_g2`, 2026-11-06, `develop` at `9559d35`): `SchemaTablesTest`, `SchemaConstraintsTest`, `DatabaseRulesTest` and `ModelLayerTest` together: **377 passed, 1157 assertions, about 69 s** (first measurement on 2026-11-04: 377 and 1156). `ContractsSchemaTest` and `WorkerGrantsTest` were **not run** (see 10).
 
 ## 8. Gotchas and invariants
 
 - **`useSchemaDatabase()` runs `migrate:fresh` on `DB_SCHEMA_TEST_DATABASE`.** Never set it to a database you care about. Two runs on the same database overwrite each other (A7). The default is `atlantech_testing`.
-- **Adding a migration breaks `ContractsSchemaTest.php:13` (first test):** it hard-codes `-- Last migration: 2026_11_03_183535_alter_port_settings_add_min_max` (`:25`) and the totals 100 tables and 129 CHECKs (`:36-37`). Update those numbers in the same PR. The second test (`:45`, line 50) hard-codes the database name `atlantech_testing` and 100 tables: with your own database name it still passes only because `atlantech_testing` exists on the shared server (if it does not, the generator would create it, migrate and drop it).
+- **Adding a migration breaks `ContractsSchemaTest.php:13` (first test):** it hard-codes `-- Last migration: 2026_11_05_100000_create_personal_access_tokens_table` (`:25`) and the totals 101 tables and 129 CHECKs (`:36-37`). P1-C3 edited exactly these numbers when it added the token table; the next migration needs the same edit. The second test (`:45`, line 50) hard-codes the database name `atlantech_testing` and 101 tables: with your own database name it still passes only because `atlantech_testing` exists on the shared server (if it does not, the generator would create it, migrate and drop it).
 - **Add or remove a CHECK:** edit the 129-name list in `DatabaseRulesTest.php:212` and the count in `SchemaTablesTest.php:118`, `ContractsSchemaTest.php`. **Add a generated column:** add it to the list in `SchemaTablesTest.php:118` and keep it out of the model's `#[Fillable]` (F06 guard). **Add a token table:** add it to the list in `SchemaTablesTest.php:164`.
 - **Case-insensitive collation.** Any text CHECK must use a binary cast or the `'c'` regex flag, or it is always true or always false.
 - **Never edit a released worker-used column in a way that drops or renames it** (CT-17 §4). Add a nullable column; increment the contract minor version; tell the AI team.
@@ -552,7 +574,7 @@ Measured while writing this guide (database `atlantech_testing_g2`, 2026-11-04):
 
 **Add a column (after release).** (1) New file `database/migrations/<date>_alter_<table>_<change>.php` with `Schema::table`; nullable or with a default; no drop or rename of a worker-used column. (2) If a worker reads or writes it, edit `workers.sql` (a new column is not visible to a role that has column-level grants until you list it). (3) Update the model `#[Fillable]`/casts and factory (F06). (4) Update the tests in section 8. (5) PR gets `ai-impact` automatically. (6) After merge: `composer contracts:schema` and the paired PortHub PR.
 
-**Add a table.** Create `…_create_<plural>_table.php` after the last file, with FKs only to tables that exist, named FKs and indexes, CHECKs by `DB::statement`; add the table to `contracts/db/table-names.md` (so `SchemaTablesTest` expects it), the model/enum/factory (F06, including its module in the map), grants if a worker touches it, and the counts in the tests.
+**Add a table.** Create `…_create_<plural>_table.php` after the last file, with FKs only to tables that exist, named FKs and indexes, CHECKs by `DB::statement`; add the table to `contracts/db/table-names.md` (so `SchemaTablesTest` expects it), the model/enum/factory (F06, including its module in the map), grants if a worker touches it, and the counts in the tests. A table that belongs to a framework package (like `personal_access_tokens`) is **not** added to `table-names.md`; instead add its name to the framework list in `SchemaTablesTest.php:48-52`, bump the table total in `ContractsSchemaTest.php:36,50`, and exclude its model from `ModelLayerTest::domainModels()` (F06).
 
 **Add a CHECK.** `DB::statement('ALTER TABLE ... ADD CONSTRAINT chk_<abbr>_<what> CHECK (...)')`, name in the guard list, and ideally a broken row in `rulesBrokenRows()` (`DatabaseRulesTest.php:100`) with a valid base row in `rulesValidRow()` (`:28`).
 
@@ -579,12 +601,12 @@ Real output (relevant lines):
 ```powershell
 $env:DB_DATABASE = "atlantech_testing_g2"; php artisan migrate:status
 ```
-Real output: `0001_01_01_000000_create_sessions_table .. [1] Ran` … `2026_10_28_200000_add_deferred_foreign_keys .. [1] Ran`, `2026_11_03_183535_alter_port_settings_add_min_max .. [1] Ran` (97 lines, all `Ran`).
+Real output: `0001_01_01_000000_create_sessions_table .. [1] Ran` … `2026_10_28_200000_add_deferred_foreign_keys .. [1] Ran`, `2026_11_03_183535_alter_port_settings_add_min_max .. [1] Ran`, `2026_11_05_100000_create_personal_access_tokens_table .. [1] Ran` (98 migrations, all `Ran`).
 
 ```bash
 docker exec atlantech-mysql-1 mysql -uroot -N -e "SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='atlantech_testing_g2'"
 ```
-Real output on the migrated database: tables 100, CHECK constraints 129, stored generated columns 17, foreign keys 156, ENUM columns 103, `updated_at` of type `datetime(6)` 24. `SHOW CREATE TABLE user_role_assignments` shows `active_assignment_key tinyint GENERATED ALWAYS AS (if((active_to is null),1,NULL)) STORED`, `UNIQUE KEY uq_ura_active (user_id, active_assignment_key)` and the four constraints `fk_ura_unit`, `fk_ura_user`, `chk_ura_period`, `chk_ura_role_matches_unit`.
+Real output on the migrated database: tables 101, CHECK constraints 129, stored generated columns 17, foreign keys 157 (156 on port tables + `fk_pat_user_device`), ENUM columns 103, `updated_at` of type `datetime(6)` 24. `SHOW CREATE TABLE user_role_assignments` shows `active_assignment_key tinyint GENERATED ALWAYS AS (if((active_to is null),1,NULL)) STORED`, `UNIQUE KEY uq_ura_active (user_id, active_assignment_key)` and the four constraints `fk_ura_unit`, `fk_ura_user`, `chk_ura_period`, `chk_ura_role_matches_unit`.
 
 ```bash
 node docs/reference/lookup.mjs part1_run
@@ -600,7 +622,9 @@ Real output: table `user_role_assignments`, `active_assignment_key nullable .. t
 $env:DB_DATABASE = "atlantech_testing_g2"; $env:DB_SCHEMA_TEST_DATABASE = "atlantech_testing_g2"
 vendor/bin/pest tests/Feature/Database/SchemaTablesTest.php tests/Feature/Database/SchemaConstraintsTest.php tests/Feature/Database/DatabaseRulesTest.php
 ```
-Real output: all pass (the four files together: 377 passed, 1156 assertions, 59.7 s).
+Real output: all pass (the four files together, 2026-11-06: 377 passed, 1157 assertions, 69.3 s).
+
+The new table (real output of `SHOW CREATE TABLE personal_access_tokens`, abbreviated): `user_device_id bigint unsigned NOT NULL`, `token varchar(64) NOT NULL`, `revoked_at datetime DEFAULT NULL`, `UNIQUE KEY uq_pat_token (token)`, `KEY idx_pat_expires_at (expires_at)`, `CONSTRAINT fk_pat_user_device FOREIGN KEY (user_device_id) REFERENCES user_devices (id)`, InnoDB, `utf8mb4_0900_ai_ci`.
 
 Expected, **not run**:
 
@@ -612,11 +636,11 @@ Expected, **not run**:
 
 Findings (not fixed; this guide is documentation only):
 
-1. **`workers.sql:592` still contains `-- DEMO (do not merge): shows the ai-impact label and the AI lead review request. No grant changes.`** It is on `develop`. Harmless, but it will be copied into the next `schema.sql`. Remove in the next PR that touches grants.
-2. **The published `PortHub/contracts/db/schema.sql` is stale.** On PortHub `main` (`0689c90`) its header says `-- Last migration: 2026_10_28_200000_add_deferred_foreign_keys`; it has no `min_value`/`max_value` on `port_settings` (the DEC-59 migration of 2026-11-03). The last regeneration commit is `b1695ea` (2026-10-28). It needs `composer contracts:schema` and a paired PortHub PR; the AI team builds on this file.
-3. **`schema.sql` header says `CT-17 v1.0`** while additive changes (the 16, then 24 token tables, DEC-36 key, FK naming, `port_settings` min/max) are waiting for CT-17 v1.1 through `contract-change` (P1-B2 follow-ups F12 to F14). The test pins the string `v1.0` (`ContractsSchemaTest.php`).
-4. **`ContractsSchemaTest` hard-codes the last migration name, the 100 tables and `atlantech_testing`** (section 8). Each new migration needs a test edit; the second test's database name should come from the same variable as `useSchemaDatabase()`.
-5. **`password_reset_tokens` is keyed by `email`**, which users no longer have (DEC-35); there is no password-reset feature (P1-B1 R5). **`personal_access_tokens` (CT-17 §3, mobile Sanctum tokens with `revoked_at`) is not migrated yet**; planned with P1-C3 (F15).
+1. **Resolved since 2026-11-04: the DEMO line.** `workers.sql` used to end with `-- DEMO (do not merge): shows the ai-impact label ...`. P1-C3 removed it (the file is now 590 lines) and added `WorkerGrantsTest.php:126`, which fails if any line matches `DEMO` or `do not merge`.
+2. **Resolved since 2026-11-04: the published `PortHub/contracts/db/schema.sql` was stale.** It was republished on PortHub `main` (last commit `292cad9`, 2026-11-06): header `-- Last migration: 2026_11_05_100000_create_personal_access_tokens_table`, 101 `CREATE TABLE` lines, `port_settings.min_value` present, no DEMO line. Still true: the file is only as fresh as the last paired PortHub PR; run `composer contracts:schema` after every migration.
+3. **`schema.sql` header says `CT-17 v1.0`** while additive changes (the 24 token tables, DEC-36 key, FK naming, `port_settings` min/max, the framework token table) are waiting for CT-17 v1.1 through `contract-change` (P1-B2 follow-ups F12 to F14). The test pins the string `v1.0` (`ContractsSchemaTest.php:24`).
+4. **`ContractsSchemaTest` still hard-codes the last migration name (`:25`), the table total (`:36`, `:50`: 101) and the database name `atlantech_testing` (`:50`)** (section 8). Every migration since the first (P1-B4 review, DEC-59 migration, P1-C3 token table) needed this edit, and the second test's database name does not follow `DB_SCHEMA_TEST_DATABASE`. Unchanged by P1-C3 except for the numbers.
+5. **`password_reset_tokens` is keyed by `email`**, which users no longer have (DEC-35); there is no password-reset feature (P1-B1 R5). **`personal_access_tokens` is now migrated** (3.1b, P1-C3), so the open point of 2026-11-04 is closed; what remains: `tokenable_*` has no foreign key, so a token row can outlive its owner (tokens are never deleted by design, FR-GL-03), and the second timestamp pair is second-precision.
 6. **`AuditLog` (model docblock) says "the application DB user gets INSERT + SELECT only on this table (P21-03)"**, but no file in the repo grants or restricts an application user; `.env.example` connects as `root`. The append-only rule is enforced only in the model (F10). Unverified for production: check what the install script of the port server does (P6).
 7. **`chk_yr_retry`** (a CHECK for `yard_runs.retry_count` 0..1, DEC-04 "others once") was proposed to the AI team and not added (P1-B4 answer 3). Only `chk_p1r_retry` (0..3) exists.
 8. **Index wording:** `00_INDEX.md` says "8 generated unique keys". The code has 12 unique indexes over generated columns that use 8 distinct column names (3.5). The statement is right if read as column names.
