@@ -117,7 +117,7 @@ Each step has a mode (see the `backend-task-execute` skill):
 
 | Test | Covers |
 | --- | --- |
-| `tests/Unit/Shared/IdempotencyStoreTest.php` | Key built from the token hash (the token is not in the key or value); request hash covers method, path+query, body; stored value is encrypted; TTL 24 h |
+| `tests/Feature/Api/IdempotencyStoreTest.php` (Unit tests do not boot the app here) | Key built from the token hash (the token is not in the key or value); request hash covers method, path+query, body; stored value is encrypted; TTL 24 h |
 | `tests/Feature/Api/IdempotencyTest.php` | Missing and malformed key → 422 after 401 (bad token with no key is 401); same key and body replays status, body, content type and `Idempotent-Replayed`, the counter route ran once; different body, path and method → `IDEMPOTENCY_KEY_REUSED`; key of another token (same user and other user) does not replay and runs; 5xx, 401, 423, 426, 429 not stored (second call runs); 2xx and 422/403/409 stored; web session request with and without the header untouched, also with a stray `Authorization` header; exempt route `sync.events.store` runs without a key; GET/HEAD/OPTIONS pass |
 | `tests/Feature/Api/IdempotencyConcurrencyTest.php` | A second request while the lock is held and the first has not stored: waits, then replays after the winner stores (simulated with a held `Cache::lock` released by a callback); still held after the wait → 503 + `Retry-After`; the lock is released when the request throws |
 | `tests/Feature/Access/MobileLogoutTest.php` (added) | Logout twice with one key: 204 then replayed 204 (token revoked, header set); logout twice with two keys: 204 then 401 |
@@ -175,7 +175,10 @@ Contract artefacts: OpenAPI (CT-02) yes, 1.7.0 → 1.8.0 · CT-01 wording (exemp
 
 ## 9. Progress log
 
-<Filled by `backend-task-execute`.>
+| Date | Step | Result |
+| --- | --- | --- |
+| 2026-11-06 | 1 | E1, E2, E3 plans brought in and fixed; restore added to E3; P1-C3 log row; this plan. Commit `cd12f9f`. |
+| 2026-11-06 | 2 | `config/idempotency.php`, `IdempotencyStore`, `IdempotencyStoreTest` (27 tests pass on `atlantech_testing_id`). Docker Desktop was stopped; started it. Test file moved from Unit to Feature (Unit tests do not extend the app test case). Waiting for the lead's OK (mode C). |
 
 ## 10. Review
 
