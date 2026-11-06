@@ -8,34 +8,34 @@ use App\Modules\Shared\Support\IdempotencyStore;
 use Closure;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
-use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Write chain step "idempotency" (IDEMP-01, CT-01 section 4, alias `idempotency`), the first step of the `port.api` group: it runs
- * before `auth:sanctum` because a retried logout carries a token the first request revoked, and the replay has to be found before the
- * token is refused. The entry is found by the hash of that exact token plus the secret key, so finding it proves the caller sent both.
+ * Write chain step "idempotency" (IDEMP-01, CT-01 section 4, alias `idempotency`), the first step of the `port.api` group, before
+ * `auth:sanctum`. It applies to a POST, PUT, PATCH or DELETE that carries a Bearer token, except routes in
+ * `config('idempotency.exempt_routes')`. A missing or malformed key passes through here and is refused with 422 by
+ * `RequireIdempotencyKey` once the caller is authenticated.
  *
- * It applies to a POST, PUT, PATCH or DELETE that carries a Bearer token, except routes in `config('idempotency.exempt_routes')`.
- * A missing or malformed key passes through here and is refused with 422 by `RequireIdempotencyKey` once the caller is authenticated.
+ * The request runs under a lock on its key, so a concurrent twin waits and then replays (503 + Retry-After if the first one is still
+ * running after `lock_wait_seconds`). Its response is stored when `RequireIdempotencyKey` marked the caller as a mobile one and the
+ * status may be kept (never a 5xx, never 401 or a refusal that passes with time).
  *
- *  - same key, same request (method, path and query, body): the stored response is replayed with `Idempotent-Replayed: true`;
- *  - same key, another request: 422 IDEMPOTENCY_KEY_REUSED;
- *  - otherwise the request runs under a lock on the key, so a concurrent twin waits and then replays (503 + Retry-After if the first
- *    one is still running after `lock_wait_seconds`), and its response is stored when `RequireIdempotencyKey` marked the caller as a
- *    mobile one and the status may be kept (never a 5xx, never 401 or a refusal that passes with time).
+ * A replay is answered here, before authentication, only for a request that revoked its own token (logout): its retry carries a token
+ * that `auth:sanctum` would refuse. The entry is found by the hash of that exact token plus the secret key, so finding it proves the
+ * caller sent both. Every other replay is answered by `RequireIdempotencyKey`, after authentication and the device check, so a token
+ * that was revoked later (device revoked, user deactivated, password change) never gets a stored body.
  */
 class IdempotentWrite
 {
     public function __construct(private readonly IdempotencyStore $store) {}
 
     /**
-     * @param  Closure(Request): SymfonyResponse  $next
+     * @param  Closure(Request): Response  $next
      *
      * @throws ApiProblemException 422 IDEMPOTENCY_KEY_REUSED, 503 SERVICE_UNAVAILABLE while the first request with this key still runs.
      */
-    public function handle(Request $request, Closure $next): SymfonyResponse
+    public function handle(Request $request, Closure $next): Response
     {
         $key = self::keyOf($request);
 
@@ -46,7 +46,7 @@ class IdempotentWrite
         $scope = IdempotencyStore::scopeOf((string) $request->bearerToken());
         $requestHash = IdempotencyStore::requestHash($request);
 
-        if (($replay = $this->replay($scope, $key, $requestHash)) !== null) {
+        if (($replay = $this->replayAfterOwnRevocation($scope, $key, $requestHash)) !== null) {
             return $replay;
         }
 
@@ -60,14 +60,14 @@ class IdempotentWrite
 
         try {
             // The request that held the lock may have stored its response while this one waited.
-            if (($replay = $this->replay($scope, $key, $requestHash)) !== null) {
+            if (($replay = $this->replayAfterOwnRevocation($scope, $key, $requestHash)) !== null) {
                 return $replay;
             }
 
             $response = $next($request);
 
             if ($request->attributes->get(IdempotencyStore::STORABLE_ATTRIBUTE) === true && IdempotencyStore::isStorable($response)) {
-                $this->store->put($scope, $key, $requestHash, $response);
+                $this->store->put($scope, $key, $requestHash, $response, preauth: self::revokedItsOwnToken($request));
             }
 
             return $response;
@@ -97,28 +97,20 @@ class IdempotentWrite
     }
 
     /**
+     * Whether the endpoint just revoked the token this request came with (mobile logout).
+     */
+    private static function revokedItsOwnToken(Request $request): bool
+    {
+        return $request->user()?->currentAccessToken()?->getAttribute('revoked_at') !== null;
+    }
+
+    /**
      * @throws ApiProblemException 422 IDEMPOTENCY_KEY_REUSED when the stored request differs from this one.
      */
-    private function replay(string $scope, string $key, string $requestHash): ?SymfonyResponse
+    private function replayAfterOwnRevocation(string $scope, string $key, string $requestHash): ?Response
     {
         $entry = $this->store->find($scope, $key);
 
-        if ($entry === null) {
-            return null;
-        }
-
-        if (! hash_equals($entry['request_hash'], $requestHash)) {
-            throw new ApiProblemException(ErrorCode::IdempotencyKeyReused);
-        }
-
-        $response = new Response($entry['body'], $entry['status']);
-
-        if ($entry['content_type'] !== null) {
-            $response->headers->set('Content-Type', $entry['content_type']);
-        }
-
-        $response->headers->set(IdempotencyStore::REPLAY_HEADER, 'true');
-
-        return $response;
+        return $entry !== null && $entry['preauth'] ? $this->store->replayFor($entry, $requestHash) : null;
     }
 }

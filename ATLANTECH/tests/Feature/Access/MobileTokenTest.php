@@ -247,3 +247,25 @@ it('revokes the other tokens of the user after a password change from a tablet, 
     withTabletToken($second, 'GET', '/api/v1/auth/me', ['X-Device-Id' => 'tablet-b'])->assertUnauthorized();
     withTabletToken($strangers, 'GET', '/api/v1/auth/me', ['X-Device-Id' => 'tablet-c'])->assertOk();
 });
+
+it('replays the first answer of a retried change-password with the same key, and changes the password once (IDEMP-01)', function () {
+    $user = makeUserWithRole(Role::MarinePilot, ['username' => 'pilot.k']);
+    $token = signInTablet($user);
+    $key = (string) Str::uuid();
+    $body = ['current_password' => 'password', 'new_password' => 'NewPass2026', 'new_password_confirmation' => 'NewPass2026'];
+
+    $first = withTabletToken($token, 'POST', '/api/v1/auth/change-password', ['Idempotency-Key' => $key], $body)->assertOk();
+    $hash = $user->fresh()->password_hash;
+
+    // Without the rule this retry fails: the current password is no longer "password".
+    $retry = withTabletToken($token, 'POST', '/api/v1/auth/change-password', ['Idempotency-Key' => $key], $body)
+        ->assertOk()
+        ->assertHeader('Idempotent-Replayed', 'true');
+
+    expect($retry->json())->toBe($first->json())
+        ->and($user->fresh()->password_hash)->toBe($hash);
+
+    withTabletToken($token, 'POST', '/api/v1/auth/change-password', ['Idempotency-Key' => $key], [...$body, 'new_password' => 'Other2026x', 'new_password_confirmation' => 'Other2026x'])
+        ->assertUnprocessable()
+        ->assertJsonPath('code', 'IDEMPOTENCY_KEY_REUSED');
+});

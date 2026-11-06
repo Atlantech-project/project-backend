@@ -2,10 +2,13 @@
 
 namespace App\Modules\Shared\Support;
 
+use App\Modules\Shared\Errors\ApiProblemException;
+use App\Modules\Shared\Errors\ErrorCode;
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
@@ -18,7 +21,7 @@ use Symfony\Component\HttpFoundation\Response;
  * never stored. The value is encrypted with the application key: a response body may hold a one-time secret. Entries and locks live in
  * the cache store of `config('idempotency.store')`.
  */
-final class IdempotencyStore
+class IdempotencyStore
 {
     public const string HEADER = 'Idempotency-Key';
 
@@ -71,7 +74,7 @@ final class IdempotencyStore
     }
 
     /**
-     * @return array{request_hash: string, status: int, content_type: ?string, body: string}|null
+     * @return array{request_hash: string, status: int, content_type: ?string, body: string, preauth: bool}|null
      */
     public function find(string $scope, string $key): ?array
     {
@@ -87,19 +90,47 @@ final class IdempotencyStore
             return null;
         }
 
-        return is_array($entry) ? $entry : null;
+        return is_array($entry) ? $entry + ['preauth' => false] : null;
     }
 
-    public function put(string $scope, string $key, string $requestHash, Response $response): void
+    /**
+     * @param  bool  $preauth  The request revoked its own token (logout): a retry can only be answered before authentication.
+     */
+    public function put(string $scope, string $key, string $requestHash, Response $response, bool $preauth = false): void
     {
         $entry = json_encode([
             'request_hash' => $requestHash,
             'status' => $response->getStatusCode(),
             'content_type' => $response->headers->get('Content-Type'),
+            'preauth' => $preauth,
             'body' => (string) $response->getContent(),
         ], JSON_THROW_ON_ERROR);
 
         $this->cache()->put($this->entryKey($scope, $key), Crypt::encryptString($entry), now()->addHours((int) config('idempotency.ttl_hours', 24)));
+    }
+
+    /**
+     * The stored response again, marked `Idempotent-Replayed: true`.
+     *
+     * @param  array{request_hash: string, status: int, content_type: ?string, body: string, preauth: bool}  $entry
+     *
+     * @throws ApiProblemException 422 IDEMPOTENCY_KEY_REUSED when the stored request differs from this one.
+     */
+    public function replayFor(array $entry, string $requestHash): Response
+    {
+        if (! hash_equals($entry['request_hash'], $requestHash)) {
+            throw new ApiProblemException(ErrorCode::IdempotencyKeyReused);
+        }
+
+        $response = new HttpResponse($entry['body'], $entry['status']);
+
+        if ($entry['content_type'] !== null) {
+            $response->headers->set('Content-Type', $entry['content_type']);
+        }
+
+        $response->headers->set(self::REPLAY_HEADER, 'true');
+
+        return $response;
     }
 
     public function lock(string $scope, string $key): Lock
