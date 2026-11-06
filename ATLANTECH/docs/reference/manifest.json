@@ -1,6 +1,6 @@
 {
   "sourceRoot": "E:/collage/GRADUATION PROGECT",
-  "syncedAt": "2026-11-03",
+  "syncedAt": "2026-11-06",
   "watch": [
     "Code Notes",
     "Documentation"
@@ -29,22 +29,22 @@
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "6b0e829203d83291770aabf443fcb1f2091a18fd"
+      "sha1": "33aa8af4bbff861b3fa97ec1ca59aa3f9a1b4f06"
     },
     {
       "path": "contracts/api-conventions.md",
       "source": "Code Notes/contracts/api-conventions.md",
-      "sha1": "9dff2d24f9a68b9959fd09bc44862ff9157d9fef"
+      "sha1": "4661e52a6bdd08b63a21b31f9c16585b35984186"
     },
     {
       "path": "contracts/error-codes.md",
       "source": "Code Notes/contracts/error-codes.md",
-      "sha1": "7b21b26bcb9327d1d7dc9e359bece2c281e53667"
+      "sha1": "64b4fdba709009205fc890a0068fea9503327137"
     },
     {
       "path": "contracts/auth-web.md",
       "source": "Code Notes/contracts/auth-web.md",
-      "sha1": "e3d9f314c905399e34daae887483cbed74db9a18"
+      "sha1": "f91b5903956bd8ac6be328294e4a99be44f83ec9"
     },
     {
       "path": "contracts/realtime-sse.md",
@@ -89,7 +89,7 @@
     {
       "path": "decisions/ATLANTECH_Decisions.md",
       "source": "Code Notes/ATLANTECH_Decisions.md",
-      "sha1": "07bcd66f1bf77def299b6c483bb575c123675f58"
+      "sha1": "8b110cf8f7d9704dfee8af014754bb910e0a3476"
     },
     {
       "path": "roadmap/ATLANTECH_Master_Roadmap.pdf",

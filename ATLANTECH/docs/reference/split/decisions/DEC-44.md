@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1225-1249 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1510-1534 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-44 · Storing the clock-skew review note
 
 | | |
