@@ -1,6 +1,6 @@
 # F04 · The OpenAPI contract
 
-Task origin: P1-A4 (Sprint 1), kept current by every endpoint task since (P1-C1, P1-C2, P2-F8). Facts checked against `develop` at `106b40e`; the file is at `info.version` **1.2.0** with 5 paths. Paths are inside `project-backend/ATLANTECH/` unless stated. Contracts involved: **CT-02** (Port API OpenAPI file, Approved v1.0.0 on 2026-10-30), **CT-01** (the conventions it describes, see F03) and **DEC-13** (Closed 2026-10-29, Option 1).
+Task origin: P1-A4 (Sprint 1), kept current by every endpoint task since (P1-C1, P1-C2, P2-F8). Facts first checked against `develop` at `106b40e` (file at 1.2.0, 5 paths), **updated on 2026-11-06 against `9559d35`: the file is at `info.version` 1.6.0 with 7 paths** (P1-C5 system info, P1-C3 mobile sign-in and Bearer security, P1-C4 sign-out, P1-C3 review fixes). Paths are inside `project-backend/ATLANTECH/` unless stated. Contracts involved: **CT-02** (Port API OpenAPI file, Approved v1.0.0 on 2026-10-30), **CT-01** (the conventions it describes, see F03) and **DEC-13** (Closed 2026-10-29, Option 1).
 
 ## 1. What it does
 
@@ -32,15 +32,15 @@ The pairing matters because PortHub holds the copy the other teams read, while o
 
 ### 3.1 `openapi/port-api.yaml`: structure
 
-756 lines, OpenAPI `3.0.3`. Top level, in order:
+943 lines, OpenAPI `3.0.3`. Top level, in order:
 
 | Key | Content |
 | --- | --- |
 | `openapi` | `3.0.3` (the drift test accepts any `3.0.x`). |
 | `info` | `title: ATLANTECH Port API`, `version: '1.2.0'`, a description that restates the CT-01 rules (prefix, UTC times, problem format, paging, opaque version token), `contact: ATLANTECH Backend Team`. |
 | `servers` | One entry, `url: /` ("paths carry the full /api/v1 prefix"). Paths therefore read `/api/v1/auth/login`, exactly as in the CT-02 example. |
-| `tags` | `Auth` (web sign-in, Sanctum SPA session, call `GET /sanctum/csrf-cookie` first) and `Audit`. A new area adds its tag. |
-| `paths` | Five paths (section 3.2). |
+| `tags` | `Auth` (web sign-in with the Sanctum SPA session, and mobile sign-in with a device token; signed-in routes take either the cookie or `Authorization: Bearer`), `Audit` and `System` (public port information for the mobile app). A new area adds its tag. |
+| `paths` | Seven paths (section 3.2). |
 | `components` | `securitySchemes`, `parameters`, `headers`, `schemas`, `responses`. |
 
 The file starts with a comment block stating the source-of-truth rule, the drift test, the publish command and the version rule. The header comment is part of what is copied to PortHub.
@@ -50,10 +50,14 @@ The file starts with a comment block stating the source-of-truth rule, the drift
 | Path and method | `operationId` | Security | Errors referenced | Owner feature |
 | --- | --- | --- | --- | --- |
 | `POST /api/v1/auth/login` | `authLogin` | `security: []` (open) | 400, 401, 403 `AccountDisabled`, 419, 422, 429 | F07 |
-| `GET /api/v1/auth/me` | `authMe` | `cookieAuth` | 401, 403 `AccountDisabled` | F07 |
-| `POST /api/v1/auth/change-password` | `authChangePassword` | `cookieAuth` | 401, 403 `AccountDisabled`, 419, 422, 429 | F08 |
-| `POST /api/v1/auth/logout` | `authLogout` (204) | `cookieAuth` | 401, 403 `AccountDisabled`, 419 | F07 |
-| `GET /api/v1/audit-logs` | `auditLogsList` | `cookieAuth` | 401, 403 `Forbidden`, 422 | F10 |
+| `POST /api/v1/auth/mobile/login` | `authMobileLogin` | `security: []`; parameters `AppVersion`, `DeviceId` | 200 `MobileSignIn`; 401; 403 described inline with two examples (`ACCOUNT_DISABLED`, `DEVICE_REVOKED`); 422; 426 `AppUpdateRequired`; 429 | F07 |
+| `GET /api/v1/auth/me` | `authMe` | `cookieAuth` **or** `bearerAuth` | 401, 403 `AccountDisabled`, 422, 426 | F07 |
+| `POST /api/v1/auth/change-password` | `authChangePassword` | `cookieAuth` or `bearerAuth`; `XsrfToken` | 401, 403 `AccountDisabled`, 419, 422, 426, 429 | F08 |
+| `POST /api/v1/auth/logout` | `authLogout` (204) | `cookieAuth` or `bearerAuth`; `XsrfToken` | 401, 403 `AccountDisabled`, 419, 422, 426 | F07 |
+| `GET /api/v1/audit-logs` | `auditLogsList` | `cookieAuth` or `bearerAuth` | 401, 403 `Forbidden`, 422, 426 | F10 |
+| `GET /api/v1/system/info` | `systemInfo` | `security: []` (public, never 426) | 200 `SystemInfo`; 503 `ServiceUnavailable` (no port profile or no `min_app_version` setting) | F11 and MasterData |
+
+On the signed-in paths the `security` list has two alternatives (`- cookieAuth: []` and `- bearerAuth: []`), which OpenAPI reads as "either one". The `422` and `426` responses on those paths come from the Bearer rules: a Bearer request must send `X-App-Version` (`x.y.z`) and `X-Device-Id`; a missing or malformed value is 422 and a version older than `min_app_version` is 426 (1.6.0 added the 422). A web request may omit `X-App-Version`. Behaviour of the mobile paths themselves is in F07, F08 and F11.
 
 Conventions in an operation: `operationId` is the route name in camelCase; `tags`; `summary`; a `description` that tells the **behaviour a client needs** (throttle limits, the allow-list while `must_change_password` is set, filters); `parameters` with `$ref` to shared parameters; `requestBody` with a `$ref` schema; `responses` keyed by status, each error a `$ref` to `#/components/responses/<ErrorCode case>`. `GET /api/v1/audit-logs` is the model for a **list** endpoint: `$ref` parameters `Page` and `PerPage`, its own query parameters inline, and a `200` with `{ data: [AuditLogEntry], meta: PageMeta }`.
 
@@ -64,29 +68,31 @@ Conventions in an operation: `operationId` is the route name in camelCase; `tags
 | Name | Definition | Notes |
 | --- | --- | --- |
 | `cookieAuth` | `type: apiKey`, `in: cookie`, `name: atlantech_session` | The Laravel session cookie of the Sanctum SPA flow (CT-03). The name must equal `config('session.cookie')` (env `SESSION_COOKIE`, default `atlantech_session`); a drift test checks it. Writes also send `X-XSRF-TOKEN`. |
-| `bearerAuth` | `type: http`, `scheme: bearer` | Mobile personal access token (CT-04). No path uses it yet. |
+| `bearerAuth` | `type: http`, `scheme: bearer` | Mobile personal access token (CT-04). Listed as an alternative on every signed-in path since 1.4.0; its description states the header rules (422, 401, 426). |
 
-**`parameters`**: `Page` (query, integer 1 to 1 000 000, default 1), `PerPage` (query, integer 1 to 100, default 25), `XsrfToken` (header `X-XSRF-TOKEN`, required, for web writes), and three mobile headers not yet used by any path: `AppVersion` (`X-App-Version`), `DeviceId` (`X-Device-Id`), `IdempotencyKey` (`Idempotency-Key`, UUID, described with the replay rule and `IDEMPOTENCY_KEY_REUSED`).
+**`parameters`**: `Page` (query, integer 1 to 1 000 000, default 1), `PerPage` (query, integer 1 to 100, default 25), `XsrfToken` (header `X-XSRF-TOKEN`, required, for web writes), and three mobile headers (`AppVersion` and `DeviceId` are used by the mobile sign-in path since 1.4.0, `IdempotencyKey` by no path yet): `AppVersion` (`X-App-Version`), `DeviceId` (`X-Device-Id`), `IdempotencyKey` (`Idempotency-Key`, UUID, described with the replay rule and `IDEMPOTENCY_KEY_REUSED`).
 
 **`headers`**: `Allow` (methods the path supports; used by `MethodNotAllowed`) and `RetryAfter` (seconds; used by `TooManyAttempts` and `ServiceUnavailable`).
 
-**`schemas`** (12):
+**`schemas`** (15):
 
 | Schema | Purpose |
 | --- | --- |
 | `DateTime` | `string`, `format: date-time`, UTC with microseconds on output, input must carry `Z` or an offset. Also the type of the version token. |
 | `PageMeta` | Required `page`, `per_page`, `total` (`per_page` maximum 100, `total` minimum 0). |
-| `ErrorCode` | String enum of all 17 codes, in `ErrorCode` order. |
+| `ErrorCode` | String enum of all 18 codes, in `ErrorCode` order (`DEVICE_REVOKED` sits after `PASSWORD_CHANGE_REQUIRED`). |
 | `Problem` | The RFC 9457 body. Required `type` (uri), `title`, `status` (400 to 599), `code` (`$ref ErrorCode`), `message_key` (pattern `^errors\.[a-z0-9_]+(\.[a-z0-9_]+)?$`), `detail`. |
 | `ValidationProblem` | `allOf` `Problem` plus required `errors`: object from field name to an array of message keys. |
 | `VersionConflictProblem` | `allOf` `Problem` plus required `current { id: integer, version: DateTime }`. |
 | `AppUpdateRequiredProblem` | `allOf` `Problem` plus required `min_app_version: string`. |
-| `LoginRequest`, `ChangePasswordRequest` | Request bodies (F07, F08). |
+| `LoginRequest`, `ChangePasswordRequest`, `MobileLoginRequest` | Request bodies (F07, F08). `MobileLoginRequest` requires `username`, `password` and `platform` (`ANDROID` or `IOS`). |
+| `MobileSignIn` | The mobile sign-in answer: required `token` (opaque device token), `expires_at` (`DateTime`; each use moves it 30 days later), `user` (`UserProfile`). |
+| `SystemInfo` | Required `port_id` (uuid, `port_profiles.public_id`), `port_code` (nullable), `port_name`, `license_mode` (`SETUP`, `FULL`, `READ_ONLY`; always `FULL` until the licence work), `token_warning_days_left` (nullable; always null for now), `min_app_version` (`x.y.z`). |
 | `UserProfile` | `id`, `name`, `role` (nullable enum of the 12 roles), `terminal_ids`, `must_change_password`. |
 | `AuditAction` | Enum of the six audit actions (F10). |
 | `AuditLogEntry` | One audit row (F10). |
 
-**`responses`** (17, one per `ErrorCode` case, named by the **case name in PascalCase**): `ValidationFailed`, `VersionConflict`, `Unauthenticated`, `SessionExpired`, `Forbidden`, `NotFound`, `MethodNotAllowed`, `AccountDisabled`, `PasswordChangeRequired`, `AppUpdateRequired`, `LicenseReadOnly`, `PlanLimitExceeded`, `TooManyAttempts`, `IdempotencyKeyReused`, `ServiceUnavailable`, `ServerError`, `BadRequest`. Each has `description` (`'<status> <CODE>'`, reserved ones add a note), content `application/problem+json` with a `schema` (`Problem`, or `ValidationProblem`, `VersionConflictProblem`, `AppUpdateRequiredProblem`) and an `example` whose `type`, `title`, `status`, `code`, `message_key` and `detail` are taken from `ErrorCode` and `lang/en/errors.php`. `MethodNotAllowed` declares the `Allow` header; `TooManyAttempts` and `ServiceUnavailable` declare `Retry-After`.
+**`responses`** (18, one per `ErrorCode` case, named by the **case name in PascalCase**): `ValidationFailed`, `VersionConflict`, `Unauthenticated`, `SessionExpired`, `Forbidden`, `NotFound`, `MethodNotAllowed`, `AccountDisabled`, `PasswordChangeRequired`, `DeviceRevoked`, `AppUpdateRequired`, `LicenseReadOnly`, `PlanLimitExceeded`, `TooManyAttempts`, `IdempotencyKeyReused`, `ServiceUnavailable`, `ServerError`, `BadRequest`. Each has `description` (`'<status> <CODE>'`, reserved ones add a note), content `application/problem+json` with a `schema` (`Problem`, or `ValidationProblem`, `VersionConflictProblem`, `AppUpdateRequiredProblem`) and an `example` whose `type`, `title`, `status`, `code`, `message_key` and `detail` are taken from `ErrorCode` and `lang/en/errors.php`. `MethodNotAllowed` declares the `Allow` header; `TooManyAttempts` and `ServiceUnavailable` declare `Retry-After`.
 
 ### 3.4 `tests/Feature/Api/OpenApiDriftTest.php`: exactly what makes it fail
 
@@ -129,7 +135,7 @@ rules:
   oas3-unused-component: off
 ```
 
-`spectral:oas` recommended is Spectral's built-in OpenAPI ruleset (valid `$ref`s, unique `operationId`s, defined tags and similar hygiene rules; I did not list its rules one by one). The only change is switching off `oas3-unused-component`, because shared components wait for endpoints that will use them: today these are unreferenced: `bearerAuth`, parameters `AppVersion`, `DeviceId`, `IdempotencyKey`, and responses `VersionConflict`, `NotFound`, `MethodNotAllowed`, `PasswordChangeRequired`, `AppUpdateRequired`, `LicenseReadOnly`, `PlanLimitExceeded`, `IdempotencyKeyReused`, `ServiceUnavailable`, `ServerError` (I counted them with a script). Turning the rule on would make the job fail.
+`spectral:oas` recommended is Spectral's built-in OpenAPI ruleset (valid `$ref`s, unique `operationId`s, defined tags and similar hygiene rules; I did not list its rules one by one). The only change is switching off `oas3-unused-component`, because shared components wait for endpoints that will use them: on 1.6.0 these components are unreferenced: the parameter `IdempotencyKey` and the responses `VersionConflict`, `NotFound`, `MethodNotAllowed`, `PasswordChangeRequired`, `DeviceRevoked`, `LicenseReadOnly`, `PlanLimitExceeded`, `IdempotencyKeyReused`, `ServerError` (I counted them with a script that looks for `#/components/<kind>/<name>`; on 1.2.0 the list was longer, because the mobile parameters, `bearerAuth`, `AppUpdateRequired` and `ServiceUnavailable` have been used since P1-C3 and P1-C5; the security schemes are referenced by name under `security`, not by `$ref`). Turning the rule on would make the job fail.
 
 CI (`.github/workflows/ci.yml:54-70`, F02 section 3.1): Node 22, `npx --yes @stoplight/spectral-cli@6.17.0 lint openapi/port-api.yaml --fail-severity=warn`. The version is pinned, `--fail-severity=warn` makes warnings fail, and the ruleset is found in the working directory. To bump Spectral, change the number in `ci.yml` and re-run it locally.
 
@@ -139,12 +145,12 @@ Semver, kept by hand (nothing automatic enforces it). Decided in P1-A4 Q6 and re
 
 - **Minor bump** (`1.2.0` to `1.3.0`) for each PR that adds or changes an endpoint without breaking a client.
 - **Major bump** is a breaking change and means a new base path `/api/v2` served beside `/api/v1`.
-- `0.x` was the draft phase (0.1.0 shared components, 0.2.0 sign-in); `1.0.0` was set when CT-01 and CT-02 were approved (2026-10-30, commit `762f515`). History of the file in git: 0.1.0 (P1-A4), 0.2.0 (P1-C1), 1.0.0 (CT-02), 1.1.0 (P1-C2 change-password, logout), 1.2.0 (P2-F8 audit-logs).
-- Each version is published to PortHub in its own paired PR (`publish OpenAPI 1.2.0`).
+- `0.x` was the draft phase (0.1.0 shared components, 0.2.0 sign-in); `1.0.0` was set when CT-01 and CT-02 were approved (2026-10-30, commit `762f515`). History of the file in git: 0.1.0 (P1-A4), 0.2.0 (P1-C1), 1.0.0 (CT-02), 1.1.0 (P1-C2 change-password, logout), 1.2.0 (P2-F8 audit-logs), 1.3.0 (P1-C5 `system/info`), 1.4.0 (P1-C3 mobile sign-in, Bearer on signed-in paths, `DEVICE_REVOKED`), 1.5.0 (P1-C4 sign-out for web and mobile), 1.6.0 (P1-C3 review 3: `X-App-Version` on Bearer requests, password change revokes the user's other tokens). PortHub history shows copy commits for 1.5.0 and 1.6.0 (and 1.2.0 before them); I did not see separate publishes of 1.3.0 and 1.4.0.
+- Each version is published to PortHub in its own paired PR (for example `P2-F8: publish OpenAPI 1.2.0`).
 
 ### 3.8 What `PortHub/contracts/openapi/port-api.yaml` is
 
-The **published copy** of the backend source. It is written only by `composer contracts:openapi`, and PortHub is where Frontend, Mobile and QA read it (CT-02 "Output"). Frontend generates types from it (FE-035) and contract tests (FE-101). I compared the two files in this session: they are identical apart from line endings (the Windows checkout of PortHub shows CRLF; `diff --strip-trailing-cr` prints no difference). The backend repo normalises to LF (`.gitattributes` has `* text=auto eol=lf`); how PortHub stores the file was not checked (Unverified).
+The **published copy** of the backend source. It is written only by `composer contracts:openapi`, and PortHub is where Frontend, Mobile and QA read it (CT-02 "Output"). Frontend generates types from it (FE-035) and contract tests (FE-101). I compared the two files again on 2026-11-06 (backend `9559d35` against the PortHub working tree, whose latest copy commit is `292cad9`, 1.6.0): they are identical apart from line endings (the Windows checkout of PortHub shows CRLF; `diff --strip-trailing-cr` prints no difference). The backend repo normalises to LF (`.gitattributes` has `* text=auto eol=lf`); how PortHub stores the file was not checked (Unverified).
 
 ### 3.9 `RouteVersionCoverageTest` (does it belong here? No)
 
@@ -188,7 +194,7 @@ None. The file is text in the repository; the PortHub copy is text in another re
 | CI job `openapi` (Spectral) | The file is a valid OpenAPI document with no warnings from `spectral:oas` | `npx --yes @stoplight/spectral-cli@6.17.0 lint openapi/port-api.yaml --fail-severity=warn` |
 | `tests/Feature/Api/RouteVersionCoverageTest.php` | Not this feature (section 3.9, see F12) | |
 
-I ran the first two files on my own database (F02 section 3.13): all passed; together with the F03 files `122 passed, 699 assertions`. Neither needs MySQL data, but `OpenApiDriftTest` boots the application and reads the route table. I did not run Spectral (needs `npx` to download the package).
+I ran the first two files on my own database (F02 section 3.13): all passed; together with the F03 files `122 passed, 699 assertions` on `106b40e`, and `136 passed, 734 assertions` on `9559d35` (this run also included `SystemInfoTest` and `RouteAbilityCoverageTest`). `OpenApiDriftTest` itself did not change in P1-C3/C4/C5; it now also requires the `DeviceRevoked` response and the 18-value enum, and passes. Neither needs MySQL data, but `OpenApiDriftTest` boots the application and reads the route table. I did not run Spectral (needs `npx` to download the package).
 
 ## 8. Gotchas and invariants
 
@@ -201,7 +207,7 @@ I ran the first two files on my own database (F02 section 3.13): all passed; tog
 - **Example values are asserted.** `status`, `code`, `message_key`, `title` and `type` in each response example must equal the enum. `detail` is not asserted but should be the English text from `lang/en/errors.php`.
 - **`cookieAuth.name`** follows `SESSION_COOKIE`. Changing the env or `config/session.php` without changing the file fails the drift test.
 - **Spectral warnings fail CI** (`--fail-severity=warn`). A new operation needs `operationId`, `tags` that exist, a `summary`, and valid `$ref`s.
-- **`oas3-unused-component` is off.** Do not switch it on until the mobile endpoints use `AppVersion`, `DeviceId`, `IdempotencyKey`, `bearerAuth`, and the remaining error responses are referenced. The `openapi-sync` skill still says to turn it on "with the first path": that instruction is out of date (finding F4-2).
+- **`oas3-unused-component` is off.** Do not switch it on until the components listed in section 3.6 are used or removed (`IdempotencyKey` and nine error responses today). The `openapi-sync` skill still says to turn it on "with the first path": that instruction is out of date (finding F4-2).
 - **Bump `info.version` by hand.** Nothing checks it.
 - **The file is large and shared:** edit only your task's operations and schemas and reuse the components (skill rule).
 - **Treat `version` as opaque** in schemas: it is `$ref DateTime` for documentation, but clients must not parse it (F03, F12).
@@ -245,7 +251,7 @@ The routes the file must match (I ran this):
 ```bash
 php artisan route:list --except-vendor
 ```
-Output: the five `api/v1` routes and `GET /`. The file has exactly the five `/api/v1/...` paths (`audit-logs`, `auth/change-password`, `auth/login`, `auth/logout`, `auth/me`).
+Output on `9559d35`: seven `api/v1` routes plus `GET /` ("Showing [8] routes"). The file has exactly the seven `/api/v1/...` paths (`audit-logs`, `auth/change-password`, `auth/login`, `auth/logout`, `auth/me`, `auth/mobile/login`, `system/info`). On `106b40e` it was five.
 
 The command is registered (I ran `php artisan list`): `atlantech:contracts-openapi  Publish openapi/port-api.yaml to PortHub contracts/openapi (CT-02)`.
 
@@ -288,12 +294,13 @@ Output (first line each): `DEC-13 · decision · Who keeps the OpenAPI file curr
 ## 11. Open points
 
 - **F4-1 · Field-level drift is unguarded.** The test checks routes, error codes, paging bounds and the cookie name. A wrong `required` list, a missing response field or a wrong status on one operation passes CI. Review notes 5 of P1-A4. Candidates: a response-schema check against resources, or contract tests from the Frontend (FE-101).
-- **F4-2 · Stale instructions to switch on Spectral rules.** The `openapi-sync` skill (section 3, step 2) and the comment in `.spectral.yaml` say to turn `oas3-unused-component` and `openapi-tags` back on "with the first path". There are five paths now and the rule must stay off (section 3.6). Also the skill's first section still says the first version is `0.1.0`. The `.spectral.yaml` comment claims "with one path, 18 of them are still unreferenced" (stale). I did not edit them.
+- **F4-2 · Stale instructions to switch on Spectral rules.** The `openapi-sync` skill (section 3, step 2) and the comment in `.spectral.yaml` say to turn `oas3-unused-component` and `openapi-tags` back on "with the first path". There are seven paths now and the rule must stay off (section 3.6). Also the skill's first section still says the first version is `0.1.0`. The `.spectral.yaml` comment claims "with one path, 18 of them are still unreferenced" (stale). I did not edit them.
 - **F4-3 · Version bump is manual.** Nothing fails if `info.version` is not bumped.
 - **F4-4 · Pairing is manual.** Nothing checks that the PortHub copy equals the source (a stale PortHub copy is possible). A CI step or a PortHub check could do it. The two files match today.
 - **F4-5 · Spectral runs on a downloaded package.** Pinned, but a deleted npm version would turn the job red; P1-A4 review note 8 lists deprecated transitive packages (`glob@7`, `inflight`).
-- **F4-6 · Mobile parts are drafts.** `bearerAuth`, `AppVersion`, `DeviceId`, `IdempotencyKey`, `AppUpdateRequired` and `IdempotencyKeyReused` describe behaviour that is not implemented (`EnsureMinAppVersion` is an empty hook, F11; mobile sign-in is P1-C3).
+- **F4-6 · Mobile parts: mostly real now, two still drafts.** Since P1-C3 `bearerAuth`, `AppVersion`, `DeviceId` and `AppUpdateRequired` describe implemented behaviour (`EnsureMinAppVersion`, mobile sign-in). `IdempotencyKey` and `IdempotencyKeyReused` still describe behaviour no code has (mobile writes come later).
 - **F4-7 · Reserved responses.** `LicenseReadOnly` and `PlanLimitExceeded` are documented as reserved (DEC-54).
 - **F4-8 · Review by Frontend and Mobile.** CT-02 v1.0.0 was approved by the Backend lead without team review (DEC-57: critical changes only). P1-A4 notes that PortHub PR #16 had no Frontend or Mobile review at merge.
+- **F4-11 · `DeviceRevoked` response is unreferenced.** The mobile sign-in 403 is written inline with two named examples (`accountDisabled`, `deviceRevoked`) because one status carries two codes. The `DeviceRevoked` component exists (the drift test requires it) but no path points at it.
 - **F4-9 · Line endings.** The PortHub working copy has CRLF on Windows; git normalises it. Nobody should be surprised by a full-file diff in an editor; use `--strip-trailing-cr`.
 - **F4-10 · `RouteVersionCoverageTest`** is listed under this feature in the index, but it tests the version-token rule (F12). The index should move it there.

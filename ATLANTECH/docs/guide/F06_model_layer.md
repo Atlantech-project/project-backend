@@ -1,6 +1,6 @@
 # F06 · The model layer (pattern once, then the catalogue)
 
-Task origin: P1-B5 (models, enums, factories, `ModelLayerTest`), PR #17 (`523a0cb`); the access fields added later by P2-D1. Facts checked against `develop` at `106b40e`. Paths are inside `project-backend/ATLANTECH/` unless stated. Read F05 first: the models are written to match that schema, and `ModelLayerTest` compares them with it.
+Task origin: P1-B5 (models, enums, factories, `ModelLayerTest`), PR #17 (`523a0cb`); the access fields added later by P2-D1. Facts first checked against `develop` at `106b40e` (2026-11-04) and **updated on 2026-11-06 against `develop` at `9559d35`** (P1-C3 added `HasApiTokens` to `User` and the Sanctum token model `PersonalAccessToken`, which is not one of the 92 models). Paths are inside `project-backend/ATLANTECH/` unless stated. Read F05 first: the models are written to match that schema, and `ModelLayerTest` compares them with it.
 
 ## 1. What it does
 
@@ -27,7 +27,7 @@ There is no HTTP request. The flow for a normal read or write is:
 
 ### 3.1 The layout and how a model is found
 
-`app/Modules/<Module>/Models/<Class>.php` for models, `…/Enums/<Name>.php` for enums, `database/factories/<Module>/<Class>Factory.php` for factories (namespace `Database\Factories\<Module>`). Nothing is registered: `ModelLayerTest::domainModels()` globs `app/Modules/*/Models/*.php` and keeps every subclass of `Illuminate\Database\Eloquent\Model` (`ModelLayerTest.php:58-73`), so a new model is checked automatically. The non-model files in those folders (`Access/Models/Concerns/RestrictsToOwnTasks.php`, `Shared/Models/AuditLogBuilder.php`) are skipped because they are not `Model` subclasses.
+`app/Modules/<Module>/Models/<Class>.php` for models, `…/Enums/<Name>.php` for enums, `database/factories/<Module>/<Class>Factory.php` for factories (namespace `Database\Factories\<Module>`). Nothing is registered: `ModelLayerTest::domainModels()` globs `app/Modules/*/Models/*.php` and keeps every subclass of `Illuminate\Database\Eloquent\Model` (`ModelLayerTest.php:59-75`), so a new model is checked automatically. Since P1-C3 the function also skips every subclass of `Laravel\Sanctum\PersonalAccessToken` (`ModelLayerTest.php:66-67`, comment: "Framework tables are not CT-17 tables"), so `Access/Models/PersonalAccessToken.php` is not part of the 92 (3.8b). The non-model files in those folders (`Access/Models/Concerns/RestrictsToOwnTasks.php`, `Shared/Models/AuditLogBuilder.php`) are skipped because they are not `Model` subclasses.
 
 Which module owns which table was decided in P1-B5 (answer 1) with one rule: a table lives in the earliest module that owns its meaning and no later than every table it points to allows (the full map is the catalogue in 3.9). Placements that follow from the layer rule (`A_orientation.md` A4):
 
@@ -42,20 +42,20 @@ Which module owns which table was decided in P1-B5 (answer 1) with one rule: a t
 
 | Line | Code | What it does and why |
 | --- | --- | --- |
-| 23 | `#[Table(name: 'users')]` | Laravel 13 attribute: the table name is explicit (never inferred). The same attribute carries `key:`, `incrementing:`, `keyType:` and `timestamps:` when a table differs from the default (3.3). |
-| 24 | `#[DateFormat('Y-m-d H:i:s.u')]` | Dates are written to MySQL with microseconds. Needed on the 24 token tables because `updated_at` is the version token (F12); without it Eloquent would write seconds. |
-| 25 | `#[Fillable(['name','username','password_hash','phone','is_active','must_change_password'])]` | The columns that mass assignment may set. `id`, `created_at` and `updated_at` are not listed. An AI-owned column or a generated column never appears here (3.7). |
-| 26 | `#[Hidden(['password_hash'])]` | The hash never appears in `toArray()`/JSON (`ModelLayerTest.php:257`). |
-| 27 | `#[UseFactory(UserFactory::class)]` | Binds the factory by attribute (no `newFactory()` method, and the factory does not need the `Database\Factories\<Model>Factory` naming convention). Every model has this. |
-| 28 | `class User extends Authenticatable` | The only model that extends `Authenticatable` (sign-in, F07). All others extend `Model`, or `Pivot` for link tables (3.5). |
-| 31 | `use HasFactory, Notifiable;` | `HasFactory` with the docblock `@use HasFactory<UserFactory>` is on every model. |
-| 40 | `protected $authPasswordName = 'password_hash';` | DEC-35: the password column is `password_hash`, not `password`. `getAuthPassword()` then reads it. |
-| 47 | `protected $rememberTokenName = '';` | There is no remember-token column; web sign-in is a Sanctum session. |
-| 52-61 | `casts()` | `password_hash` is `hashed` (assigning a plain string stores a hash; `ModelLayerTest.php:257`), `is_active` and `must_change_password` are `boolean`, `created_at`/`updated_at` are `datetime`. |
-| 66, 74 | `devices()`, `roleAssignments()` | `hasMany(UserDevice::class)`, `hasMany(UserRoleAssignment::class)`: Access to Access, allowed. |
-| 84 | `activeRoleAssignment()` | `hasOne(UserRoleAssignment::class)->whereNull('active_to')`: the one active assignment of DEC-36. |
-| 92 | `accessScope()` | Memoised `AccessScope::for($this)` (F09). The only non-persistence behaviour on a model; kept here so `RestrictsToOwnTasks` can ask the user for scope. |
-| 102 | `auditLogs()` | `hasMany(AuditLog::class, 'actor_id')`. `audit_logs.actor_id` points at `users`, but Shared (layer 1) may not know Access (layer 2), so `AuditLog` has **no** `belongsTo(User)`; the link is defined on the later module (3.6). |
+| 24 | `#[Table(name: 'users')]` | Laravel 13 attribute: the table name is explicit (never inferred). The same attribute carries `key:`, `incrementing:`, `keyType:` and `timestamps:` when a table differs from the default (3.3). |
+| 25 | `#[DateFormat('Y-m-d H:i:s.u')]` | Dates are written to MySQL with microseconds. Needed on the 24 token tables because `updated_at` is the version token (F12); without it Eloquent would write seconds. |
+| 26 | `#[Fillable(['name','username','password_hash','phone','is_active','must_change_password'])]` | The columns that mass assignment may set. `id`, `created_at` and `updated_at` are not listed. An AI-owned column or a generated column never appears here (3.7). |
+| 27 | `#[Hidden(['password_hash'])]` | The hash never appears in `toArray()`/JSON (`ModelLayerTest.php:259`). |
+| 28 | `#[UseFactory(UserFactory::class)]` | Binds the factory by attribute (no `newFactory()` method, and the factory does not need the `Database\Factories\<Model>Factory` naming convention). Every model has this. |
+| 29 | `class User extends Authenticatable` | The only model that extends `Authenticatable` (sign-in, F07). All others extend `Model`, or `Pivot` for link tables (3.5). |
+| 32 | `use HasApiTokens, HasFactory, Notifiable;` | `HasFactory` with the docblock `@use HasFactory<UserFactory>` is on every model. `HasApiTokens` (Laravel Sanctum, added by P1-C3) gives `createToken()`/`tokens()` for the mobile sign-in; the token rows live in `personal_access_tokens` with the custom model of 3.8b. `Notifiable` is Laravel's default. |
+| 41 | `protected $authPasswordName = 'password_hash';` | DEC-35: the password column is `password_hash`, not `password`. `getAuthPassword()` then reads it. |
+| 48 | `protected $rememberTokenName = '';` | There is no remember-token column; web sign-in is a Sanctum session and mobile sign-in uses Sanctum tokens (no remember token either way). |
+| 53-62 | `casts()` | `password_hash` is `hashed` (assigning a plain string stores a hash; `ModelLayerTest.php:259`), `is_active` and `must_change_password` are `boolean`, `created_at`/`updated_at` are `datetime`. |
+| 67, 75 | `devices()`, `roleAssignments()` | `hasMany(UserDevice::class)`, `hasMany(UserRoleAssignment::class)`: Access to Access, allowed. |
+| 85 | `activeRoleAssignment()` | `hasOne(UserRoleAssignment::class)->whereNull('active_to')`: the one active assignment of DEC-36. |
+| 93 | `accessScope()` | Memoised `AccessScope::for($this)` (F09). The only non-persistence behaviour on a model; kept here so `RestrictsToOwnTasks` can ask the user for scope. |
+| 103 | `auditLogs()` | `hasMany(AuditLog::class, 'actor_id')`. `audit_logs.actor_id` points at `users`, but Shared (layer 1) may not know Access (layer 2), so `AuditLog` has **no** `belongsTo(User)`; the link is defined on the later module (3.6). |
 
 `app/Modules/Access/Models/UserRoleAssignment.php` (a table with **no timestamps**):
 
@@ -88,7 +88,7 @@ Which module owns which table was decided in P1-B5 (answer 1) with one rule: a t
 - `:8` `enum Role: string` — a string-backed enum.
 - `:10-21` twelve cases whose **names are TitleCase of the SQL value** and whose **values are the exact SQL strings**: `PortGm = 'PORT_GM'`, `PortStaff`, `MarineSafetyOfficer`, `PilotageManager`, `PilotageOfficer`, `MarinePilot`, `TugManager`, `TugOfficer`, `TugMaster`, `TerminalAdmin`, `TerminalOfficer`, `TerminalSupervisor`. This is the lead's rule (P1-B5 answer 3): CLAUDE.md asks for TitleCase keys, the contract asks for SQL names, so the key is TitleCase and the backing value is the SQL name. Keep the list in the same order as the MySQL ENUM; the guard compares the arrays in order.
 - `:26` `isTerminalScoped()` — true for `TerminalAdmin`, `TerminalOfficer`, `TerminalSupervisor` (FR-AC-15). `:37` `isFieldRole()` — true for `MarinePilot`, `TugMaster`, `TerminalSupervisor` (FR-AC-16, DEC-48). These two helpers are the only methods on any of the 80 enums (checked by script); F09 uses them for scope.
-- Used by one column: `user_role_assignments.role` (`casts()` of `UserRoleAssignment`). Its values equal `user_role_assignments.role` in the migration (`…100011…php:18`), proven by `ModelLayerTest.php:140`.
+- Used by one column: `user_role_assignments.role` (`casts()` of `UserRoleAssignment`). Its values equal `user_role_assignments.role` in the migration (`…100011…php:18`), proven by `ModelLayerTest.php:142`.
 
 A DB-backed enum has no logic by default: it exists so that code writes `Role::MarinePilot` and not `'MARINE_PILOT'`, and so that CT-21 (`status-vocabulary.json`, F14) can be generated from the enums.
 
@@ -102,7 +102,7 @@ A DB-backed enum has no logic by default: it exists so that code writes `Role::M
 
 `UserRoleAssignmentFactory.php:23-31` builds an active **terminal** role: `user_id => User::factory()`, `role => Role::TerminalOfficer`, `organization_unit_id => OrganizationUnit::factory()`, `unit_type => UnitType::Terminal`, `active_from => now()`, `active_to => null`. `:38` `ended()` gives a history row (`active_from` a month ago, `active_to` yesterday). `OrganizationUnitFactory.php:21-47`: default a terminal unit (`terminal_id => Terminal::factory()`), `harbourAuthority()` and `marineServices()` states (`terminal_id` null; only one such unit may exist because of `uq_org_unit_type_key`). The test helper `makeUserWithRole(?Role, …)` (`tests/Pest.php:86`) wraps these three factories for F09 tests.
 
-Because factories are plain data, **the foreign key may not exist**: `ModelLayerTest` switches FK checks off (`beforeEach`, `:41-45`). With FK checks on, 59 of the 92 factories create a row on an empty database; 33 fail with MySQL error 1452 because they depend on a composite FK that needs coordinated parents (measured 2026-11-04 on `atlantech_testing_g2`; the list is in section 11).
+Because factories are plain data, **the foreign key may not exist**: `ModelLayerTest` switches FK checks off (`beforeEach`, `:42-46`). With FK checks on, 59 of the 92 factories create a row on an empty database; 33 fail with MySQL error 1452 because they depend on a composite FK that needs coordinated parents (measured 2026-11-04 and again 2026-11-06 on `atlantech_testing_g2`: same result; the list is in section 11).
 
 ### 3.6 Relation rules
 
@@ -117,15 +117,32 @@ All 234 relations are typed methods with a generic docblock (`@return BelongsTo<
 
 ### 3.7 The AI-ownership rule on `#[Fillable]` (CT-15)
 
-- **Generated columns** are never fillable (F05 3.5). `ModelLayerTest.php:238` reads `information_schema` for every `STORED GENERATED` column and asserts it is not fillable.
+- **Generated columns** are never fillable (F05 3.5). `ModelLayerTest.php:240` reads `information_schema` for every `STORED GENERATED` column and asserts it is not fillable.
 - **Columns an AI worker UPDATEs** (the `GRANT UPDATE (...)` lists in `workers.sql`, F05 3.9) are not fillable either. The test reads `workers.sql` itself, so it moves with the grants. Examples: `SolverRun` lists only `trigger_type`, `triggered_by`, `horizon_start`, `horizon_end`, `queued_at`, `result_handled_at`; `Vessel` omits `call_sign` and `flag_state`; `BaplieFile` omits `parse_status` and `staged_payload`.
-- **Tables a worker only inserts** (the 19 rows of `contracts/ai/table-ownership.md` with `INSERT:`): where the Backend may change "Nothing" (13 rows) the model has `#[Fillable([])]` (`ModelLayerTest.php:224`). Fourteen models have an empty list in total.
+- **Tables a worker only inserts** (the 19 rows of `contracts/ai/table-ownership.md` with `INSERT:`): where the Backend may change "Nothing" (13 rows) the model has `#[Fillable([])]` (`ModelLayerTest.php:226`). Fourteen models have an empty list in total.
 - **Backend-only columns** (`result_handled_at`, `drift_measurements.notified_at`) are fillable: the Backend sets them.
 - When the Backend must set an AI-updatable column itself (the run row's `QUEUED` status and `solver_version` at creation; `vessels.call_sign` while NULL; `baplie_files.staged_payload` on a staff correction) it uses `forceFill([...])` explicitly. The docblocks of `Vessel`, `BaplieFile` and `SolverRun` say so (lead, 2026-10-29, P1-B5 section 7).
 
 ### 3.8 `RestrictsToOwnTasks` (only mentioned here; F09 owns it)
 
-`PlanComponent` uses the trait `App\Modules\Access\Models\Concerns\RestrictsToOwnTasks` (`use HasFactory, RestrictsToOwnTasks;`). It adds `scopeVisibleTo(Builder, User)` (`:24`) and `authorizeTask(Request, User)` (`:46`): field roles see only rows with their own `assigned_user_id`. It lives in Access and is used by a Plan model because Plan may use Access but not the reverse (`A_orientation.md` A4). Apart from `Notifiable` on `User`, it is the only behavioural trait on any model.
+`PlanComponent` uses the trait `App\Modules\Access\Models\Concerns\RestrictsToOwnTasks` (`use HasFactory, RestrictsToOwnTasks;`). It adds `scopeVisibleTo(Builder, User)` (`:24`) and `authorizeTask(Request, User)` (`:46`): field roles see only rows with their own `assigned_user_id`. It lives in Access and is used by a Plan model because Plan may use Access but not the reverse (`A_orientation.md` A4). Apart from `HasApiTokens` and `Notifiable` on `User`, it is the only trait on any model besides `HasFactory`.
+
+### 3.8b `PersonalAccessToken` (not one of the 92 models)
+
+`app/Modules/Access/Models/PersonalAccessToken.php` (73 lines, P1-C3) extends `Laravel\Sanctum\PersonalAccessToken` and maps the **framework** table `personal_access_tokens` (F05 3.1b). It is registered in `AccessServiceProvider.php:34` with `Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class)`, and `:35-37` makes Sanctum answer 401 for a revoked token (`authenticateAccessTokensUsing(... $isValid && ! $token->isRevoked())`). It differs from the 92 models on purpose: no `#[Table]` attribute (the table name comes from Sanctum), no `#[UseFactory]`, no factory, no enum casts, and it is excluded from `ModelLayerTest`.
+
+| Member | What it does |
+| --- | --- |
+| `LIFETIME_DAYS = 30` (`:16`) | The sliding lifetime of a token (FR-AC-06). |
+| `$fillable` (`:21`) | `name`, `token`, `abilities`, `expires_at`, `user_device_id`. `revoked_at` and `last_used_at` are written only through `forceFill()` in the two methods below. |
+| `casts()` (`:26-31`) | `revoked_at` as `datetime`. |
+| `markUsed()` (`:36`) | `forceFill(['last_used_at' => now(), 'expires_at' => now()->addDays(30)])->save()`: one write that stamps the use and slides the expiry. Called by `EnsureTokenDevice` after the device matches (not by Sanctum: `config/sanctum.php` has `'last_used_at' => false`). |
+| `device()` (`:44`) | `belongsTo(UserDevice::class, 'user_device_id')`. |
+| `isRevoked()` (`:49`) | `revoked_at !== null`. |
+| `revoke()` (`:57`) | Sets `revoked_at` once; revoking twice keeps the first time. |
+| `delete()` (`:69`) | Throws `LogicException`: "Tokens are never deleted (FR-GL-03): call revoke()." |
+
+It follows the same rule as `AuditLog`: a model that refuses an operation the design forbids. Its behaviour is exercised by the mobile sign-in tests (`tests/Feature/Access/MobileSignInTest.php`, `MobileTokenTest.php`, `MobileLogoutTest.php`), which are outside this guide's feature list; Unverified here beyond reading the class.
 
 ### 3.9 The catalogue of all 92 models
 
@@ -631,20 +648,20 @@ The models read and write the 92 tables of F05. Ownership (CT-15): the Backend o
 
 | Test (line) | What it proves | Cases |
 | --- | --- | --- |
-| every model points at its own table and no two share one (`:95`) | Every `getTable()` exists; no duplicates | 1 |
-| every contract table has a model (`:105`) | The 92 names of `table-names.md` are all modelled; exactly 92 models | 1 |
-| a row is written and read back through its model (`:118`) | `Model::factory()->create()` works, then the row is read by the table's PRIMARY columns; every `getFillable()` name is a real column; every enum cast returns the enum | 92 |
-| every enum cast holds exactly the values of its database ENUM (`:140`) | The set of enum-cast columns equals the set of ENUM columns of the table, and each enum's values equal the column's ENUM list, **in the same order** | 92 |
-| every declared relation loads (`:159`) | Each public method with a `Relation` return type returns a relation and `getResults()` does not throw | models with relations |
-| a belongsTo returns its own parent, not a neighbour (`:171`) | A decoy parent proves 8 composite-key-affected relations pick the right row | 8 |
-| a status update finds its status type within its component type (`:188`), eager loading is refused (`:198`) | The special relation of 3.6 | 2 |
-| a belongsToMany through a pivot returns exactly the linked rows (`:204`) | The 8 many-to-many relations | 8 |
-| tables only an AI worker inserts give the Backend nothing to fill (`:224`) | 19 AI-insert rows in `table-ownership.md`, 13 "Nothing" → `Fillable([])` | 1 |
-| columns a worker updates are not fillable; generated columns never are (`:238`) | Reads `workers.sql` and `information_schema` | 1 |
-| a user signs in with username and a hashed `password_hash`, never shown (`:257`) | DEC-35 | 1 |
-| the version token `updated_at` is written and read with microseconds (`:265`) | `#[DateFormat]` on `User` | 1 |
+| every model points at its own table and no two share one (`:97`) | Every `getTable()` exists; no duplicates | 1 |
+| every contract table has a model (`:107`) | The 92 names of `table-names.md` are all modelled; exactly 92 models | 1 |
+| a row is written and read back through its model (`:120`) | `Model::factory()->create()` works, then the row is read by the table's PRIMARY columns; every `getFillable()` name is a real column; every enum cast returns the enum | 92 |
+| every enum cast holds exactly the values of its database ENUM (`:142`) | The set of enum-cast columns equals the set of ENUM columns of the table, and each enum's values equal the column's ENUM list, **in the same order** | 92 |
+| every declared relation loads (`:161`) | Each public method with a `Relation` return type returns a relation and `getResults()` does not throw | models with relations |
+| a belongsTo returns its own parent, not a neighbour (`:173`) | A decoy parent proves 8 composite-key-affected relations pick the right row | 8 |
+| a status update finds its status type within its component type (`:190`), eager loading is refused (`:200`) | The special relation of 3.6 | 2 |
+| a belongsToMany through a pivot returns exactly the linked rows (`:206`) | The 8 many-to-many relations | 8 |
+| tables only an AI worker inserts give the Backend nothing to fill (`:226`) | 19 AI-insert rows in `table-ownership.md`, 13 "Nothing" → `Fillable([])` | 1 |
+| columns a worker updates are not fillable; generated columns never are (`:240`) | Reads `workers.sql` and `information_schema` | 1 |
+| a user signs in with username and a hashed `password_hash`, never shown (`:259`) | DEC-35 | 1 |
+| the version token `updated_at` is written and read with microseconds (`:267`) | `#[DateFormat]` on `User` | 1 |
 
-Measured 2026-11-04 on `atlantech_testing_g2`: `ModelLayerTest` together with the three F05 files passed (377 tests, 1156 assertions, 59.7 s). Run:
+Measured 2026-11-06 on `atlantech_testing_g2` (`develop` at `9559d35`): `ModelLayerTest` together with the three F05 files passed (377 tests, 1157 assertions, 69.3 s). The first measurement on 2026-11-04 gave 377 tests and 1156 assertions. Run:
 
 ```powershell
 $env:DB_DATABASE = "atlantech_testing_mine"; $env:DB_SCHEMA_TEST_DATABASE = "atlantech_testing_mine"
@@ -659,7 +676,7 @@ vendor/bin/pest tests/Feature/Models/ModelLayerTest.php
 4. Keep generated columns and AI-updated columns out of `#[Fillable]`; if the table is insert-only for a worker and the Backend may change nothing, use `Fillable([])`.
 5. Write `belongsTo` for foreign keys whose target is in the same or an earlier module, with a typed return and generic docblock; no relation to later modules or peers; no relation that matches only part of a composite key.
 6. Create `database/factories/<Module>/<Singular>Factory.php` whose `definition()` returns a valid row (CHECKs satisfied; unique values from Faker).
-7. Update the two **92** constants in `ModelLayerTest.php:113,115` (and the AI-insert counts `:228-229` if the table is a worker's).
+7. Update the two **92** constants in `ModelLayerTest.php:115,117` (and the AI-insert counts `:230-231` if the table is a worker's).
 8. Run `ModelLayerTest` and `tests/Unit/Modules/ModuleArchitectureTest.php`.
 
 ## 8. Gotchas and invariants
@@ -681,8 +698,8 @@ vendor/bin/pest tests/Feature/Models/ModelLayerTest.php
 - **A new column on an existing table.** Migration (F05 9), then add it to `#[Fillable]` (unless generated/AI-updated), `casts()` (date, decimal scale, boolean, JSON, enum) and the factory's `definition()`.
 - **A new ENUM value.** Migration with `ALTER TABLE … MODIFY` (F05 9), then the case in the enum **at the same position**; run `ModelLayerTest`; regenerate the vocabulary (F14).
 - **A new state in a factory.** `public function name(): static { return $this->state(fn (array $attributes) => [...]); }` (see `UserFactory::inactive`, `:40`). Prefer a state over passing raw arrays in tests.
-- **A new many-to-many.** Create the pivot model (composite key, `incrementing: false`, `extends Pivot`), then `belongsToMany(Target::class, 'pivot_table', 'owner_key', 'target_key')->using(Pivot::class)` on both sides if the module rule allows, and add a row to the dataset at `ModelLayerTest.php:213`.
-- **A new relation.** Typed method with the generic docblock; check the target's module layer first; add a decoy test like `:171` when the key is not the obvious one.
+- **A new many-to-many.** Create the pivot model (composite key, `incrementing: false`, `extends Pivot`), then `belongsToMany(Target::class, 'pivot_table', 'owner_key', 'target_key')->using(Pivot::class)` on both sides if the module rule allows, and add a row to the dataset at `ModelLayerTest.php:215`.
+- **A new relation.** Typed method with the generic docblock; check the target's module layer first; add a decoy test like `:173` when the key is not the obvious one.
 - **A new module with models.** Follow F01 9 and add the module to `ModuleArchitectureTest`.
 
 ## 10. Try it
@@ -699,12 +716,12 @@ Real output: `Table .. user_role_assignments`; `id increments, unique .. bigint 
 $env:DB_DATABASE = "atlantech_testing_g2"; $env:DB_SCHEMA_TEST_DATABASE = "atlantech_testing_g2"
 vendor/bin/pest tests/Feature/Models/ModelLayerTest.php
 ```
-Real output: passed (part of the 377-test run in F05, 59.7 s).
+Real output: passed (part of the 377-test run in F05, 2026-11-06, 69.3 s).
 
 ```bash
 ls app/Modules/*/Models/*.php | wc -l ; ls app/Modules/*/Enums/*.php | wc -l ; ls database/factories/*/*.php | wc -l
 ```
-Real output: `93`, `80`, `92` (93 files under `Models/` = 92 models + `AuditLogBuilder`).
+Real output (2026-11-06): `94`, `80`, `92` (94 files under `Models/` = 92 models + `AuditLogBuilder` + `PersonalAccessToken`).
 
 Expected, **not run**: `php artisan tinker --execute 'App\Modules\Access\Models\User::factory()->make()->username;'` prints a username like `user.k3x9a0pqzv` (no database write, `make` only).
 
@@ -715,9 +732,9 @@ Findings (documentation only; nothing was changed):
 1. **33 factories are not FK-valid on an empty database** (measured: 59 of 92 succeed with FK checks on): `BaplieFile`, `BaplieParseIssue`, `BaplieParseRun`, `ContainerManifestEntry`, `BerthingRequestCargo`, `ActualStatusUpdate`, `DeviationLog`, `RetrainingRun`, `EquipmentCargoCompatibility`, `StorageFacility`, `StorageFacilityCargoCompatibility`, `TankDetail`, `TerminalProductivityProfile`, `WarehouseDetail`, `OperationalPlan`, `PlanComponent`, `Recommendation`, `RecommendationOption`, `RecommendationOptionTug`, `RecommendationOverride`, `RecommendationRationaleFactor`, `RecommendationReview`, `DgZoneAllowedClass`, `OogZoneDetail`, `ReeferZoneDetail`, `StorageAllocationItem`, `StorageMovement`, `TerminalRecommendation`, `YardBlock`, `YardPlacementItem`, `YardRun`, `YardSlot`, `YardZone`. P1-B5 recorded 57 and 35 on 2026-10-29; the difference is not explained in the plan files. Tests that need related rows must build the chain by hand; coordinated states are not written yet.
 2. **`TerminalRecommendation` docblock contains a broken character** (`Visible to that terminal only (�42)`); a UTF-8 encoding slip from the SQL source.
 3. **46 of the 92 models have only the placeholder docblock "The `x` table."**; their purpose is written only in F05 3.3 of this guide and in the table comments of the migrations.
-4. **Counts match the index** (92 models, 80 enums, 92 factories; 77 enums back ENUM columns, 3 do not). One detail to know when counting files: `app/Modules/*/Models/*.php` holds **93** files, because `Shared/Models/AuditLogBuilder.php` is the query builder of `AuditLog`, not a model. `Access/Models/Concerns/RestrictsToOwnTasks.php` is in a subfolder and is not counted.
+4. **Counts match the index** (92 models, 80 enums, 92 factories; 77 enums back ENUM columns, 3 do not). One detail to know when counting files: `app/Modules/*/Models/*.php` holds **94** files: the 92 models, `Shared/Models/AuditLogBuilder.php` (the query builder of `AuditLog`) and, since P1-C3, `Access/Models/PersonalAccessToken.php` (the Sanctum token model, excluded in `ModelLayerTest.php:66-67`). `Access/Models/Concerns/RestrictsToOwnTasks.php` is in a subfolder and is not counted.
 5. **Relations that exist only on one side** (`forecast_runs.berthing_request_id`, `organization_units.terminal_id`, `audit_logs.actor_id`) are consequences of the layer rule (3.6); no change needed, but a developer will look for them.
-6. **`ModelLayerTest` pins the totals 92, 19 and 13** (`:113,115,228-229`); every new table needs those edits.
+6. **`ModelLayerTest` pins the totals 92, 19 and 13** (`:115,117,230-231`); every new table needs those edits.
 7. **`PilotRankLimit` keyType** is `string` while `PilotProfile`/`TugMasterProfile` use `int`; both correct for their columns, noted because the naming looks inconsistent.
 8. The DEC-aware helper `Role::isFieldRole()` includes `TerminalSupervisor`; F09 explains the scope consequences.
 9. **Not built:** observers, policies, API resources and the status-vocabulary generator beyond `PublishStatusVocabulary` (F14); the factory states needed by P1-B6/P1-B7 and by the demo seeders are in F13.

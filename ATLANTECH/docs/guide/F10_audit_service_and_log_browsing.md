@@ -1,6 +1,6 @@
 # F10 · Audit service and audit-log browsing
 
-Task origin: P2-D3 (audit service, backend PR #47) and P2-F8 (audit-log browsing, same PR family). Facts checked against `develop` at `106b40e`. Paths are inside `project-backend/ATLANTECH/` unless stated.
+Task origin: P2-D3 (audit service, backend PR #47) and P2-F8 (audit-log browsing, same PR family). Facts re-checked against `develop` at `9559d35` (first written at `106b40e`); the mobile stack (P1-C3, PR #55 and #57) added two audit reasons and a new caller. Paths are inside `project-backend/ATLANTECH/` unless stated.
 
 ## 1. What it does
 
@@ -28,14 +28,14 @@ Typical use (from the service's docblock, `AuditService.php:20-25`):
 
 ### 2.2 Writing a refusal (`REJECTED_ATTEMPT`)
 
-1. A guard refuses a request (sign-in 401/403 in F07; the password gate in F08; `AccessRefusal` 403 in F09; `EnsureRecordVersion` 409 and 422 in F12).
+1. A guard refuses a request (sign-in 401/403 in F07 on both channels; the mobile device checks in F07; the password gate in F08; `AccessRefusal` 403 in F09; `EnsureRecordVersion` 409 and 422 in F12).
 2. The guard calls `$audit->rejectedAttempt($route, $code, $reason, $actorId, $username, $entityType = 'users', $entityId = null)`.
 3. The method calls `$this->transaction(fn () => $this->record(RejectedAttempt, ...))`: a transaction of its own, one row with `before_state = NULL` and `after_state = {route, status, code, reason, username}`.
 4. The caller then throws its `ApiProblemException`.
 
 ### 2.3 Browsing: `GET /api/v1/audit-logs`
 
-1. Route `routes/api.php:24`: `Route::get('audit-logs', ...)->middleware('ability:audit.read')->name('audit-logs.index')`, inside `port.api`. So: `auth:web` (401) → `EnsureAccountUsable` (F08) → `EnsureAbility` (F09; any role but `PORT_GM` gets 403 and an audit row).
+1. Route in `routes/api.php`: `Route::get('audit-logs', ...)->middleware('ability:audit.read')->name('audit-logs.index')`, inside `port.api`. So: `auth:web` (401) → `EnsureAccountUsable` (F08) → `EnsureAbility` (F09; any role but `PORT_GM` gets 403 and an audit row).
 2. Laravel builds `AuditLogIndexRequest` (a `FormRequest`) and validates the query string. Failure → **422 `VALIDATION_FAILED`** with `errors` per field.
 3. `AuditLogController::index` (`AuditLogController.php:19-41`) takes `$request->validated()` and builds one query:
    1. `AuditLog::query()->leftJoin('users', 'users.id', '=', 'audit_logs.actor_id')->select('audit_logs.*', 'users.name as actor_name', 'users.username as actor_username')`. **Left** join, because `actor_id` is NULL for the system or a worker;
@@ -67,7 +67,27 @@ A plain class (resolved from the container). The actor is a **plain `?int`**, ne
 - `after_state` is exactly `{route, status: $code->status(), code: $code->value, reason, username}`. `username` is the **raw input** and may be null (a refused write by a signed-in user passes their username). It never carries a password.
 - `$entityType`/`$entityId` name the refused target: before sign-in they stay `'users'`/`NULL`; a signed-in refusal names the user (`'users'`, user id) like the guards in F08/F09; a refused write names its table and row (`EnsureRecordVersion` passes the record's table and key).
 - **Why it runs in its own transaction, and why after the rollback.** A refused write is rolled back; an audit row written inside that transaction would roll back with it and the refusal would leave no trace. `rejectedAttempt` therefore opens its own `transaction()`, and the caller must call it **after** the refused write's transaction has ended. If it is called while an outer transaction is open, it only joins it (nested transactions are savepoints in one transaction), so a later rollback of the outer one takes the audit row with it (P2-D3 review note). `AuditServiceTest` "keeps a refused attempt after the refused write was rolled back" proves the correct order: the exception is caught outside the transaction and the audit call comes after.
-- **Callers today:** `SignInService::recordRejectedAttempt` (delegator; F07, F08), `AccessRefusal::refuse` (F09), `EnsureRecordVersion::recordRefusal` (F12, `EnsureRecordVersion.php:83`).
+- **Callers today:** `SignInService::recordRejectedAttempt` (delegator; F07, F08), `AccessRefusal::refuse` (F09), `EnsureRecordVersion::recordRefusal` (F12, `EnsureRecordVersion.php:79-90`), **`EnsureTokenDevice::refuse`** (F07, mobile token on the wrong or a revoked device) and **`MobileSignInService::issueToken`** (F07, mobile sign-in from a revoked device).
+
+**Every `after_state.reason` written today, and where.** The reason is a free `string` argument; there is no enum behind it except `AccessRefusalReason` for the F09 cases.
+
+| `reason` | `code` / status | `entity_type` / `entity_id` | Written by | Meaning |
+| --- | --- | --- | --- | --- |
+| `invalid_credentials` | `UNAUTHENTICATED` 401 | `users` / NULL, actor NULL | `SignInService::refuse` (web and mobile sign-in) | unknown username or wrong password |
+| `account_disabled` | `ACCOUNT_DISABLED` 403 | `users` / NULL at sign-in; user id on a later request | `SignInService::refuse` (sign-in); `EnsureAccountUsable` | deactivated user |
+| `password_change_required` | `PASSWORD_CHANGE_REQUIRED` 403 | `users` / user id | `EnsureAccountUsable` | route not on the allow-list while the flag is set |
+| `wrong_current_password` | `VALIDATION_FAILED` 422 | `users` / user id | `ChangePasswordRequest::failedValidation` | wrong current password (guessing from an open session or token) |
+| `no_active_role`, `role_not_allowed`, `terminal_out_of_scope`, `not_own_task` | `FORBIDDEN` 403 | `users` / user id | `AccessRefusal::refuse` (F09) | role, terminal or own-task refusal |
+| **`device_mismatch`** | `UNAUTHENTICATED` 401 | `users` / user id | `EnsureTokenDevice` (`refuse($request, 'device_mismatch')`) | a Bearer token used with an `X-Device-Id` that is not the device it was issued to |
+| **`device_revoked`** (a) | `UNAUTHENTICATED` 401 | `users` / user id | `EnsureTokenDevice` | a Bearer token whose device row has `revoked_at`; the token is revoked in the same step |
+| **`device_revoked`** (b) | `DEVICE_REVOKED` 403 | **`user_devices`** / device id | `MobileSignInService::issueToken` | a sign-in (right password) from a device the Port Admin revoked; no token is issued |
+| `version_invalid`, `stale_version` | `VALIDATION_FAILED` 422 / `VERSION_CONFLICT` 409 | the record's table / its key | `EnsureRecordVersion` (F12) | missing or bad version token / stale version |
+
+Notes on the two new reasons:
+
+- `device_mismatch` and `device_revoked` (a) are 401, not 403, on purpose: a stolen token learns nothing about which case it hit. They carry the user as actor and entity, like the password gate. The same reason string `device_revoked` appears twice with **different codes**: 401 `UNAUTHENTICATED` on a token request, 403 `DEVICE_REVOKED` at sign-in. Filter the audit list by `after_state.code` if you need to tell them apart (the browsing endpoint has no filter on `reason`).
+- The sign-in case (b) is written **after** `DB::transaction` in `MobileSignInService` ends (`MobileSignInService.php:51-55`): inside the transaction it only returns the locked device row; the caller then calls `rejectedAttempt` and throws. This is the pattern F10 requires (audit after the refused work, never inside it). `MobileSignInTest` "refuses a revoked device with 403 DEVICE_REVOKED, audited, and issues no token" asserts `entity_type user_devices`, `entity_id` = device id and `reason device_revoked`. `MobileTokenTest` "answers 422 without X-Device-Id and 401 for another device, audited, without extending the token" and "refuses a token whose device was revoked: 401, audited as device_revoked, and the token is revoked too" cover (a) and `device_mismatch`.
+- A **successful** mobile sign-in writes no row (lead decision Q10), and 422 and 426 at sign-in are not audited.
 
 ### 3.2 `AuditLog` (`app/Modules/Shared/Models/AuditLog.php`)
 
@@ -188,7 +208,7 @@ Filters combine with AND. Master-data history for one record: `?entity_type=bert
 
 ## 5. How it connects
 
-- **Called by:** `PasswordChangeService` (F08), `SignInService` (F07), `EnsureAccountUsable` and `ChangePasswordRequest` through the delegator (F08), `AccessRefusal` (F09), `EnsureRecordVersion` (F12). Every later write endpoint must use `transaction()` + `record*()` (F11 describes where in the chain).
+- **Called by:** `PasswordChangeService` (F08), `SignInService` (F07), `EnsureAccountUsable` and `ChangePasswordRequest` through the delegator (F08), `AccessRefusal` (F09), `EnsureRecordVersion` (F12), `EnsureTokenDevice` and `MobileSignInService` (F07, the device reasons). Every later write endpoint must use `transaction()` + `record*()` (F11 describes where in the chain).
 - **Calls:** `DB`, `AuditLog`, `ErrorCode` (status and value for `after_state`, F03). The browsing endpoint calls `PageRequest`, `PaginatedCollection`, `ZonedDateTime` (F03).
 - **Depends on:** F05 (table, `chk_al_states`), F09 (`audit.read`, `AccessRefusal`), F03.
 - **Used by:** Frontend screen P-29 (FE-050), QA, the Port Admin; the later features that write status changes and safety exceptions.
@@ -252,11 +272,11 @@ Run with `vendor/bin/pest tests/Feature/Audit/AuditServiceTest.php tests/Feature
 | "answers 403 FORBIDDEN to every role except the Port Admin and audits the refusal" (11 roles) | one new `REJECTED_ATTEMPT` row each |
 | "answers 403 FORBIDDEN to a user with no active role" | |
 
-Real run for this guide: both files passed inside the 156-test run (Access, Audit, `RolePermissionsTest`, `RouteAbilityCoverageTest`, `PublishRoleMatrixTest`; 1685 assertions; 41 s) on `atlantech_testing_g3`.
+Real run for this guide: both files passed inside the 217-test run on `develop` at `9559d35` (Access and Audit folders, `RolePermissionsTest`, `SystemInfoTest`, `RouteAbilityCoverageTest`, `WriteChainOrderTest`, `PublishRoleMatrixTest`, `TokenPruneNotScheduledTest`; 2017 assertions; 68 s) on `atlantech_testing_g3`. The two device reasons are tested in `MobileSignInTest` and `MobileTokenTest` (F07), not in the Audit folder.
 
 ## 8. Gotchas and invariants
 
-- **Never call `rejectedAttempt` inside the transaction it is meant to survive.** Call it after the rollback (or outside any transaction). `EnsureRecordVersion` calls it before `$next` or after the response, never inside the endpoint's transaction.
+- **Never call `rejectedAttempt` inside the transaction it is meant to survive.** Call it after the rollback (or outside any transaction). `MobileSignInService::issueToken` does it right: it returns from the transaction, then audits and throws. `EnsureRecordVersion` calls it before `$next` or after the response, never inside the endpoint's transaction.
 - **`record*()` need an open transaction**; always go through `$audit->transaction()`.
 - **Pass the actor explicitly**, `null` for the system. There is no `Auth::id()` fallback in Shared on purpose.
 - **Do not put secrets in `before`/`after` arrays** you pass to `record()` yourself: only `recordCreated/Updated/Deleted` strip `password` and `password_hash`. `rejectedAttempt` stores `username` as typed, so a password typed into the username field is stored (lower-cased by `LoginRequest`), visible to the Port Admin only.
@@ -265,7 +285,7 @@ Real run for this guide: both files passed inside the 156-test run (Access, Audi
 - **The append-only guard is Eloquent-only** (section 6). Do not use `DB::table('audit_logs')` for anything but reading; and never delete in tests (`AuditServiceTest` deletes with `DB::table`, which is why it filters by its own ids).
 - **`occurred_at` has one-second precision**: ordering inside a second relies on `id`.
 - **The browsing query joins `users`**; a column added to `audit_logs` that clashes with `users` names must be selected explicitly (the select uses `audit_logs.*` plus two aliases).
-- **`entity_type` is a table name** in the plural; sign-in refusals use `users`.
+- **`entity_type` is a table name** in the plural; sign-in refusals use `users`, except the mobile revoked-device refusal, which uses `user_devices`. `personal_access_tokens` revocations (logout, password change, deactivation) write **no** audit row of their own; only the password change's `UPDATE` row on `users` exists, and it does not list the tokens.
 - **A refused read (403) is audited, a successful read is not.**
 - **`q` excludes rows with no actor** (system rows), because it filters on joined columns.
 
@@ -291,7 +311,7 @@ Run for this guide:
 $env:DB_DATABASE='atlantech_testing_g3'; $env:DB_SCHEMA_TEST_DATABASE='atlantech_testing_g3'
 vendor/bin/pest tests/Feature/Audit
 ```
-Real result: part of the 156-test run, all passed.
+Real result: part of the 217-test run, all passed.
 
 ```bash
 php artisan route:list --path=api/v1/audit-logs

@@ -1,6 +1,6 @@
 # F02 · CI and quality gates
 
-Task origin: P1-A3 (Sprint 1, CI), with the `openapi` job added by P1-A4 and the labeler, CODEOWNERS and templates added by P1-B1 and later tasks. Facts checked against `develop` at `106b40e`. Paths are inside `project-backend/ATLANTECH/` unless they start with `.github/`; **`.github/` sits one level up, at the root of the `project-backend` repository** (GitHub only reads workflows from the repository root). See A3 and A7 in `A_orientation.md` for the repo map and the daily workflow.
+Task origin: P1-A3 (Sprint 1, CI), with the `openapi` job added by P1-A4 and the labeler, CODEOWNERS and templates added by P1-B1 and later tasks. Facts first checked against `develop` at `106b40e`, then **updated on 2026-11-06 against `9559d35`** (P1-C5, P1-C3, P1-C4 and the review fixes merged as PRs #54 to #57). The CI workflows, labeler, CODEOWNERS, templates, `phpunit.xml`, `tests/Pest.php` and `.spectral.yaml` did not change in that range (`git diff 106b40e..9559d35` is empty for them); `tests/TestCase.php` and the test files did. Paths are inside `project-backend/ATLANTECH/` unless they start with `.github/`; **`.github/` sits one level up, at the root of the `project-backend` repository** (GitHub only reads workflows from the repository root). See A3 and A7 in `A_orientation.md` for the repo map and the daily workflow.
 
 ## 1. What it does
 
@@ -159,7 +159,14 @@ An issue form named "Defect" ("Report a defect found while testing a release bra
 
 ### 3.10 `tests/TestCase.php`
 
-An empty `abstract class TestCase extends Illuminate\Foundation\Testing\TestCase`. It adds nothing: no traits, no `setUp`. It exists so `Pest.php` can bind it.
+`abstract class TestCase extends Illuminate\Foundation\Testing\TestCase`. Until P1-C3 it was empty. It now has one override, **`be(Authenticatable $user, $guard = null): static`**:
+
+```php
+$this->app['auth']->forgetGuards();
+return parent::be($user, $guard);
+```
+
+**Why:** signed-in routes use `auth:sanctum` since P1-C3 (F11). Sanctum's guard keeps the first user it resolved for the life of the application instance. A test that signs in a second user (`actingAs($a)` then `actingAs($b)` in one test) would still be answered as the first user. `forgetGuards()` drops the cached guard instances before each sign-in. `actingAs()` calls `be()`, so every Feature test gets the fix. Anyone who builds a test with two users does not need to do anything; anyone who bypasses `actingAs()`/`be()` (for example by setting the user on a guard by hand) gets the old behaviour.
 
 ### 3.11 `tests/Pest.php`
 
@@ -181,7 +188,7 @@ Consequences:
 
 - The first test in a run that calls the helper wipes the database. Never point it at a database you care about (section 8).
 - After the first call the schema is reused: later tests do **not** rebuild it. They must leave the data clean. The common pattern is `DB::beginTransaction()` in `beforeEach` and `DB::rollBack()` plus `DB::disconnect()` in `afterEach` (see `PaginationTest`, `UtcDateTimeTest`). Tests that commit data must delete it.
-- 26 test files call the helper (the Access, Audit, Database, Models and Seeders tests, plus `PublishStatusVocabularyTest`, `PaginationTest`, `UtcDateTimeTest`, `VersionTokenTest` and `WriteChainOrderTest`). Tests that do not call it (for example `ProblemResponseTest`, `OpenApiDriftTest`) never touch the schema.
+- 30 test files call the helper (the Access tests including `MobileSignInTest`, `MobileTokenTest` and `MobileLogoutTest`; the Audit, Database, Models and Seeders tests; `SystemInfoTest`; plus `PublishStatusVocabularyTest`, `PaginationTest`, `UtcDateTimeTest`, `VersionTokenTest` and `WriteChainOrderTest`). Tests that do not call it (for example `ProblemResponseTest`, `OpenApiDriftTest`) never touch the schema.
 
 ### 3.12 Test groups and how to select tests
 
@@ -189,7 +196,7 @@ Consequences:
 
 ```
  - arch (14 tests)
- - default (347 tests)
+ - default (406 tests)
  - infra (3 tests)
  - schema (390 tests)
 ```
@@ -266,7 +273,7 @@ None. CI creates and discards its own MySQL service. The test databases:
 | Database | Used by | Who creates it |
 | --- | --- | --- |
 | `atlantech` | `InfrastructureTest` only (`select 1`); CI creates it with `MYSQL_DATABASE` | Compose, or the CI service |
-| `atlantech_testing` | Default for `phpunit.xml` and `useSchemaDatabase()`; `migrate:fresh` rebuilds it (100 tables in this checkout after a run: 92 port tables plus framework tables) | Created by hand (`CREATE DATABASE`) or by the CI step |
+| `atlantech_testing` | Default for `phpunit.xml` and `useSchemaDatabase()`; `migrate:fresh` rebuilds it (101 tables after a run on `9559d35`: 92 port tables plus framework tables, now including `personal_access_tokens` from P1-C3) | Created by hand (`CREATE DATABASE`) or by the CI step |
 | `atlantech_testing_<yours>` | Your per-session override | You |
 | `atlantech_schema_test`, `atlantech_schema_rebuild` | Scratch databases created and dropped by `ContractsSchemaTest` | The test itself |
 
@@ -279,6 +286,7 @@ The CI is itself the thing under test; the P1-A3 plan added no Pest tests. The p
 | PR #9 run 40657506647 | First green run: `pint` 19 s, `tests` 56 s (at that time) including `ContractsSchemaTest` | P1-A3 log |
 | Demo PR #26 (`tests/Unit/CiGateDemoTest.php`, failing on purpose) | A failing test turns `tests` red, `pint` and `openapi` stay green, merge state BLOCKED; closed without merge | P1-A3 log, 2026-10-29 |
 | `ModuleArchitectureTest` | The module-layer rule runs in CI (F01) | `tests/Unit/Modules/ModuleArchitectureTest.php` |
+| PRs #55 (P1-C3), #56 (P1-C4), #57 (review fixes), read with `gh pr view` on 2026-11-06 | All three carry the label `ai-impact` (P1-C3 added the `personal_access_tokens` migration, so the labeler rule fired as designed). All three merged with `reviewDecision` still `REVIEW_REQUIRED`, which means the lead used the admin bypass that the ruleset keeps (section 4). #55 and #56 show the four checks `pint`, `labeler`, `openapi`, `tests` all `SUCCESS`. **#57 shows only `labeler`**: no `pint`, `tests` or `openapi` result is attached to it, so it merged without the three required checks (Unverified why: possibly the bypass, possibly the checks did not run; check the PR's Actions tab) | GitHub, `Atlantech-project/project-backend` |
 
 Test files that exist only as skeleton: `tests/Feature/ExampleTest.php` and `tests/Unit/ExampleTest.php` (the Laravel samples; harmless).
 
@@ -330,7 +338,7 @@ Test groups (I ran this):
 ```bash
 vendor/bin/pest --list-groups
 ```
-Output: `arch (14 tests)`, `default (347 tests)`, `infra (3 tests)`, `schema (390 tests)`.
+Output (on `9559d35`): `arch (14 tests)`, `default (406 tests)`, `infra (3 tests)`, `schema (390 tests)`.
 
 A narrow run on your own database (I ran the set below with `DB_DATABASE` and `DB_SCHEMA_TEST_DATABASE` both set to `atlantech_testing_g1`, created empty first):
 
@@ -339,7 +347,7 @@ docker exec atlantech-mysql-1 mysql -uroot -e "CREATE DATABASE IF NOT EXISTS atl
 $env:DB_DATABASE = 'atlantech_testing_g1'; $env:DB_SCHEMA_TEST_DATABASE = 'atlantech_testing_g1'
 vendor/bin/pest tests/Feature/Api/PaginationTest.php tests/Feature/Api/UtcDateTimeTest.php
 ```
-The 10-file F03/F04 set (errors, pagination, UTC, OpenAPI drift, publish command) gave: `tests 122, passed 122, assertions 699, 42 s`. Afterwards `atlantech_testing_g1` held 100 tables and `atlantech_testing` was not touched by this run, which shows the override works.
+The 10-file F03/F04 set (errors, pagination, UTC, OpenAPI drift, publish command) gave: `tests 122, passed 122, assertions 699, 42 s` (first run on `106b40e`). Re-run on 2026-11-06 on `9559d35` with `SystemInfoTest` and `RouteAbilityCoverageTest` added: `tests 136, passed 136, assertions 734, 51 s`. Afterwards `atlantech_testing_g1` held 100 tables and `atlantech_testing` was not touched by this run, which shows the override works.
 
 Only the infrastructure group (needs `docker compose up -d`; not run by me because `InfrastructureTest` uses the lead's `atlantech` database name, read-only):
 
@@ -368,9 +376,12 @@ To watch the gate itself, open a draft PR (jobs are skipped), mark it ready (the
 - **F2-1 · README says two jobs.** `project-backend/README.md:159-167` ("Continuous integration") says "Two jobs run in parallel" and "Both are required checks". There are three jobs and three required checks since P1-A4; the paragraph was not updated.
 - **F2-2 · Stale comment in `.spectral.yaml`.** It says "with one path, 18 of them are still unreferenced" and "Turn it back on once they are used". The file now has five paths, and some components are still unused (`AppVersion`, `DeviceId`, `IdempotencyKey`, `bearerAuth`, the mobile headers), so `oas3-unused-component` must stay off until the mobile endpoints land. The `openapi-sync` skill says to turn it on "with the first path": that instruction would make the job fail today. See F04.
 - **F2-3 · `opcache` missing in CI.** The `tests` job comment says the extensions match the Dockerfile; `opcache` is not in the list. Harmless for tests (CLI), but the comment is inaccurate.
-- **F2-4 · Shared scratch names break per-session isolation.** `ContractsSchemaTest` creates `atlantech_schema_test` and `atlantech_schema_rebuild` (names fixed in the test, `ContractsSchemaTest.php:15-18`), and `WorkerGrantsTest` creates the server-wide MySQL user `t_worker` and roles `t_r_*` (`WorkerGrantsTest.php:25-44`). Two sessions running these tests at the same time collide even with separate test databases. Also `ContractsSchemaTest.php:46-50` asserts that a database literally named `atlantech_testing` already exists and has **100 tables**, regardless of `DB_SCHEMA_TEST_DATABASE`: on a fresh MySQL where nobody has built `atlantech_testing`, that test fails with a message that points at the wrong cause. I did not run these two files (shared names; see F05).
+- **F2-4 · Shared scratch names break per-session isolation.** `ContractsSchemaTest` creates `atlantech_schema_test` and `atlantech_schema_rebuild` (names fixed in the test, `ContractsSchemaTest.php:15-18`), and `WorkerGrantsTest` creates the server-wide MySQL user `t_worker` and roles `t_r_*` (`WorkerGrantsTest.php:25-44`). Two sessions running these tests at the same time collide even with separate test databases. Also `ContractsSchemaTest.php:46-50` asserts that a database literally named `atlantech_testing` already exists and has **101 tables**, regardless of `DB_SCHEMA_TEST_DATABASE`: on a fresh MySQL where nobody has built `atlantech_testing`, that test fails with a message that points at the wrong cause. I did not run these two files (shared names; see F05). Since P1-C3 the same test hard-codes the number **101** in two places (`ContractsSchemaTest.php:36` and `:50`) and the name of the last migration (`:25`): every new table or migration needs this test edited, and the `:50` count reads the shared `atlantech_testing`, not your own database.
 - **F2-5 · No automatic check for the PR template.** Ticks (including "paired PortHub PR linked") rely on the author and reviewer.
 - **F2-6 · Unverified GitHub settings.** The ruleset content, the label `ai-impact` existing (or being created by the action) and the labeler's `sync-labels` default were not checked against GitHub from this session.
 - **F2-7 · Skeleton leftovers in `tests/Pest.php`** (`toBeOne`, `something()`) and the two `ExampleTest.php` files.
 - **F2-8 · Deferred by decision:** coverage gates (NFR-EXT-4), a Docker image build job (P6), the contract-test job (P3-I8), the AI CI (AI-016) and the web CI (FE-012).
 - **F2-9 · Known advisories.** The P1-A4 review noted `composer audit` advisories on `phpunit/phpunit` and `symfony/mime` (2026-10-29). Not re-checked here; `phpunit/phpunit` is at 13.4.3 in `composer.lock`.
+- **F2-10 · PR #57 merged with only `labeler` attached** (section 7). If the three required checks did not run on a PR into `develop`, that is a hole in the gate; if the lead bypassed them on purpose, say so in the PR. Not verified.
+- **F2-11 · Hard-coded table count in `ContractsSchemaTest`.** The number 101 (two places) and the last-migration name must be edited with every new table or migration (they were changed in P1-C3 from 100 and `2026_11_03_183535_alter_port_settings_add_min_max`). A guard test added in P1-C3 to `WorkerGrantsTest` fails if `database/grants/workers.sql` contains a line with `DEMO` or `do not merge`, because that file is published into `schema.sql` (F05).
+- **F2-12 · README and `.spectral.yaml` still stale** at `9559d35` (F2-1, F2-2 unchanged); the PortHub `project-backend` pointer was still `106b40e` when I checked on 2026-11-06.

@@ -1,6 +1,6 @@
 # F12 · Version token and optimistic locking
 
-Task origin: P2-D4 (Sprint 2, merged in PR #51 with P2-D2, see F11). Facts checked against `develop` at `106b40e`. Paths are inside `project-backend/ATLANTECH/` unless stated. Plan file: `docs/tasks/P2-D4.md`.
+Task origin: P2-D4 (Sprint 2, merged in PR #51 with P2-D2, see F11). Facts checked against `develop` at `106b40e` and re-checked at `9559d35` on 2026-11-06 (`git diff` shows `VersionToken`, `EnsureRecordVersion` and their tests unchanged; only `Shared` gained `AppVersion`, `MinAppVersionSource` and the `DEVICE_REVOKED` error code, see F11). Paths are inside `project-backend/ATLANTECH/` unless stated. Plan file: `docs/tasks/P2-D4.md`.
 
 ## 1. What it does
 
@@ -203,13 +203,13 @@ public function update(UpdateTugboatRequest $request, Tugboat $tugboat, AuditSer
 
 ## 10. Try it
 
-From `project-backend/ATLANTECH`, PowerShell. These runs were done on 2026-11-04 on `develop` `106b40e`, with an own empty database `atlantech_testing_g4` (Docker MySQL was running).
+From `project-backend/ATLANTECH`, PowerShell. These runs were done on 2026-11-04 on `develop` `106b40e` and the Pest run was repeated on 2026-11-06 on `9559d35`, with an own empty database `atlantech_testing_g4` (Docker MySQL was running).
 
 ```powershell
 $env:DB_DATABASE="atlantech_testing_g4"; $env:DB_SCHEMA_TEST_DATABASE="atlantech_testing_g4"
 vendor/bin/pest tests/Feature/Api/VersionTokenHelperTest.php tests/Feature/Api/VersionTokenTest.php tests/Feature/Api/RouteVersionCoverageTest.php tests/Feature/Api/WriteChainOrderTest.php
 ```
-Real result: `27 passed (114 assertions)`, about 39 seconds.
+Real result: `27 passed (114 assertions)`, about 39 seconds (2026-11-04). On 2026-11-06, with `WriteChainOrderTest` and `RouteAbilityCoverageTest` added in the same call: `32 passed (119 assertions)`, about 49 seconds.
 
 The format, matching and 409 body, run in a small script that boots the app (no database needed), real output:
 

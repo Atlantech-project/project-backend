@@ -1,6 +1,6 @@
 # F13 · Seeders and the demo port
 
-Task origin: P1-B6 (Sprint 2, PR #48, merged). Facts checked against `develop` at `106b40e`. Paths are inside `project-backend/ATLANTECH/` unless stated. Plan file: `docs/tasks/P1-B6.md` (decisions K1, C-1, R-1, R-2 and answers Q1 to Q5 are cited below).
+Task origin: P1-B6 (Sprint 2, PR #48, merged). Facts checked against `develop` at `106b40e` and re-checked at `9559d35` on 2026-11-06 (no seeder, data file or `config/seeding.php` changed; what changed around them is listed in sections 5, 7 and 11). Paths are inside `project-backend/ATLANTECH/` unless stated. Plan file: `docs/tasks/P1-B6.md` (decisions K1, C-1, R-1, R-2 and answers Q1 to Q5 are cited below).
 
 ## 1. What it does
 
@@ -146,7 +146,7 @@ The 10 role users plus `MARINE_PILOT` (pilots) and `TUG_MASTER` (tug masters) ma
 
 ### 3.9 The `port_settings` min/max migration
 
-`database/migrations/2026_11_03_183535_alter_port_settings_add_min_max.php`: adds `min_value DECIMAL(18,6) NULL` after `value_type` and `max_value DECIMAL(18,6) NULL` after `min_value`, with comments "Lowest/Highest allowed value; NULL = no lower/upper limit (CT-18)". Additive, no CHECK (a `min <= max` CHECK was planned and dropped because the guard tests fix the design at 129 CHECK constraints; enforcement belongs to P2-F9 or the typed settings editor, P2-F1). `down()` drops both columns. It is the last of the 97 migrations. `PortSetting` model: `min_value` and `max_value` in `#[Fillable]` and cast `decimal:6`; `PortSettingFactory` was updated. Workers' grants need no change (table-level SELECT in `database/grants/workers.sql`). Because the migration touches a worker-visible table, the PR carries the `ai-impact` label (F02).
+`database/migrations/2026_11_03_183535_alter_port_settings_add_min_max.php`: adds `min_value DECIMAL(18,6) NULL` after `value_type` and `max_value DECIMAL(18,6) NULL` after `min_value`, with comments "Lowest/Highest allowed value; NULL = no lower/upper limit (CT-18)". Additive, no CHECK (a `min <= max` CHECK was planned and dropped because the guard tests fix the design at 129 CHECK constraints; enforcement belongs to P2-F9 or the typed settings editor, P2-F1). `down()` drops both columns. At `106b40e` it was the last of 97 migrations; on `9559d35` there are 98 and the last one is `2026_11_05_100000_create_personal_access_tokens_table` (P1-C3, F05/F07), so `ContractsSchemaTest` now names that one. `PortSetting` model: `min_value` and `max_value` in `#[Fillable]` and cast `decimal:6`; `PortSettingFactory` was updated. Workers' grants need no change (table-level SELECT in `database/grants/workers.sql`). Because the migration touches a worker-visible table, the PR carries the `ai-impact` label (F02).
 
 ## 4. Why this design
 
@@ -168,7 +168,7 @@ The 10 role users plus `MARINE_PILOT` (pilots) and `TUG_MASTER` (tug masters) ma
 
 ## 5. How it connects
 
-- **Used by:** every developer, QA and the shared dev server (DEC-47: a dev server seeded on each merge to `develop`, target P6-R6); the mobile sign-in chain tasks P1-C5, P1-C3, P1-C4 need the `port_profiles` row and `min_app_version` (planned, F15); the AI team's tests reuse `damietta-demo-port.json` (AI-015); FT-02's readiness pack should list the 32 demo users (its update was left to the lead, step 7).
+- **Used by:** every developer, QA and the shared dev server (DEC-47: a dev server seeded on each merge to `develop`, target P6-R6); the mobile chain is built now and **reads these seeded rows**: `GET /api/v1/system/info` (P1-C5) needs the `port_profiles` row id 1 and `min_app_version` (503 `SERVICE_UNAVAILABLE` when either is missing), and `EnsureMinAppVersion` (P1-C3, F11) reads `min_app_version` through `PortSettingMinAppVersion` (503 when it is missing or not `x.y.z`). A database seeded with the demo port off has no `port_profiles` row, so `system/info` answers 503 there until provisioning writes it (not built); the AI team's tests reuse `damietta-demo-port.json` (AI-015); FT-02's readiness pack should list the 32 demo users (its update was left to the lead, step 7).
 - **Uses:** models of Access (`User`, `OrganizationUnit`, `UserRoleAssignment`) and MasterData (`PortProfile`, `PortSetting`, `Terminal`, `Berth`, `NavigationChannel`, `ChannelWaypoint`, `PortShift`, `PilotProfile`, `PilotSchedule`, `Tugboat`, `TugMasterProfile`, `TugMasterSchedule`, and the reference models), `Yard\Models\YardZoneType`. The seeders are in the `Database\Seeders` namespace (outside `app/Modules`), so the module layer rule does not apply to them.
 - **Depends on:** the schema and models (F05, F06); `Role` enum values (F09).
 - **Contracts:** CT-18 (seed data and `port_settings` keys), CT-17 (schema, the min/max addition is a minor version), DEC-59. The published `schema.sql` in PortHub must be regenerated after the min/max migration (F14; see Open points).
@@ -207,7 +207,7 @@ Files in `tests/Feature/Seeders/` (35 tests, all passed on 2026-11-04 on `atlant
 
 A detail in the "loads the demo port only when the config allows it" test: with `demo_port` off it asserts `port_profiles` count is 1, but that row comes from the `beforeEach` `DemoPortSeeder` run, not from `DatabaseSeeder`. The test deletes berths and terminals only. So it does not prove what a fresh database without demo gets (it gets **no** profile row).
 
-Related tests in other features: `ModelLayerTest` (F06) covers the factories; `ContractsSchemaTest` (F14) names the last migration `2026_11_03_183535_alter_port_settings_add_min_max`.
+Related tests in other features: `ModelLayerTest` (F06) covers the factories; `ContractsSchemaTest` (F14) names the last migration (`2026_11_05_100000_create_personal_access_tokens_table` on `9559d35`; it was `2026_11_03_183535_alter_port_settings_add_min_max` at `106b40e`) and counts 101 tables.
 
 Run: `vendor/bin/pest tests/Feature/Seeders`.
 
@@ -267,15 +267,15 @@ Real: `RuntimeException: Demo seeding is off in this environment. Set SEED_DEMO_
 ```powershell
 vendor/bin/pest tests/Feature/Seeders
 ```
-Real: `35 passed (82 assertions)` in about 63 s.
+Real: `35 passed (82 assertions)` in about 63 s (2026-11-04). On 2026-11-06 the Seeders folder plus `tests/Feature/Console` ran together: `50 passed` (35 seeder tests unchanged, 13 console tests and 2 new ones, `TokenPruneNotScheduledTest`). `migrate:fresh --seed` on 2026-11-06 ran 98 migrations (101 tables) and gave the same counts as section 6.
 
 Sign in as a demo user: not run (needs the app served and a `DEMO_USER_PASSWORD`; the demo users were created in this run with a random hash on purpose). Expected, with `DEMO_USER_PASSWORD=Secret123!` in `.env` before seeding: `POST /api/v1/auth/login` with `{"username":"port.gm","password":"Secret123!"}` (after `GET /sanctum/csrf-cookie`) answers 200 with `must_change_password: true` (F07, F08).
 
 ## 11. Open points
 
 - **Seeding is a manual step, and the README says so** (correction made in the completeness pass: an earlier draft claimed the README had no seeding instructions; that came from searching `ATLANTECH/README.md`, Laravel's default file, instead of `project-backend/README.md`). The project README documents `migrate --seed` for Herd and for Docker (lines 113, 129 and 132). Nothing seeds a fresh Docker environment automatically, so the roadmap's "a fresh environment starts with the demo port loaded" is true only after someone runs `migrate --seed`; that is a documented step, not a gap.
-- **Published `schema.sql` is stale** (finding): `PortHub/contracts/db/schema.sql` ends at `2026_10_28_200000_add_deferred_foreign_keys` and contains no `min_value` (`grep -c min_value` gives 0). The P1-B6 plan left publishing to the lead ("step 7"). `ContractsSchemaTest` expects the generator to report the min/max migration as the last one; so the generator is right and the published file is behind. Run `composer contracts:schema` on a PortHub branch (F14).
-- **Repo copies of the decisions/contracts are stale** (finding): `docs/reference` shows `DEC-59` as Open and `CT-18` as "Proposed v1.1", while the shared `Code Notes` files and PortHub `main` say DEC-59 Closed (2026-11-04) and CT-18 v1.1 Approved. `node docs/reference/sync-check.mjs` reports the two files as `CHANGED` (real output, 2026-11-04). Run `sync-check --apply` in a task branch of the lead's choosing (not done here).
+- **Published `schema.sql`:** it was stale on 2026-11-04 (no `min_value`). It has been republished since: on 2026-11-06 `PortHub/contracts/db/schema.sql` says `Last migration: 2026_11_05_100000_create_personal_access_tokens_table` and contains `min_value` (the file is regenerated by `composer contracts:schema`, F14). Its first line still says CT-17 v1.0; whether CT-17 has a newer approved version is Unverified (check `lookup.mjs CT-17`).
+- **Repo copies of the decisions/contracts are stale** (finding, still true on 2026-11-06): `docs/reference` shows `DEC-59` as Open and has no DEC-60, while the shared `Code Notes` files and PortHub `main` say DEC-59 Closed (2026-11-04) and DEC-60 Closed. `node docs/reference/sync-check.mjs` now reports five files as `CHANGED`: `contracts/ATLANTECH_Contracts.md`, `contracts/api-conventions.md`, `contracts/error-codes.md`, `contracts/auth-web.md`, `decisions/ATLANTECH_Decisions.md` (real output). Run `sync-check --apply` on a branch of the lead's choosing (not done here).
 - **CHAMPION `deployed_at`:** DEC-59's second part says a `CHAMPION` row in the seed carries `deployed_at`; no such row exists in this repo's seed (AI rows arrive with P2-F9).
 - **AI seed rows and AI `port_settings` keys:** P2-F9 (Sprint 3), waits for the AI seed spec (AI-009) and CT-18.
 - **DEC-30 (numeric thresholds register, AI Team, Open, close-by Sprint 2)** is still Open in the shared decisions file and blocks the port-wide default values of `safety_constraints` that CT-18/CT-25 will seed (F15).

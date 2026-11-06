@@ -1,6 +1,6 @@
 # F01 · Runtime and platform
 
-Task origin: P1-A1 (Sprint 1), plus later config from P1-A2, P1-C1 and P1-B6. Facts checked against `develop` at `106b40e`. Paths are inside `project-backend/ATLANTECH/` unless stated.
+Task origin: P1-A1 (Sprint 1), plus later config from P1-A2, P1-C1 and P1-B6. Facts checked against `develop` at `106b40e`, and updated on 2026-11-06 for `develop` `9559d35` (P1-C3, P1-C4, P1-C5 merged: the lines that changed say so). Paths are inside `project-backend/ATLANTECH/` unless stated.
 
 ## 1. What it does
 
@@ -115,7 +115,7 @@ The three ways to run it:
 | `config/app.php` `timezone` | `UTC` | All times are UTC (F03, CT-01). |
 | `config/database.php` `mysql` | `strict => true`, `charset utf8mb4`, `collation utf8mb4_0900_ai_ci`, `engine InnoDB`, `timezone '+00:00'` | Strict mode makes MySQL refuse a value outside an ENUM list or a bad cast, so the database rules (F05) really bite. The session time zone is UTC. |
 | `config/session.php` | driver `database`, lifetime 120, cookie `atlantech_session`, `same_site lax`, `http_only true` | Web sign-in uses a server session (F07). |
-| `config/sanctum.php` | `stateful` from `SANCTUM_STATEFUL_DOMAINS`, `guard ['web']`, `expiration null` | SPA cookie authentication. A mobile token guard comes with P1-C3. |
+| `config/sanctum.php` | `stateful` from `SANCTUM_STATEFUL_DOMAINS`, `guard ['web']`, `expiration null`, `last_used_at false` | SPA cookie authentication; since P1-C3 the same `auth:sanctum` guard also accepts a mobile Bearer token (model `Access/Models/PersonalAccessToken`, set in `AccessServiceProvider`). Token expiry is **not** this config's `expiration` (null): `PersonalAccessToken` slides `expires_at` to 30 days after each accepted use, done by `EnsureTokenDevice`. `last_used_at => false` switches off Sanctum's own use stamp, because it would run before the device check and a refused request would extend a token (F11). |
 | `config/cors.php` | `paths ['api/*', 'sanctum/csrf-cookie']`, origins from `CORS_ALLOWED_ORIGINS`, `supports_credentials true` | Lets the Vue app send cookies cross-origin. |
 | `config/seeding.php` | `demo_port` (env `SEED_DEMO_PORT`, default on outside production) and `demo_user_password` | The production guard of the demo data (F13). |
 | `config/queue.php`, `config/cache.php` | defaults are `database`, but `.env` sets `redis` | If `.env` is missing, cache and queue fall back to the database tables. |
@@ -140,10 +140,11 @@ A provider's class comment states the module's intended job. Only some providers
 | --- | --- | --- |
 | `AppServiceProvider` | `JsonResource::withoutWrapping()`: Eloquent resources are returned as-is, not inside an automatic `{"data": ...}` wrapper. Lists build their own `{data, meta}` (F03). | none |
 | `Shared` | Aliases middleware `version.token` (`EnsureRecordVersion`); registers `PublishOpenApi` and `PublishStatusVocabulary` commands. | Audit, transitions, `ResourceChanged` event, terminal-scope filters |
-| `Access` | Aliases `ability`, `terminal.scope`, `app.version`; defines one **Gate per ability**; registers `PublishRoleMatrix`. | Users, devices, tokens (P1-C3, P2-E1…) |
+| `Access` | Aliases `ability`, `terminal.scope`, `app.version`; defines one **Gate per ability**; registers `PublishRoleMatrix`; since P1-C3 also `Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class)` and `Sanctum::authenticateAccessTokensUsing(...)` so a revoked token answers 401. | User, role and device administration (P2-E1..E3) |
 | `License` | Aliases `license.write` (`EnsureLicenseAllowsWrite`, a pass-through today). | SETUP, FULL, READ_ONLY modes, check-in, plan limits |
 | `AiBridge` | Registers `CreateWorkerAccounts` and `GenerateContractsSchema` commands. | Job publisher, run rows, completion consumer, mock workers |
-| `MasterDataServiceProvider`, `EnvironmentServiceProvider`, `BerthingServiceProvider`, `BaplieServiceProvider`, `RecommendationServiceProvider`, `PlanServiceProvider`, `YardServiceProvider`, `DispatchServiceProvider`, `ExecutionServiceProvider`, `LearningServiceProvider`, `RealtimeServiceProvider` | Nothing (empty classes). | Their module's routes and services in later phases |
+| `MasterDataServiceProvider` | Since P1-C3/P1-C5: `register()` binds `Shared\Support\MinAppVersionSource` to `MasterData\Services\PortSettingMinAppVersion`, which reads `port_settings.min_app_version`; used by `GET system/info` and by the 426 check (F11). | Its module's routes and services in later phases (F15) |
+| `EnvironmentServiceProvider`, `BerthingServiceProvider`, `BaplieServiceProvider`, `RecommendationServiceProvider`, `PlanServiceProvider`, `YardServiceProvider`, `DispatchServiceProvider`, `ExecutionServiceProvider`, `LearningServiceProvider`, `RealtimeServiceProvider` | Nothing (empty classes): ten providers are empty now (`MasterData` is no longer one). | Their module's routes and services in later phases |
 
 ### 3.10 Leftovers from the Laravel skeleton (safe to ignore)
 
@@ -176,7 +177,7 @@ A provider's class comment states the module's intended job. Only some providers
 
 ## 6. Data
 
-No tables of its own. It relies on the framework tables created by the first three migrations: `password_reset_tokens` (kept as the framework creates it; the app has no password-reset feature yet), `sessions` (web sessions), `cache` and `cache_locks`, `jobs`, `job_batches` and `failed_jobs`. MySQL's database `atlantech` is created by Compose; the test database `atlantech_testing` is created by the test helper (F02).
+No tables of its own. It relies on the framework tables created by the first three migrations: `password_reset_tokens` (kept as the framework creates it; the app has no password-reset feature yet), `sessions` (web sessions), `cache` and `cache_locks`, `jobs`, `job_batches` and `failed_jobs`. A 98th migration, `2026_11_05_100000_create_personal_access_tokens_table` (P1-C3), adds the Sanctum token table with a device link and `revoked_at`; it is a framework-style table (no worker grant) and is listed in `SchemaTablesTest`'s framework tables (F05, F07). On `develop` `9559d35` there are 98 migrations and a migrated database has 101 tables. MySQL's database `atlantech` is created by Compose; the test database `atlantech_testing` is created by the test helper (F02).
 
 ## 7. Tests
 
@@ -197,7 +198,7 @@ No tables of its own. It relies on the framework tables created by the first thr
 - **A missing `.env` changes behaviour.** Defaults in `config/cache.php` and `config/queue.php` are `database`; only `.env` makes them `redis`.
 - **Never use `env()` outside config files.** Laravel caches config; `env()` calls in application code stop working in production. Add a key to `.env.example`, read it in a `config/*.php`, then use `config('...')`.
 - **Redis is not wiped by tests, MySQL's `atlantech_testing` is rebuilt by tests.** Do not point test settings at a database you care about (F02).
-- **Empty module providers are intentional.** Do not delete them: `ModuleArchitectureTest` and `providers.php` expect all 15.
+- **Empty module providers are intentional.** Do not delete them: `ModuleArchitectureTest` and `providers.php` expect all 15. Ten of them are empty today (`MasterData` is not: it binds `MinAppVersionSource`).
 - **Compose comment is stale.** `docker-compose.yml` still says AOF is "a development setting until DEC-11 closes", but DEC-11 is Closed with AOF `everysec`; only the comment is old.
 - **Ports are localhost-only on purpose.** A shared dev server (P6-R6) must set real MySQL and Redis passwords first.
 
@@ -239,7 +240,7 @@ php artisan list | grep -E "dev|atlantech:"
 php artisan dev:list
 php artisan route:list --except-vendor
 ```
-Expect the five `atlantech:*` commands, three dev processes (`server`, `queue`, `vite`), and the routes `GET /` (welcome page), `GET api/v1/audit-logs`, `POST api/v1/auth/login`, `POST api/v1/auth/logout`, `GET api/v1/auth/me`, `POST api/v1/auth/change-password`. (`/up` and Sanctum's `/sanctum/csrf-cookie` come from the framework and are not listed under `--except-vendor`.)
+Expect the five `atlantech:*` commands, three dev processes (`server`, `queue`, `vite`), and the routes `GET /` (welcome page), `GET api/v1/audit-logs`, `POST api/v1/auth/login`, `POST api/v1/auth/logout`, `GET api/v1/auth/me`, `POST api/v1/auth/change-password`, and, since 2026-11-05, `POST api/v1/auth/mobile/login` and `GET api/v1/system/info`: eight routes in all (real `route:list --except-vendor` on `9559d35`; six on `106b40e`). (`/up` and Sanctum's `/sanctum/csrf-cookie` come from the framework and are not listed under `--except-vendor`.)
 
 ## 11. Open points
 

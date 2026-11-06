@@ -2,7 +2,7 @@
 
 Location: this folder (`ATLANTECH/docs/guide/` in the backend repo) is the shared copy for the team; it was first written in the team's `Code Notes` folder (`Code Notes/Backend_Guide/`). Change the repo copy from now on, through a pull request into `develop`.
 
-Status: **all files written** (2026-11-04) from `develop` at `106b40e` (Sprint 2 merged); the completeness pass is done (section 8). The plan below is the original; where a feature file differs, the file is right.
+Status: **all files written** (2026-11-04), refreshed 2026-11-06 for the mobile sign-in stack, from `develop` at `2abf6c0`; the completeness pass is done (section 8). The plan below is the original; where a feature file differs, the file is right.
 Language: English. Reader: a new software engineer who knows Laravel but not this project. Codebase: `PortHub/project-backend/ATLANTECH/` (the Laravel app) plus `PortHub/contracts/` (shared contracts).
 
 ## 1. How this guide works
@@ -178,24 +178,25 @@ Give them the `Backend_Guide/` folder and this prompt:
 | `F14_contract_and_documents_tooling.md` | Publishing commands, `docs/reference`, plan files, skills and agents. |
 | `F15_not_built_yet_and_next.md` | What is not built, what is planned, what comes next. |
 
-## 8. Coverage check (completeness pass, 2026-11-04)
+## 8. Coverage check (completeness pass, 2026-11-04; refreshed 2026-11-06)
 
-A script compared the guide text with the code on `develop` (`106b40e`): every item below appears by name in at least one guide file.
+A script compared the guide text with the code on `develop` (`2abf6c0`, after the mobile sign-in stack): every item below appears by name in at least one guide file.
 
 | Area | Count on `develop` | Covered |
 | --- | --- | --- |
-| PHP files in `app` other than models and enums (services, middleware, commands, controllers, requests, resources, providers) | 52 | 52 / 52 (the ten empty providers are listed by class name in F01 section 3.9) |
-| Models, enums, factories | 92, 80, 92 | all, in the F06 catalogues |
+| PHP files in `app` other than models and enums (services, middleware, commands, controllers, requests, resources, providers) | 62 | 62 / 62 (the ten empty providers are listed by class name in F01 section 3.9) |
+| Models, enums, factories | 93 (92 port models plus Sanctum's `PersonalAccessToken`), 80, 92 | all, in the F06 catalogues |
 | Seeders | 6 (plus 2 data files) | 6 / 6 (F13) |
-| Test files | 45 | 45 / 45 |
-| Migrations | 97 (3 framework, 92 port tables, 2 later changes) | all (F05 catalogue) |
+| Test files | 50 | 50 / 50 |
+| Migrations | 98 (3 framework, 92 port tables, 3 later changes) | all (F05 catalogue) |
 | Config files | 13 | 13 / 13 (F01 and the feature that owns each key) |
-| Routes | `GET audit-logs`, `POST auth/login`, `POST auth/logout`, `GET auth/me`, `POST auth/change-password`, plus the skeleton `GET /`, `/up` and Sanctum's CSRF route | all |
+| Routes | `GET audit-logs`, `POST auth/login`, `POST auth/mobile/login`, `POST auth/logout`, `GET auth/me`, `POST auth/change-password`, `GET system/info`, plus the skeleton `GET /`, `/up` and Sanctum's CSRF route | all |
 | Artisan commands | 5 (`atlantech:contracts-openapi`, `-role-matrix`, `-schema`, `-status-vocabulary`, `atlantech:worker-accounts`) | all |
-| Error codes, abilities | 17, 27 | all (F03, F09) |
+| Error codes, abilities | 18, 27 | all (F03, F09) |
 | Skills, agents, docker, CI and ops files, `docs/reference` tools | 15, 4, 12, 6, 4 | all (F02, F14, F01) |
 | Links between guide files | every `.md` link | none broken |
+| Diagrams (F05b) | 16 group diagrams and 1 overview, 144 entities, 127 relationships | syntax-linted, no errors |
 
-Facts spot-checked against code in this pass: the throttle numbers (F07), the `VersionToken` and `AuditService` method lists (F10, F12), the seeder counts (F13) and the README seeding claim (found wrong and corrected). Each writing session also ran the tests of its own features on its own database (122, 377, 156 and about 80 tests, all passing; the few it could not run are marked "expected, not run" in the files).
+Facts spot-checked against code in the first pass: the throttle numbers (F07), the `VersionToken` and `AuditService` method lists (F10, F12), the seeder counts (F13) and the README seeding claim (found wrong and corrected). The 2026-11-06 refresh was made by the four writing sessions against the mobile stack, each re-running the tests of its own files on its own database (136, 377-plus, 217 and 100-plus tests, all passing).
 
 What this pass does **not** prove: that every sentence is right. Where a writer could not verify something, the file says "Unverified". Walk through the files with the lead, and treat a disagreement between a file and the code as a bug in the file.

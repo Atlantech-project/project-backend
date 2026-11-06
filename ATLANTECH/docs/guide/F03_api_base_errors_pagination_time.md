@@ -1,13 +1,13 @@
 # F03 · API base: errors, pagination, time
 
-Task origin: P1-A2 (Sprint 1), plus later additions: `SESSION_EXPIRED` and `errors.auth.invalid_credentials` (P1-C1), the `page` upper bound (P1-A2 review), and its first real users in P2-F8. Facts checked against `develop` at `106b40e`. Paths are inside `project-backend/ATLANTECH/` unless stated. The contract is CT-01 (`PortHub/contracts/api-conventions.md` v1.3 and `error-codes.md` v1.2, both Approved 2026-10-30).
+Task origin: P1-A2 (Sprint 1), plus later additions: `SESSION_EXPIRED` and `errors.auth.invalid_credentials` (P1-C1), the `page` upper bound (P1-A2 review), and its first real users in P2-F8. Facts first checked against `develop` at `106b40e`, **updated on 2026-11-06 against `9559d35`** (P1-C5, P1-C3, P1-C4 merged: one new code `DEVICE_REVOKED`, `AppVersion` and `MinAppVersionSource` helpers, two new routes). `ProblemRenderer`, `ApiProblemException`, `PageRequest`, `PaginatedCollection`, `ZonedDateTime` and the exception section of `bootstrap/app.php` did not change in that range. Paths are inside `project-backend/ATLANTECH/` unless stated. The contract is CT-01 (`PortHub/contracts/api-conventions.md` v1.3 and `error-codes.md` v1.3; the conventions were Approved 2026-10-30 and the catalogue gained `DEVICE_REVOKED` on 2026-11-06, DEC-60).
 
 ## 1. What it does
 
 This feature defines **the shape every API response follows**, so the web, mobile and QA teams can write one error handler, one pager and one date parser.
 
 - **A fixed base path:** every route is served under `/api/v1`.
-- **One error format:** every error under `/api/*` is an RFC 9457 problem body (`application/problem+json`) with six always-present members, a stable `code` from a closed catalogue of 17, and no stack trace, class name or SQL, even when `APP_DEBUG=true`.
+- **One error format:** every error under `/api/*` is an RFC 9457 problem body (`application/problem+json`) with six always-present members, a stable `code` from a closed catalogue of 18, and no stack trace, class name or SQL, even when `APP_DEBUG=true`.
 - **Message keys:** each code has a translation key (`errors.<lower_snake_code>`); the English text is in `lang/en/errors.php`. Clients branch on `code` and translate by `message_key`.
 - **One list format:** `{ "data": [...], "meta": { "page", "per_page", "total" } }`, `page` 1 to 1 000 000, `per_page` 1 to 100 (default 25), out-of-range is 422 and never clamped.
 - **UTC everywhere:** the app and the MySQL session run in UTC; output datetimes are `2026-11-02T10:15:04.123456Z`; input datetimes must carry `Z` or an offset, and a naive time is refused with 422.
@@ -42,7 +42,7 @@ For a list endpoint: `PageRequest::fromRequest()` validates `page` and `per_page
 
 The write-chain middleware group and priority list in the same file belong to F11.
 
-`routes/api.php` today holds `POST auth/login`, `GET auth/me`, `POST auth/change-password`, `POST auth/logout` and `GET audit-logs` (F07 to F10). `ApiRoutingTest` proves that an unknown path gives a `NOT_FOUND` problem and that `/api/v1/up` is a 404 while `/up` is 200.
+`routes/api.php` today (on `9559d35`) holds `POST auth/login`, `POST auth/mobile/login`, `GET system/info` (these three need no sign-in), and, in the `port.api` group, `GET auth/me`, `POST auth/change-password`, `POST auth/logout` and `GET audit-logs` (F07 to F10). `ApiRoutingTest` proves that an unknown path gives a `NOT_FOUND` problem and that `/api/v1/up` is a 404 while `/up` is 200.
 
 ### 3.2 `App\Modules\Shared\Errors\ErrorCode` (the catalogue)
 
@@ -55,7 +55,7 @@ A string-backed enum (`ErrorCode.php`). The case value is the stable `code` in U
 | `type(): string` | `TYPE_BASE_URI` (`https://atlantech.io/errors/`) plus the kebab-case code | An identifier, not a web page. |
 | `title(): string` | A short fixed English title | A `match` over all cases (no default arm either). |
 
-The 17 cases (checked by running the enum; same order as the enum, which the OpenAPI file and the tests also follow):
+The 18 cases (the first 17 checked by running the enum, `DEVICE_REVOKED` read from the diff; same order as the enum, which the OpenAPI file and the tests also follow):
 
 | Code | Status | Message key | Title | Raised by today |
 | --- | --- | --- | --- | --- |
@@ -68,12 +68,13 @@ The 17 cases (checked by running the enum; same order as the enum, which the Ope
 | `METHOD_NOT_ALLOWED` | 405 | `errors.method_not_allowed` | Method not allowed | A known path with a wrong method (keeps the `Allow` header) |
 | `ACCOUNT_DISABLED` | 403 | `errors.account_disabled` | Account disabled | `EnsureAccountUsable`; `SignInService` (F07, F08) |
 | `PASSWORD_CHANGE_REQUIRED` | 403 | `errors.password_change_required` | Password change required | `EnsureAccountUsable` (F08) |
-| `APP_UPDATE_REQUIRED` | 426 | `errors.app_update_required` | App update required | Nothing yet. `ApiProblemException::appUpdateRequired()` exists; the hook `EnsureMinAppVersion` is empty until P1-C3 (F11) |
+| `DEVICE_REVOKED` | 403 | `errors.device_revoked` | Device revoked | `MobileSignInService` (`MobileSignInService.php:52-54`): mobile sign-in from a device the Port Admin revoked; the refusal is audited and no token is issued (P1-C3, DEC-60, CT-04 v1.2). Text: "This device has been revoked by your port administrator. Contact your port administrator to use it again." A *token* of a revoked device on a later request is a 401, not this code (`EnsureTokenDevice`, F07 and F08) |
+| `APP_UPDATE_REQUIRED` | 426 | `errors.app_update_required` | App update required | `EnsureMinAppVersion` (`EnsureMinAppVersion.php:43`, filled by P1-C3, F11) through `ApiProblemException::appUpdateRequired($minimum)`. |
 | `LICENSE_READ_ONLY` | 423 | `errors.license_read_only` | License is read-only | Reserved (licence guard is future work, DEC-54) |
 | `PLAN_LIMIT_EXCEEDED` | 422 | `errors.plan_limit_exceeded` | Plan limit exceeded | Reserved (DEC-54) |
-| `TOO_MANY_ATTEMPTS` | 429 | `errors.too_many_attempts` | Too many attempts | `SignInService` (with `Retry-After`); `throttle:5,1` on change-password (a framework `ThrottleRequestsException`, status 429) |
+| `TOO_MANY_ATTEMPTS` | 429 | `errors.too_many_attempts` | Too many attempts | `SignInService` (with `Retry-After`; web and mobile sign-in share it); `throttle:5,1` on change-password (a framework `ThrottleRequestsException`, status 429) |
 | `IDEMPOTENCY_KEY_REUSED` | 422 | `errors.idempotency_key_reused` | Idempotency key reused | Nothing yet (mobile writes, P1-C3 and later) |
-| `SERVICE_UNAVAILABLE` | 503 | `errors.service_unavailable` | Service unavailable | A 503 `HttpException`, for example maintenance mode |
+| `SERVICE_UNAVAILABLE` | 503 | `errors.service_unavailable` | Service unavailable | `GET /api/v1/system/info` when there is no port profile (`SystemInfoController.php:27-29`); `PortSettingMinAppVersion` when the `min_app_version` setting is missing (`PortSettingMinAppVersion.php:24`); `MobileSignInService.php:78` when the locked device row cannot be read; and a 503 `HttpException`, for example maintenance mode |
 | `SERVER_ERROR` | 500 | `errors.server_error` | Server error | Any other `Throwable` |
 | `BAD_REQUEST` | 400 | `errors.bad_request` | Bad request | `AuthController::login` without a session (origin not stateful, `AuthController.php:32-34`); any other framework 4xx that has no catalogue code (413, 415 ...) |
 
@@ -208,7 +209,7 @@ Why naive times are refused: the port has its own time zone (`port_profiles.time
 
 | Choice | Reason | Source |
 | --- | --- | --- |
-| Build on the CT-01 draft before it was approved | The plan answers were the lead's choices; the contract was approved later (2026-10-30) with the 17 codes that exist in `ErrorCode`. | P1-A2 Q1; `error-codes.md` change log |
+| Build on the CT-01 draft before it was approved | The plan answers were the lead's choices; the contract was approved later (2026-10-30) with the 17 codes that existed in `ErrorCode` then. | P1-A2 Q1; `error-codes.md` change log |
 | `updated_at DATETIME(6)` as the version token, output with microseconds | The later decision wins over the earlier integer `version`; microseconds are lossless. | P1-A2 Q2 and Q5; P1-B1 Q3; DEC-57 |
 | Exactly `meta {page, per_page, total}`, default 25, max 100, 422 outside the range, empty page past the end | The lead's list shape; clamping would hide client bugs. | P1-A2 Q3; CT-01 section 8 |
 | Test-only sample routes, nothing shipped | The done-when needed "a sample endpoint" but the product had no endpoint yet (`/system/info` is P1-C5). | P1-A2 Q4 |
@@ -249,14 +250,14 @@ All run with `vendor/bin/pest <file>`; the Feature ones need MySQL for the two t
 | `tests/Feature/Api/PaginationTest.php` | Exactly `data` and `meta`; default 25; page 2 of 10 returns the right rows; `per_page=100` is allowed; a page past the end (9 and 1 000 000) is 200 with empty `data`; nine invalid values are 422 with the expected key (`per_page` 101, 0, `abc`, 2.5; `page` 0, -1, `abc`, 1 000 001, 9223372036854775807). Needs MySQL (30 `cargo_types` rows). |
 | `tests/Feature/Api/UtcDateTimeTest.php` | UTC in app, PHP and MySQL session (the last is group `infra`); offset to UTC round trip through a `DATETIME(6)` column; eight refusal cases. Needs MySQL. |
 | `tests/Unit/Modules/Shared/Errors/ApiProblemExceptionTest.php` | The status comes from the code; `detail`, `replace` and headers are kept; `versionConflict` and `appUpdateRequired` extensions; a reserved extension name throws `InvalidArgumentException`. |
-| `tests/Unit/Modules/Shared/Errors/ErrorCodeTest.php` | The exact list of 17 codes with statuses (order matters, it is compared with `toBe`); shape rules for value, status, key, type and title; the CT-01 and CT-03 examples; no duplicate key or type. |
+| `tests/Unit/Modules/Shared/Errors/ErrorCodeTest.php` | The exact list of 18 codes with statuses (order matters, it is compared with `toBe`); shape rules for value, status, key, type and title; the CT-01 and CT-03 examples; no duplicate key or type. |
 
 Not covered by any test (see section 11): the `AuthenticationException` branch on a real guarded route with a Bearer token, a `redirectGuestsTo` check for a web path, and OriginMismatch 403.
 
 ## 8. Gotchas and invariants
 
 - **Adding a case to `ErrorCode` breaks three things at once** (the enum order test, the OpenAPI drift test, the translation test). That is the point: step 9 lists them.
-- **Order matters.** `ErrorCodeTest` and `OpenApiDriftTest` compare lists in enum order. Add new cases at the **end** of the enum, the test list and the OpenAPI `enum`, unless you want to reorder everything.
+- **Order matters.** `ErrorCodeTest` and `OpenApiDriftTest` compare lists in enum order. Put a new case at the **same position** in the enum, in the `ErrorCodeTest` list and in the OpenAPI `ErrorCode.enum`. The default is the end; P1-C3 inserted `DEVICE_REVOKED` right after `PASSWORD_CHANGE_REQUIRED` (next to the other 403 codes) and changed the three lists at that place. Both work as long as the three agree.
 - **A code, its status and its key never change** once CT-01 is approved. If a status is wrong, that is a contract change (skill `contract-change`), not a refactor.
 - **Never `abort(409)`, `abort(422)`, `abort(423)`, `abort(426)`.** They render as 400 `BAD_REQUEST`. Throw `ApiProblemException`.
 - **Never build an error response by hand under `/api`** (`response()->json(['error' => ...], 400)`). It is not RFC 9457. `HttpResponseException` passes through untouched on purpose, so a hand-built response would reach the client unchanged.
@@ -278,12 +279,12 @@ Not covered by any test (see section 11): the `AuthenticationException` branch o
 Do this in one pull request (CT-01 says so). Example: `EXPORT_TOO_LARGE`, status 422.
 
 1. **Contract first.** Because CT-01 is approved, adding a code is a controlled change: use the `contract-change` skill. In PortHub it means a new row in `contracts/error-codes.md` (code, key, status, meaning, introduced-by task) and a minor version bump of that file, plus the status table row in `api-conventions.md` section 7 when the status is new. This goes in the paired PortHub PR (F04, F14).
-2. **Enum case.** In `app/Modules/Shared/Errors/ErrorCode.php`, add `case ExportTooLarge = 'EXPORT_TOO_LARGE';` **at the end**, with a one-line docblock if it is reserved or special.
+2. **Enum case.** In `app/Modules/Shared/Errors/ErrorCode.php`, add `case ExportTooLarge = 'EXPORT_TOO_LARGE';` **at the end** (or next to related codes, keeping the same place in the other two lists), with a one-line docblock if it is reserved or special.
 3. **Status.** Add the case to the `match` in `status()`.
 4. **Title.** Add the case to the `match` in `title()` (short, English, fixed).
 5. **Translation.** In `lang/en/errors.php` add `'export_too_large' => 'Plain English sentence that ends with a full stop.',` (the key is the code in lower snake case; the file is flat for codes, grouped for feature keys).
 6. **Unit test.** In `tests/Unit/Modules/Shared/Errors/ErrorCodeTest.php` add the code and status to the expected list (at the end). `ErrorMessagesTest` then proves the translation exists and ends with a full stop.
-7. **OpenAPI** (F04): add the value at the end of `components.schemas.ErrorCode.enum`; add `components.responses.ExportTooLarge` (the response name is the **case name**, PascalCase) with an `application/problem+json` example whose `status`, `code`, `message_key`, `title`, `type` and `detail` match the code and `lang/en`; bump `info.version` (minor). `OpenApiDriftTest` fails until this is done.
+7. **OpenAPI** (F04): add the value at the same position in `components.schemas.ErrorCode.enum`; add `components.responses.ExportTooLarge` (the response name is the **case name**, PascalCase) with an `application/problem+json` example whose `status`, `code`, `message_key`, `title`, `type` and `detail` match the code and `lang/en`; bump `info.version` (minor). `OpenApiDriftTest` fails until this is done.
 8. **Throw it** where the rule is enforced: `throw new ApiProblemException(ErrorCode::ExportTooLarge)` (add `detail:` or `extensions:` if needed; extra members need a schema like `VersionConflictProblem` in the OpenAPI file).
 9. **Framework status mapping.** Only if a *framework* exception with this status should become the code, add `status => ErrorCode::X` to `CODE_BY_STATUS` in `ProblemRenderer`. Usually not needed.
 10. **Feature test.** Add a test that hits the real endpoint and checks `code`, status and `message_key` (see `StableCodesTest` for the pattern with a test-only route).
@@ -317,7 +318,7 @@ Routes under the prefix (I ran this; the command is read-only):
 ```bash
 php artisan route:list --except-vendor
 ```
-Output: `GET|HEAD /` (welcome page) and the five `api/v1/...` routes: `audit-logs`, `auth/change-password`, `auth/login`, `auth/logout`, `auth/me`; "Showing [6] routes".
+Output: `GET|HEAD /` (welcome page) and, on `106b40e`, the five `api/v1/...` routes `audit-logs`, `auth/change-password`, `auth/login`, `auth/logout`, `auth/me` ("Showing [6] routes"). I re-ran it on `9559d35`: seven `api/v1` routes (those five plus `auth/mobile/login` and `system/info`), "Showing [8] routes".
 
 The catalogue and one rendered problem (I ran it through `artisan tinker` with a script file; no database access):
 
@@ -326,7 +327,7 @@ foreach (App\Modules\Shared\Errors\ErrorCode::cases() as $c) { echo $c->value.' 
 echo app(App\Modules\Shared\Errors\ProblemRenderer::class)->problem(App\Modules\Shared\Errors\ErrorCode::Forbidden)->getContent();
 echo App\Modules\Shared\Http\Validation\ZonedDateTime::toUtc('2026-11-02T12:15:04+02:00')->format('Y-m-d\TH:i:s.u\Z');
 ```
-Output (shortened): 17 lines from `VALIDATION_FAILED 422 errors.validation_failed` to `BAD_REQUEST 400 errors.bad_request`, then
+Output (shortened; this run was on `106b40e`, so it printed 17 lines and no `DEVICE_REVOKED`; on `9559d35` the loop prints 18, with `DEVICE_REVOKED 403 errors.device_revoked` after `PASSWORD_CHANGE_REQUIRED`, which I did not re-run): from `VALIDATION_FAILED 422 errors.validation_failed` to `BAD_REQUEST 400 errors.bad_request`, then
 `{"type":"https://atlantech.io/errors/forbidden","title":"Forbidden","status":403,"code":"FORBIDDEN","message_key":"errors.forbidden","detail":"You do not have permission to do this."}`
 and `2026-11-02T10:15:04.000000Z`.
 
@@ -335,7 +336,7 @@ The tests for this feature (I ran them on my own database; see F02 section 3.13 
 ```bash
 vendor/bin/pest tests/Unit/Modules/Shared tests/Feature/Api/ApiRoutingTest.php tests/Feature/Api/ProblemResponseTest.php tests/Feature/Api/StableCodesTest.php tests/Feature/Api/ErrorMessagesTest.php tests/Feature/Api/ValidationProblemTest.php tests/Feature/Api/PaginationTest.php tests/Feature/Api/UtcDateTimeTest.php
 ```
-Together with the F04 test files, my run printed `tests 122, passed 122, assertions 699`.
+Together with the F04 test files, my run on `106b40e` printed `tests 122, passed 122, assertions 699`; the re-run on `9559d35` (plus `SystemInfoTest` and `RouteAbilityCoverageTest`) printed `tests 136, passed 136, assertions 734`.
 
 A real 404 problem over HTTP (**expected, not run:** needs the server profile or Herd):
 
@@ -353,7 +354,8 @@ A 422 over HTTP (**expected, not run**; sign in first, see F07): `GET /api/v1/au
 - **F3-3 · Framework 409, 422, 423, 426 via `abort()` become 400.** By design (section 8), but there is no test or architecture rule that forbids `abort(409)` in the code base.
 - **F3-4 · No guard against hand-built error responses.** `HttpResponseException` passes through. A code review rule only.
 - **F3-5 · Untested branches.** The API-guest 401 behind a real `auth` middleware is covered only indirectly (the Access tests); there is no test that `redirectGuestsTo` returns `null` for `api/*` alone; `OriginMismatchException` (Laravel's origin check) would render as `FORBIDDEN`, no test.
-- **F3-6 · Reserved codes with no thrower.** `LICENSE_READ_ONLY`, `PLAN_LIMIT_EXCEEDED` (DEC-54), `IDEMPOTENCY_KEY_REUSED` and `APP_UPDATE_REQUIRED` are defined, translated and documented but nothing raises them yet; the middleware hooks that will are in F11.
+- **F3-6 · Reserved codes with no thrower.** `LICENSE_READ_ONLY`, `PLAN_LIMIT_EXCEEDED` (DEC-54), and `IDEMPOTENCY_KEY_REUSED` are defined, translated and documented but nothing raises them yet (the licence hooks are in F11). `APP_UPDATE_REQUIRED` is raised since P1-C3.
 - **F3-7 · `lang/ar` and `Accept-Language`** wait for FR-GL-09.
 - **F3-8 · Web login route.** `redirectGuestsTo` references `route('login')` for non-API paths; no such route exists (skeleton default, P1-A2 review note 6).
-- **F3-9 · Count in older documents.** The P1-A4 plan and its first OpenAPI draft say 16 codes; the code and the approved `error-codes.md` v1.0+ have 17 (with `BAD_REQUEST`). The code wins.
+- **F3-10 · Added 2026-11-06.** `DEVICE_REVOKED` was added "pending the CT-04 change that names it" (docblock in `ErrorCode.php`); the contract side is now done (`error-codes.md` v1.3, DEC-60), so the docblock is stale. `MinAppVersionSource` (interface in `Shared/Support`, bound by MasterData) and `AppVersion` (`x.y.z` regex `/^\d+\.\d+\.\d+$/`, `version_compare`) are the two new Shared helpers; they belong to F11 and F07, they only raise `ApiProblemException`. `ProblemRenderer` needed no change for any of it.
+- **F3-9 · Count in older documents.** The P1-A4 plan and its first OpenAPI draft say 16 codes; the code and the approved `error-codes.md` v1.0+ have 17 (with `BAD_REQUEST`), and 18 since P1-C3 (`DEVICE_REVOKED`). The code wins.
