@@ -249,3 +249,22 @@ it('does not replay to another device that holds the token', function () {
 
     idemRequest($token, 'POST', '/api/v1/test/idem', IDEM_KEY, deviceId: 'tablet-z')->assertUnauthorized();
 });
+
+it('does not replay to a caller who may no longer make the write: deactivated, password change required, ability lost', function () {
+    $user = makeUserWithRole(Role::PortGm);
+    $token = idemToken($user);
+    idemRequest($token, 'POST', '/api/v1/test/idem-ability', IDEM_KEY)->assertOk();
+    idemRequest($token, 'POST', '/api/v1/test/idem-ability', IDEM_KEY)->assertOk()->assertHeader('Idempotent-Replayed', 'true');
+
+    $user->forceFill(['must_change_password' => true])->save();
+    idemRequest($token, 'POST', '/api/v1/test/idem-ability', IDEM_KEY)->assertForbidden()->assertJsonPath('code', 'PASSWORD_CHANGE_REQUIRED');
+
+    $user->forceFill(['must_change_password' => false])->save();
+    $user->activeRoleAssignment()->update(['active_to' => now()->addMinute()]);
+    idemRequest($token, 'POST', '/api/v1/test/idem-ability', IDEM_KEY)->assertForbidden()->assertJsonPath('code', 'FORBIDDEN');
+
+    $user->forceFill(['is_active' => false])->save();
+    idemRequest($token, 'POST', '/api/v1/test/idem-ability', IDEM_KEY)->assertForbidden()->assertJsonPath('code', 'ACCOUNT_DISABLED');
+
+    expect($GLOBALS['idem_runs'])->toBe(1);
+});

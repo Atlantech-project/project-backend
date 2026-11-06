@@ -10,6 +10,7 @@ use App\Modules\License\Http\Middleware\EnsureLicenseAllowsWrite;
 use App\Modules\Shared\Errors\ProblemRenderer;
 use App\Modules\Shared\Http\Middleware\EnsureRecordVersion;
 use App\Modules\Shared\Http\Middleware\IdempotentWrite;
+use App\Modules\Shared\Http\Middleware\ReplayIdempotentWrite;
 use App\Modules\Shared\Http\Middleware\RequireIdempotencyKey;
 use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
@@ -40,8 +41,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         /*
          * The write chain of FR-GL-01 (P2-D2), in this order whatever order a route lists its middleware in:
-         * idempotency replay (mobile writes, IDEMP-01) · auth 401 · device and app-version headers 422 · idempotency key 422 ·
-         * password gate 403 · ability 403 · terminal.scope 403 · app.version 426 · license.write 423 ·
+         * logout replay (IDEMP-01) · auth 401 · device and app-version headers 422 · idempotency key 422 · password gate 403 ·
+         * ability 403 · terminal.scope 403 · app.version 426 · license.write 423 · idempotency replay (IDEMP-01) ·
          * (route binding) · version.token 409. Business rules (409 or 422) and plan limits (422) follow inside the
          * endpoint. Route binding runs after the scope checks so an unauthorised caller never gets a 404.
          * Signed-in routes use the `port.api` group and add `ability:<name>`, `terminal.scope`, `version.token`.
@@ -55,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureAccountUsable::class,
             EnsureMinAppVersion::class,
             EnsureLicenseAllowsWrite::class,
+            ReplayIdempotentWrite::class,
         ]);
         $middleware->priority([
             HandlePrecognitiveRequests::class,
@@ -75,6 +77,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureTerminalScope::class,
             EnsureMinAppVersion::class,
             EnsureLicenseAllowsWrite::class,
+            ReplayIdempotentWrite::class,
             SubstituteBindings::class,
             EnsureRecordVersion::class,
             Authorize::class,

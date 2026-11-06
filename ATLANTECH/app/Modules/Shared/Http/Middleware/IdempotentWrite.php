@@ -18,13 +18,14 @@ use Symfony\Component\HttpFoundation\Response;
  * `RequireIdempotencyKey` once the caller is authenticated.
  *
  * The request runs under a lock on its key, so a concurrent twin waits and then replays (503 + Retry-After if the first one is still
- * running after `lock_wait_seconds`). Its response is stored when `RequireIdempotencyKey` marked the caller as a mobile one and the
+ * running after `lock_wait_seconds`). Its response is stored when `ReplayIdempotentWrite` marked the caller as a mobile one and the
  * status may be kept (never a 5xx, never 401 or a refusal that passes with time).
  *
  * A replay is answered here, before authentication, only for a request that revoked its own token (logout): its retry carries a token
  * that `auth:sanctum` would refuse. The entry is found by the hash of that exact token plus the secret key, so finding it proves the
- * caller sent both. Every other replay is answered by `RequireIdempotencyKey`, after authentication and the device check, so a token
- * that was revoked later (device revoked, user deactivated, password change) never gets a stored body.
+ * caller sent both. Every other replay is answered by `ReplayIdempotentWrite`, after authentication, the device check, the password
+ * gate, the account state, the ability and the licence, so a caller who may no longer make the write (token or device revoked, user
+ * deactivated, role changed) never gets a stored body.
  */
 class IdempotentWrite
 {
