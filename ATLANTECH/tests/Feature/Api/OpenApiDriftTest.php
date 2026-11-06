@@ -120,3 +120,19 @@ it('names the session cookie the server really sets', function () {
         ->in->toBe('cookie')
         ->name->toBe(config('session.cookie'));
 });
+
+it('documents Idempotency-Key and its 422 on every write that accepts a Bearer token (IDEMP-01)', function () {
+    $writes = collect(openApi()['paths'])
+        ->flatMap(fn (array $path, string $uri) => collect($path)
+            ->only(['post', 'put', 'patch', 'delete'])
+            ->mapWithKeys(fn (array $operation, string $method) => [$method.' '.$uri => $operation]))
+        ->filter(fn (array $operation) => collect($operation['security'] ?? [])->contains(fn (array $scheme) => array_key_exists('bearerAuth', $scheme)));
+
+    expect($writes->keys()->all())->toContain('post /api/v1/auth/change-password', 'post /api/v1/auth/logout');
+
+    foreach ($writes as $operation) {
+        expect(collect($operation['parameters'] ?? [])->pluck('$ref')->all())
+            ->toContain('#/components/parameters/IdempotencyKey')
+            ->and($operation['responses'])->toHaveKey('422');
+    }
+});

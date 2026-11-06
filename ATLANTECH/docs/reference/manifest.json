@@ -34,12 +34,12 @@
     {
       "path": "contracts/api-conventions.md",
       "source": "Code Notes/contracts/api-conventions.md",
-      "sha1": "4661e52a6bdd08b63a21b31f9c16585b35984186"
+      "sha1": "3c4dc5d7f7fbbbd55f769f5e42297ed374abec89"
     },
     {
       "path": "contracts/error-codes.md",
       "source": "Code Notes/contracts/error-codes.md",
-      "sha1": "64b4fdba709009205fc890a0068fea9503327137"
+      "sha1": "f125348d5fcc54ca38c0dc1b1d05d97c5bf6ac6e"
     },
     {
       "path": "contracts/auth-web.md",
