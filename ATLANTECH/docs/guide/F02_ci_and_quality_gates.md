@@ -142,6 +142,7 @@ An issue form named "Defect" ("Report a defect found while testing a release bra
 | `bootstrap` | `vendor/autoload.php` | |
 | `testsuite Unit` / `Feature` | `tests/Unit`, `tests/Feature` | Two suites. |
 | `source/include` | `app` | Used only for coverage reports (not a gate). |
+| `memory_limit` (`<ini>`) | `512M` | Added by IDEMP-01 (PR #62, the lead's decision). The suite already peaked at 128 MB on `develop` (PHP's default `memory_limit`, also the Herd value), and the idempotency tests pushed it to 130 MB, so `php artisan test` stopped with "Allowed memory size exhausted". With the line, plain `php artisan test --compact` passes (853 tests, 2026-11-06) and CI is covered too. |
 | `APP_ENV` | `testing` | |
 | `APP_MAINTENANCE_DRIVER` | `file` | |
 | `BCRYPT_ROUNDS` | `4` | Fast password hashing in tests. |

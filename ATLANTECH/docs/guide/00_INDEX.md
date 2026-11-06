@@ -73,7 +73,7 @@ Each entry lists the **main points** the file must teach, the **files** to read,
 ### F04 · The OpenAPI contract
 
 - **Points:** `openapi/port-api.yaml` as the shared contract for the Vue and Flutter teams (DEC-13: the backend owns it); shared components (problem schemas, one response per error code, pagination, `bearerAuth`, headers); the drift test and what makes it fail; Spectral in CI; the version bump rule (minor per endpoint change); the paired PortHub PR and `php artisan atlantech:contracts-openapi`.
-- **Files:** `openapi/port-api.yaml`, `Shared/Console/PublishOpenApi.php`, `.spectral.yaml`.
+- **Files:** `openapi/port-api.yaml`, `Shared/Console/PublishOpenApi.php`, `.spectral.yaml`. (1.8.0: `Idempotency-Key` on the Bearer writes, with an inline 422/503 and the `Idempotent-Replayed` header.)
 - **Tests:** `OpenApiDriftTest`, `PublishOpenApiTest`. (`RouteVersionCoverageTest` was listed here by mistake: it checks the version-token rule and belongs to F12.)
 
 ### F05 · Database schema and migrations
@@ -115,8 +115,8 @@ Each entry lists the **main points** the file must teach, the **files** to read,
 ### F11 · The write chain (P2-D2)
 
 - **Points:** the fixed check order of FR-GL-01 (authentication 401, password gate 403, ability 403, terminal scope 403, app version 426, licence mode 423, route binding, version token 409, then business rules and plan limits inside the endpoint); the `port.api` middleware group and the `priority` list in `bootstrap/app.php` (why the order holds whatever order a route lists its middleware in, and why route binding runs after the scope checks so an unauthorised caller never gets a 404); the hook classes `EnsureMinAppVersion` and `EnsureLicenseAllowsWrite` (pass-through today, who fills them: P1-C3 and the licence work); how a new route is written.
-- **Files:** `bootstrap/app.php`, `routes/api.php`, `Access/Http/Middleware/EnsureMinAppVersion.php`, `License/Http/Middleware/EnsureLicenseAllowsWrite.php`.
-- **Tests:** `WriteChainOrderTest`.
+- **Files:** `bootstrap/app.php`, `routes/api.php`, `Access/Http/Middleware/EnsureMinAppVersion.php`, `License/Http/Middleware/EnsureLicenseAllowsWrite.php`; IDEMP-01 (section 3.11 of F11): `Shared/Http/Middleware/IdempotentWrite.php`, `RequireIdempotencyKey.php`, `ReplayIdempotentWrite.php`, `Shared/Support/IdempotencyStore.php`, `config/idempotency.php`.
+- **Tests:** `WriteChainOrderTest`; `IdempotencyTest`, `IdempotencyConcurrencyTest`, `IdempotencyStoreTest`.
 
 ### F12 · Version token and optimistic locking (P2-D4)
 
@@ -139,7 +139,7 @@ Each entry lists the **main points** the file must teach, the **files** to read,
 ### F15 · What is not built yet, and what comes next
 
 - **Points:** stubs and hooks (`EnsureMinAppVersion`, `EnsureLicenseAllowsWrite`, the `License` module beyond `LicenseState`, `Realtime` and most modules are models only); planned but not implemented (P2-E1, E2, E3 users, roles, devices; P1-C5, C3, C4 `/system/info`, mobile sign-in, mobile logout; BE-PK2 readiness pack); open dependencies (CT-04 change for a revoked device, the `personal_access_tokens` migration, DEC-30 numbers); Sprint 3 work unblocked by Sprint 2; known risks and trade-offs; the lead's decisions that shape the next work.
-- **Source:** the plan files in `docs/tasks`, section 6 and 7 of each, and `docs/reference/roadmap`.
+- **Source:** the plan files in `docs/tasks`, section 6 and 7 of each, and `docs/reference/roadmap`. (Updated 2026-11-06: P2-E1, E2 and E3 plans are on `develop` since PR #62, E3 with the new action "restore a revoked device"; IDEMP-01 is built.)
 
 ## 5. Walkthrough protocol (how we will go through it)
 
