@@ -24,6 +24,17 @@ class RecommendationOptionTug extends Pivot
     use HasFactory;
 
     /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'planned_start' => 'datetime',
+            'planned_end' => 'datetime',
+        ];
+    }
+
+    /**
      * @return BelongsTo<RecommendationOption, $this>
      */
     public function option(): BelongsTo

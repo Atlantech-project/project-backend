@@ -25,7 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 #[Table(name: 'berthing_requests')]
 #[DateFormat('Y-m-d H:i:s.u')]
-#[Fillable(['vessel_id', 'requested_terminal_id', 'source', 'external_system_id', 'external_reference', 'submitted_by', 'requested_eta', 'arrival_draft', 'departure_draft', 'previous_port', 'next_port', 'draft_source', 'eta_source', 'ports_source', 'block_coefficient', 'gross_tonnage', 'deadweight_tonnes', 'status'])]
+#[Fillable(['vessel_id', 'requested_terminal_id', 'source', 'external_system_id', 'external_reference', 'submitted_by', 'requested_eta', 'arrival_draft', 'departure_draft', 'previous_port', 'next_port', 'draft_source', 'eta_source', 'ports_source', 'block_coefficient', 'gross_tonnage', 'deadweight_tonnes', 'loading_container_count', 'status'])]
 #[UseFactory(BerthingRequestFactory::class)]
 class BerthingRequest extends Model
 {
@@ -46,6 +46,7 @@ class BerthingRequest extends Model
             'eta_source' => DataSource::class,
             'ports_source' => DataSource::class,
             'block_coefficient' => 'decimal:3',
+            'loading_container_count' => 'integer',
             'status' => BerthingRequestStatus::class,
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

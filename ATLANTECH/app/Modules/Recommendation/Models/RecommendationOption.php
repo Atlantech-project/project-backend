@@ -36,6 +36,8 @@ class RecommendationOption extends Model
         return [
             'planned_start' => 'datetime',
             'planned_end' => 'datetime',
+            'pilot_start' => 'datetime',
+            'pilot_end' => 'datetime',
             'service_time_method' => RecommendationOptionServiceTimeMethod::class,
             'service_time_p50_hours' => 'decimal:2',
             'service_time_p90_hours' => 'decimal:2',
