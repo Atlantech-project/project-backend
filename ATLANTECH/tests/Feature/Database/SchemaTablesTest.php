@@ -128,8 +128,8 @@ test('CHECK constraints and generated columns are real', function () {
         ->values()
         ->all();
 
-    // 113 DDL fixes + 8 Report A + 2 FCM + 3 yard_runs + 3 baplie_parse_runs
-    expect($checks)->toBe(129)
+    // 113 DDL fixes + 8 Report A + 2 FCM + 3 yard_runs + 3 baplie_parse_runs + 4 AI data gaps (G-09, G-10, G-14 x2)
+    expect($checks)->toBe(133)
         ->and($generated)->toBe([
             'baplie_files.active_request_key',
             'baplie_files.live_hash_key',

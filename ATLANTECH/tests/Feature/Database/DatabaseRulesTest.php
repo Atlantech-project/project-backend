@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\DB;
 
 /*
  * The database itself refuses rows that break the design's rules (P1-B4).
- * A sample of each kind of CHECK is broken on purpose; the name guard keeps all 129 in place.
+ * A sample of each kind of CHECK is broken on purpose; the name guard keeps all 133 in place.
  * Foreign-key checks are off and every test is rolled back, as in SchemaConstraintsTest.
  */
 
@@ -209,7 +209,7 @@ test('an ENUM column refuses a value outside its list', function (string $table,
     'user_role_assignments.role' => ['user_role_assignments', 'role'],
 ])->group('schema');
 
-test('all 129 CHECK constraints of the design are in place by name', function () {
+test('all 133 CHECK constraints of the design are in place by name', function () {
     $names = DB::table('information_schema.CHECK_CONSTRAINTS')
         ->where('CONSTRAINT_SCHEMA', DB::raw('DATABASE()'))
         ->pluck('CONSTRAINT_NAME')
@@ -220,7 +220,7 @@ test('all 129 CHECK constraints of the design are in place by name', function ()
     expect($names)->toBe([
         'chk_al_states', 'chk_berth_dimensions', 'chk_berth_lat', 'chk_berth_loa_fits', 'chk_berth_lon',
         'chk_bf_correction', 'chk_bf_hash', 'chk_bp_period', 'chk_bpr_error', 'chk_bpr_finished',
-        'chk_bpr_outcome', 'chk_br_cb', 'chk_br_departure_draft', 'chk_br_ports', 'chk_br_source',
+        'chk_bpr_outcome', 'chk_br_cb', 'chk_br_departure_draft', 'chk_br_loading', 'chk_br_ports', 'chk_br_source',
         'chk_br_tonnage', 'chk_brc_quantity', 'chk_brsh_change', 'chk_channel_dimensions', 'chk_cme_oog',
         'chk_cme_pod', 'chk_cme_pol', 'chk_cme_reefer', 'chk_cme_stowage', 'chk_cme_weight',
         'chk_container_number', 'chk_cst_length', 'chk_cst_teu', 'chk_ct_temp', 'chk_dfs_method',
@@ -230,9 +230,9 @@ test('all 129 CHECK constraints of the design are in place by name', function ()
         'chk_fr_on_demand', 'chk_fw_values', 'chk_license_state_reason', 'chk_license_state_singleton',
         'chk_mlv_champion_deployed', 'chk_mlv_version', 'chk_mlv_window', 'chk_nl_ack', 'chk_nl_failed',
         'chk_nl_push_no_ack', 'chk_org_unit_terminal', 'chk_ozd_positive', 'chk_ozd_type', 'chk_p1r_retry',
-        'chk_pc_assigned', 'chk_pc_resource', 'chk_pc_time', 'chk_pilot_rank_limit_loa', 'chk_port_profile_lat',
-        'chk_port_profile_lon', 'chk_port_profile_singleton', 'chk_port_shift_times', 'chk_ro_p90',
-        'chk_ro_values', 'chk_rov_berth', 'chk_rov_pilot', 'chk_rov_time', 'chk_rov_tug', 'chk_rr_review',
+        'chk_pc_assigned', 'chk_pc_resource', 'chk_pc_time', 'chk_pilot_rank_limit_loa', 'chk_port_profile_code', 'chk_port_profile_lat',
+        'chk_port_profile_lon', 'chk_port_profile_singleton', 'chk_port_shift_times', 'chk_ro_p90', 'chk_ro_pilot_interval',
+        'chk_ro_values', 'chk_rot_interval', 'chk_rov_berth', 'chk_rov_pilot', 'chk_rov_time', 'chk_rov_tug', 'chk_rr_review',
         'chk_rr_time', 'chk_rr_versions', 'chk_rrf_kind', 'chk_rt_version', 'chk_rzd_plugs', 'chk_rzd_type',
         'chk_sai_quantity', 'chk_sai_type', 'chk_sc_period', 'chk_sf_area', 'chk_sf_capacity',
         'chk_sf_capacity_sum', 'chk_sf_floor_load', 'chk_sf_lat', 'chk_sf_lon', 'chk_sf_yard_rules',
