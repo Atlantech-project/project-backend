@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1838-1862 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1892-1916 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-59 · `port_settings` min and max, and CHAMPION `deployed_at`
 
 | | |

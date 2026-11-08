@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1249-1273 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1303-1327 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-34 · Building A4 rules on synthetic data
 
 | | |

@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1864-1888 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1918-1942 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-60 · Mobile sign-in from a revoked device
 
 | | |

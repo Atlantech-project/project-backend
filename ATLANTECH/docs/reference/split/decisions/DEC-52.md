@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1698-1715 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1752-1769 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-52 · Boat management (P-61)
 
 | | |
