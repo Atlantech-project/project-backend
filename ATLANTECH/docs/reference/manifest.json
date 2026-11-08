@@ -1,6 +1,6 @@
 {
   "sourceRoot": "E:/collage/GRADUATION PROGECT",
-  "syncedAt": "2026-11-06",
+  "syncedAt": "2026-11-08",
   "watch": [
     "Code Notes",
     "Documentation"
@@ -29,7 +29,7 @@
     {
       "path": "contracts/ATLANTECH_Contracts.md",
       "source": "Code Notes/ATLANTECH_Contracts.md",
-      "sha1": "fd5e62c1fe3ceef067b4e6584000c41feee3256e"
+      "sha1": "a61c058f6ce46bc1ad82bb19573caa13692272f6"
     },
     {
       "path": "contracts/api-conventions.md",
@@ -89,7 +89,7 @@
     {
       "path": "decisions/ATLANTECH_Decisions.md",
       "source": "Code Notes/ATLANTECH_Decisions.md",
-      "sha1": "8b110cf8f7d9704dfee8af014754bb910e0a3476"
+      "sha1": "9afd64356897cbed3a766f69d1490f031e4f46dd"
     },
     {
       "path": "roadmap/ATLANTECH_Master_Roadmap.pdf",

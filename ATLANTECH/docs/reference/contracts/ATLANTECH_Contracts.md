@@ -444,7 +444,7 @@ All seven fields are required; no other field is allowed (`additionalProperties:
 | Owner | Backend Team (sending) on the AI Team schema |
 | Reviewers | AI Team |
 | Output | `contracts/ai/c02-part2-solve.schema.json` (payload only) |
-| Status | Approved v1.1 · 2026-10-27 (plural table names, CT-17) · v1.0 2026-10-26 (DEC-15) |
+| Status | **Proposed v1.2 (DEC-28 follow-ups G-11 and G-12; draft 2026-11-08, not approved)** · Approved v1.1 · 2026-10-27 (plural table names, CT-17) · v1.0 2026-10-26 (DEC-15) |
 
 The schema describes the **payload only**. `envelope.schema.json` (CT-08) references it with `if job_type = PART2_SOLVE then payload: { $ref: c02-part2-solve.schema.json }`. C-01, C-03 and C-04 follow the same pattern.
 
@@ -481,7 +481,7 @@ The schema describes the **payload only**. `envelope.schema.json` (CT-08) refere
 
 | `trigger_type` | Sent by the Backend when | `berthing_request_ids` | Extra fields |
 | --- | --- | --- | --- |
-| `NEW_REQUEST` | Part 1 finishes with `WINDOWS_FOUND` | Requests in `ENTRY_WINDOW_CONFIRMED` or `RECOMMENDATION_GENERATED` | — |
+| `NEW_REQUEST` | Staff confirm an entry window, so the request becomes `ENTRY_WINDOW_CONFIRMED` (Part 1 finishing with `WINDOWS_FOUND` does not enqueue anything). For a container vessel the request must also have an ACTIVE BAPLIE: the solve is enqueued when both hold, whichever comes last | Requests in `ENTRY_WINDOW_CONFIRMED` or `RECOMMENDATION_GENERATED` | — |
 | `MANUAL` | A user presses "Regenerate" | Same as `NEW_REQUEST` | `requested_by_user_id` (required) |
 | `RESOURCE_CHANGE` | A berth, tug or pilot becomes unavailable or available again | Pending requests whose current recommendation uses a changed resource, or whose window overlaps the change. The Backend computes this from `recommendation_options` and `recommendation_option_tugs` | `changed_resources` (required, `minItems: 1`) |
 | `REPLAN` | A deviation is recorded on a confirmed plan | Exactly one: the request that owns the plan | `operational_plan_id` (required) |
@@ -497,6 +497,7 @@ The schema describes the **payload only**. `envelope.schema.json` (CT-08) refere
 - **One solve at a time:** the Backend never enqueues a `PART2_SOLVE` while another is QUEUED or RUNNING. Triggers that arrive meanwhile are held and merged into one message sent when the current solve finishes.
 - **`payload.trigger_type`** is the highest-precedence type in `triggers`: `REPLAN > RESOURCE_CHANGE > MANUAL > NEW_REQUEST`. The Backend writes it to `solver_runs.trigger_type`.
 - **One entry per request:** a request id appears in at most one entry. If two triggers hit the same request, the higher-precedence entry wins; two `RESOURCE_CHANGE` entries merge their `changed_resources`.
+- **Container vessel waits for its BAPLIE (v1.2, DEC-28):** a request of a container vessel (`vessel_types.code = CONTAINER`) is not put in a `NEW_REQUEST` entry before it has an ACTIVE BAPLIE. It waits without a new status (`ENTRY_WINDOW_CONFIRMED`, no QUEUED `solver_runs` row) and the Backend enqueues it when the BAPLIE becomes ACTIVE. Vessels that are not container vessels are not affected.
 - **No empty solves:** a resource change that affects no pending request is not enqueued.
 - **Confirmed plans change only through `REPLAN`:** a resource change that hits a confirmed plan is sent as a `REPLAN` entry for that plan.
 - **Envelope `triggered_by_user_id`:** the `requested_by_user_id` of the MANUAL entry if there is one, otherwise `null`. With several MANUAL entries, it is the user of the MANUAL trigger the Backend received last.
@@ -532,7 +533,7 @@ The schema describes the **payload only**. `envelope.schema.json` (CT-08) refere
 | `FIFO_FALLBACK` | `ERROR` | FIFO plans (`source = FIFO`) for the requests that pass the hard filter. C-06 carries `status = DONE` (plans were written) with the technical reason in `error_category`, while `solver_runs.status` stays `ERROR` (CT-14) |
 | `GENERATION_FAILED` | `ERROR` | None |
 
-- **Per-request `outcome`:** `SOLVED` · `FIFO_FALLBACK` · `NO_FEASIBLE_PLAN`.
+- **Per-request `outcome`:** `SOLVED` · `FIFO_FALLBACK` · `NO_FEASIBLE_PLAN` · `NOT_SOLVED` (v1.2). `NOT_SOLVED` marks a request that was left out of the solve and carries `reason_code`; `recommendation_id` is `null`, `options_count` is 0 and `binding_constraints` is empty. The only value of `reason_code` for now is `MISSING_MOVES`: the request has no ACTIVE BAPLIE (for example it was withdrawn after the solve was enqueued), so its moves are NULL and are never guessed (DEC-28). The request stays `ENTRY_WINDOW_CONFIRMED`, and the Backend enqueues it again when a BAPLIE becomes ACTIVE. `reason_code` is present only with `NOT_SOLVED`. Adding a reason code is a minor version change. The names `NOT_SOLVED` and `reason_code` are to be confirmed with the AI Team.
 - **`options_count`:** 1 to 3 when a recommendation is written, otherwise 0 (DEC-23). Options 2 and 3 are returned only within `solver_option_equivalence_pct` of option 1 (CT-18).
 - **`binding_constraints`:** non-empty only when the per-request outcome is `NO_FEASIBLE_PLAN`. `detail` is an English diagnostic string, at most 255 characters.
   - `kind = "SAFETY"`: `constraint_type_code` is any `constraint_types.code` from the CT-18 seed (for example `MAX_WIND_KN`).
@@ -556,7 +557,7 @@ The schema describes the **payload only**. `envelope.schema.json` (CT-08) refere
 | Owner | Backend Team (sending) on the AI Team schema |
 | Reviewers | AI Team |
 | Output | `contracts/ai/c03-yard.schema.json` (payload only) |
-| Status | Approved v1.1 · 2026-10-27 (plural table names, CT-17) · v1.0 2026-10-27 (DEC-16) |
+| Status | **Proposed v1.2 (DEC-29 at slot level, DEC-16 edited in place; draft 2026-11-06, not approved)** · Approved v1.1 · 2026-10-27 (plural table names, CT-17) · v1.0 2026-10-27 (DEC-16) |
 
 The schema describes the **payload only**. `envelope.schema.json` (CT-08) references it with `if job_type = YARD_PLACEMENT`. The job runs on its own queue, **`queue:yard`**, served by a separate worker process (own DB account and grants per DEC-08, own heartbeat).
 
@@ -581,7 +582,7 @@ The schema describes the **payload only**. `envelope.schema.json` (CT-08) refere
 - **One transaction before RPUSH:** set `terminal_recommendations` (`rec_type = YARD_PLACEMENT`, `lifecycle_status = YARD_REC_REQUESTED`) and insert `yard_runs` (QUEUED).
 - **`triggered_by_user_id`:** `null` for the automatic trigger; the user who pressed "Regenerate" otherwise.
 - **Regenerate:** offered when `lifecycle_status` is `GENERATION_FAILED` or `YARD_REC_REJECTED`. Because of `uq_tr_rec_type`, the same row is reused: reset to `YARD_REC_REQUESTED`, delete the old `yard_placement_items` rows, mark any QUEUED or RUNNING `yard_runs` of that row as `REPLACED`, then insert a new `yard_runs`.
-- **Stale recommendation:** after a confirmed REPLAN or a BAPLIE revision becoming ACTIVE, the Backend regenerates automatically if the recommendation is not yet `YARD_REC_ACCEPTED`. If it is accepted, the Backend raises a notification only.
+- **Stale recommendation:** after a confirmed REPLAN or a BAPLIE revision becoming ACTIVE, the Backend regenerates automatically if the recommendation is not yet `YARD_REC_ACCEPTED`. If it is accepted, the Backend raises a notification only. From v1.2 the same applies when a plan of another vessel of the same terminal is confirmed or cancelled (DEC-29 open item 9): every yard recommendation of that terminal that is not yet `YARD_REC_ACCEPTED` is regenerated, one run at a time per recommendation (`uq_yr_active`). A change of `requested_eta` on a request that has no plan yet does not regenerate anything: such a request gets no slots (DEC-29 rule 5).
 - **Incomplete lines:** the Backend blocks yard recommendations while any line of the ACTIVE file has a NULL `full_empty` **or** a NULL `port_of_discharge`.
 - **No one-at-a-time rule:** different terminal recommendations may run in parallel; `uq_yr_active` allows one active run per terminal recommendation.
 - The Backend validates every message against the schema before RPUSH.
@@ -645,9 +646,10 @@ CREATE TABLE `yard_runs` (
 **Result:**
 
 - **Partial placement:** if at least one container is placed, the outcome is `YARD_REC_GENERATED` and unplaced containers get no `yard_placement_items` row. If none can be placed, the outcome is `GENERATION_FAILED` with `INFEASIBLE`.
-- **`yard_slot_id`:** always `NULL` in v1 (block level, FR-2.2.3). Nothing the worker writes is a reservation; any capacity check at accept or export time belongs to the Backend.
-- **Capacity counting:** active slots with `container_id IS NULL`, minus capacity already given to other recommendations of the same terminal in `YARD_REC_GENERATED` or `YARD_REC_ACCEPTED` (not yet exported). Counted in TEU via `container_size_types.teu_factor`, 1 slot = 1 TEU.
-- **`confidence`** = `preferred_zone_count / in_scope_count`, rounded to 3 decimals (DEC-29 Option A). Never null with `YARD_REC_GENERATED`, always null with `GENERATION_FAILED`. Reefer, DG and OOG containers can only go to their zone; general containers may overflow to a special zone and then count as not preferred.
+- **`yard_slot_id`:** filled for every placed container, as a recommendation and not a reservation (v1.2, DEC-29). Nothing the worker writes is a reservation; the Backend checks each slot at accept and at export (`YARD_SLOT_CONFLICT`).
+- **Capacity counting:** slots of the same terminal that are `ACTIVE` (not `BLOCKED`) with `container_id IS NULL`, minus the slots held by other recommendations of the same terminal in `YARD_REC_GENERATED`, `YARD_REC_ACCEPTED` or `EXPORTED_TO_TOS`, until the container is recorded in the yard or the plan is `CANCELLED` or `COMPLETED` (read from `operational_plans.status`). Holding a slot is a rule of the solver, not a Backend reservation. Counted in TEU via `container_size_types.teu_factor`, 1 slot = 1 TEU; a 40 ft or 45 ft container takes two adjacent slots: bays b and b+1, same block, row and tier (representation: G-04, pending). Requests of the same terminal that have an ACTIVE BAPLE and an ETA but no confirmed plan get no slots; their expected discharge TEU is kept free in compatible zones, in ETA order (DEC-29 rule 5). Other terminals are never read.
+- **Yard baseline (DEC-29 rule 11):** the current contents of the yard are not imported. The terminal officer sets every slot of a stack that holds existing stock (all tiers of a bay and row) to `BLOCKED` and unblocks it once that stock has left. Every other unrecorded `ACTIVE` slot counts as free. The CT Supervisor records the actual slot when it differs from the recommendation.
+- **`confidence`** = containers placed with zero expected re-handles ÷ `in_scope_count`, rounded to 3 decimals (DEC-29 rule 8). Never null with `YARD_REC_GENERATED`. Always null with `GENERATION_FAILED`, including a run that places nothing: a failed run has no recommendation to be confident about, and 0 would read as a poor plan (DEC-29 rule 8, corrected). Reefer, DG and OOG containers can only go to their zone.
 
 **`yard_runs.result_detail`:**
 
@@ -655,7 +657,10 @@ CREATE TABLE `yard_runs` (
 {
   "in_scope_count": 212,
   "placed_count": 208,
-  "preferred_zone_count": 200,
+  "no_rehandle_count": 200,
+  "placements": [
+    { "manifest_entry_id": 99701, "departure_at": "2026-11-12T06:00:00Z", "departure_source": "ONWARD_PLAN", "expected_rehandles": 0 }
+  ],
   "unplaced": [
     { "manifest_entry_id": 99812, "reason_code": "NO_REEFER_CAPACITY" },
     { "manifest_entry_id": 99840, "reason_code": "NO_DG_ZONE" }
@@ -664,7 +669,8 @@ CREATE TABLE `yard_runs` (
 }
 ```
 
-- **`unplaced[].reason_code`** (closed list for v1): `NO_REEFER_CAPACITY` · `NO_DG_ZONE` · `NO_OOG_ZONE` · `NO_CAPACITY`.
+- **`unplaced[].reason_code`** (closed list for v1): `NO_REEFER_CAPACITY` · `NO_DG_ZONE` · `NO_OOG_ZONE` · `NO_CAPACITY` · `NO_SLOT_OF_LENGTH` · `STACK_HEIGHT_REACHED` (the last two are v1.2; names to confirm with the AI Team). `no_rehandle_count` replaces `preferred_zone_count` (v1.2; name to confirm with the AI Team).
+- **`placements[]`** (optional, v1.2, DEC-29 rule 10): one entry per placed container for evaluation: `manifest_entry_id`, `departure_at` (UTC, null when unknown), `departure_source` (`ONWARD_PLAN` · `ONWARD_REQUEST_ETA` · `ONWARD_BAPLIE_ETA` · `IMPORT_DWELL` · `UNKNOWN`, matching DEC-29 rule 2; names to confirm with the AI Team) and `expected_rehandles`. It stays in `yard_runs.result_detail`, which the Backend never edits, so the history of every run is kept even when `yard_placement_items` is deleted on regeneration. The Backend does not read it and does not return it in list calls.
 - **`failure_reason`:** `{ "error_category": "...", "message": "..." }`, same shape as C-02, non-null only when the run is FAILED. `terminal_recommendations.failure_reason` holds `"<ERROR_CATEGORY>: <message>"` truncated to 500 characters.
 - **`error_category`** for yard: `INVALID_ENVELOPE` · `PRECONDITION_FAILED` · `CONFIGURATION_ERROR` (no container yard, no active slots or no active rationale template) · `DATA_UNAVAILABLE` · `INFEASIBLE` · `TIMEOUT` · `INTERNAL_ERROR`. `SOLVER_ERROR` is not used.
 
@@ -912,7 +918,7 @@ FastAPI is cancelled (DEC-10), so validation is an async job. A result with viol
 | `validation_type` | Check |
 | --- | --- |
 | `OVERRIDE` | `recommendation_options` exists and its recommendation is `PENDING_REVIEW` or `MODIFIED_BY_STAFF` |
-| `YARD_ADJUSTMENT` | `terminal_recommendations` exists, `rec_type = YARD_PLACEMENT`, `lifecycle_status` is `YARD_REC_GENERATED` or `YARD_REC_ACCEPTED`; every `manifest_entry_id` belongs to the ACTIVE BAPLIE of that request; every block belongs to the terminal's yard |
+| `YARD_ADJUSTMENT` | `terminal_recommendations` exists, `rec_type = YARD_PLACEMENT`, `lifecycle_status` is `YARD_REC_GENERATED` or `YARD_REC_ACCEPTED`; every `manifest_entry_id` belongs to the ACTIVE BAPLIE of that request; every block belongs to the terminal's yard; a proposed `yard_slot_id` belongs to that block, is `ACTIVE`, is empty and is not held by another recommendation (v1.2, CT-11); for a 40 ft or 45 ft container its second slot is free too |
 
 **Result** (`validation_result` in C-06, defined in `c06-completion.schema.json`):
 

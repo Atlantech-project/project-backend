@@ -1,4 +1,4 @@
-<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1660-1677 by build-index.mjs. Do not edit: edit the source and rebuild. -->
+<!-- Generated from docs/reference/decisions/ATLANTECH_Decisions.md lines 1714-1731 by build-index.mjs. Do not edit: edit the source and rebuild. -->
 ### DEC-50 · BAPLIE correction and withdraw
 
 | | |
