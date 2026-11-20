@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PortSettingsSeeder::class,
             ReferenceDataSeeder::class,
+            FirstPortAdminSeeder::class,
         ]);
 
         if (config('seeding.demo_port')) {
