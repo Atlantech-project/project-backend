@@ -35,6 +35,8 @@ enum ErrorCode: string
     case ServerError = 'SERVER_ERROR';
     /** Any other client error the framework raises (413, 415 …), always 400; approved in P1-A2 step 4. */
     case BadRequest = 'BAD_REQUEST';
+    /** A business rule refused the change in the record's current state (P2-E1: self-deactivation, last Port Admin); the feature message key says which. */
+    case Conflict = 'CONFLICT';
 
     public const string TYPE_BASE_URI = 'https://atlantech.io/errors/';
 
@@ -49,7 +51,7 @@ enum ErrorCode: string
             self::Forbidden, self::AccountDisabled, self::PasswordChangeRequired, self::DeviceRevoked => 403,
             self::NotFound => 404,
             self::MethodNotAllowed => 405,
-            self::VersionConflict => 409,
+            self::VersionConflict, self::Conflict => 409,
             self::SessionExpired => 419,
             self::ValidationFailed, self::PlanLimitExceeded, self::IdempotencyKeyReused => 422,
             self::LicenseReadOnly => 423,
@@ -100,6 +102,7 @@ enum ErrorCode: string
             self::ServiceUnavailable => 'Service unavailable',
             self::ServerError => 'Server error',
             self::BadRequest => 'Bad request',
+            self::Conflict => 'Conflict',
         };
     }
 }

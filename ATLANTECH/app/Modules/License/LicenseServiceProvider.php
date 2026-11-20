@@ -3,6 +3,8 @@
 namespace App\Modules\License;
 
 use App\Modules\License\Http\Middleware\EnsureLicenseAllowsWrite;
+use App\Modules\License\Services\PlanUserLimit;
+use App\Modules\Shared\Support\UserLimitCheck;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 
@@ -11,6 +13,11 @@ use Illuminate\Support\ServiceProvider;
  */
 class LicenseServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->app->bind(UserLimitCheck::class, PlanUserLimit::class);
+    }
+
     public function boot(Router $router): void
     {
         $router->aliasMiddleware('license.write', EnsureLicenseAllowsWrite::class);

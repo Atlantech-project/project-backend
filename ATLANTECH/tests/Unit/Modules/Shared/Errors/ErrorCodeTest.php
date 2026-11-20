@@ -30,6 +30,7 @@ test('the catalogue holds exactly the agreed codes with their HTTP status', func
         'SERVICE_UNAVAILABLE' => 503,
         'SERVER_ERROR' => 500,
         'BAD_REQUEST' => 400,
+        'CONFLICT' => 409,
     ]);
 });
 

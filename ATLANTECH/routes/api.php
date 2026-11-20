@@ -12,6 +12,7 @@
 
 use App\Modules\Access\Http\Controllers\AuthController;
 use App\Modules\Access\Http\Controllers\MobileAuthController;
+use App\Modules\Access\Http\Controllers\UserController;
 use App\Modules\Access\Http\Middleware\EnsureMobileHeaders;
 use App\Modules\MasterData\Http\Controllers\SystemInfoController;
 use App\Modules\Shared\Http\Controllers\AuditLogController;
@@ -29,4 +30,12 @@ Route::middleware('port.api')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
     Route::get('audit-logs', [AuditLogController::class, 'index'])->middleware('ability:audit.read')->name('audit-logs.index');
+
+    Route::middleware('ability:users.manage')->group(function () {
+        Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::post('users', [UserController::class, 'store'])->name('users.store');
+        Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+        Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->middleware('version.token:user')->name('users.deactivate');
+        Route::post('users/{user}/activate', [UserController::class, 'activate'])->middleware('version.token:user')->name('users.activate');
+    });
 });

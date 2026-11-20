@@ -17,4 +17,20 @@ return [
 
     'demo_user_password' => env('DEMO_USER_PASSWORD'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | First Port Admin (P2-E1)
+    |--------------------------------------------------------------------------
+    |
+    | The first Port Admin of a real port, created by FirstPortAdminSeeder only when all three values are set and no
+    | active Port Admin exists. Never put these values in a tracked file; do not use the demo username `port.gm`.
+    |
+    */
+
+    'first_port_admin' => [
+        'username' => env('FIRST_PORT_ADMIN_USERNAME'),
+        'name' => env('FIRST_PORT_ADMIN_NAME'),
+        'password' => env('FIRST_PORT_ADMIN_PASSWORD'),
+    ],
+
 ];
