@@ -32,7 +32,12 @@ return [
     'service_unavailable' => 'The service is temporarily unavailable. Try again in a few minutes.',
     'server_error' => 'Something went wrong on our side. Try again; if the problem continues, contact support.',
     'bad_request' => 'The request could not be processed. Check what you sent and try again.',
+    'conflict' => 'This change conflicts with the current state of the record.',
     'auth' => [
         'invalid_credentials' => 'The username or password is incorrect.',
+    ],
+    'users' => [
+        'cannot_deactivate_self' => 'You cannot deactivate your own account.',
+        'last_port_admin' => 'At least one active Port Admin must remain.',
     ],
 ];

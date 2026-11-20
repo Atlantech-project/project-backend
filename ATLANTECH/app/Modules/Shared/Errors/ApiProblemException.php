@@ -55,6 +55,14 @@ class ApiProblemException extends HttpException
     }
 
     /**
+     * 409: a business rule refused the change; `$messageKey` is the feature key, e.g. "errors.users.last_port_admin".
+     */
+    public static function conflict(string $messageKey): self
+    {
+        return new self(ErrorCode::Conflict, __($messageKey));
+    }
+
+    /**
      * 426: the mobile app is older than the port's minimum version (CT-04).
      */
     public static function appUpdateRequired(string $minAppVersion): self
