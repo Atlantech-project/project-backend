@@ -565,13 +565,7 @@ paths:
                   - $ref: '#/components/schemas/VersionConflictProblem'
                   - $ref: '#/components/schemas/Problem'
         '422':
-          description: '422 VALIDATION_FAILED, or 422 PLAN_LIMIT_EXCEEDED when the plan allows no more active users.'
-          content:
-            application/problem+json:
-              schema:
-                anyOf:
-                  - $ref: '#/components/schemas/ValidationProblem'
-                  - $ref: '#/components/schemas/Problem'
+          $ref: '#/components/responses/ValidationFailed'
         '426':
           $ref: '#/components/responses/AppUpdateRequired'
   /api/v1/users/{user}/activate:
@@ -608,13 +602,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: '409 VERSION_CONFLICT (stale `version`) or 409 CONFLICT (a business rule: yourself, the last active Port Admin).'
-          content:
-            application/problem+json:
-              schema:
-                anyOf:
-                  - $ref: '#/components/schemas/VersionConflictProblem'
-                  - $ref: '#/components/schemas/Problem'
+          $ref: '#/components/responses/VersionConflict'
         '422':
           description: '422 VALIDATION_FAILED, or 422 PLAN_LIMIT_EXCEEDED when the plan allows no more active users.'
           content:
