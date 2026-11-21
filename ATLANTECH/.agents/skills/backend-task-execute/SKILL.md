@@ -25,6 +25,9 @@ Show the steps table from the plan with each step's mode, then ask the user whet
 | **B** | Claude | User skims a short summary after the step; Claude continues unless told otherwise | Standard work with a clear source and no shared impact: an endpoint following an existing pattern, validation taken straight from FR text, read-only queries, notifications using an existing service |
 | **C** | Claude drafts | **Stop.** Show the diff summary and the reason; wait for approval before the next step | Migrations, or anything touching a table the AI writes (CT-15/CT-17); any contract artefact (OpenAPI shape, SSE events, status vocabulary, AI payloads, mock behaviour); status transitions, transactions, locks and row versions; the write chain, policies, scopes, licence mode and other security; audit; the first instance of a new pattern; anything resolving a conflict or an Open decision |
 | **D** | User | — | Things the user chose to write; decisions or agreements with other teams; anything needing accounts, secrets or servers Claude cannot reach. Claude prepares a checklist and the context, then waits |
+| **E** | User types, Claude prepares | Claude reviews at the END of the task, not per step | Core logic the lead must be able to explain: services, locks, transactions, request rules that encode a business rule, and the routes that carry the authorization (ability and `version.token`). Claude gives the code in chat with a numbered explanation under each block, the lead types it, and Claude compares it with the prepared version at the end. Load the `manual-execution` skill for the rules |
+
+Modes A, B and C are Claude's; D is the user's alone; E is the shared one. Use E for the logic the lead wants to understand, and A to C for migrations, seeders, resources, thin controllers, OpenAPI, docs and tests. The lead may hand an E part to Claude mid-task (for a mechanical file once he understands the pattern); Claude then does it without asking again.
 
 When a step needs a fact the plan does not give, look it up with `node docs/reference/lookup.mjs` and the split file it names, following the **Source of truth** rules in `docs/reference/README.md` (missing document → Master Roadmap) and record in the progress log which source was used.
 
@@ -44,6 +47,7 @@ For each step, in order:
    - **B**: post a two-line summary (what changed, where) and continue.
    - **C**: post what changed, why, the files, and anything the user should look at closely; wait for "ok" or changes.
    - **D**: post the checklist and wait until the user says it is done; then verify it (tests, diff) before moving on.
+   - **E**: do not commit per step. Send one part at a time following `manual-execution`, wait until the lead says he finished, then send the next. Commit the lead's files after he finishes the whole group (or after the final review), in small commits by part, and log each part in the progress log.
 
 Keep contract artefacts in the same branch as the code that changes them. If the plan turns out to be wrong, stop, explain, update the plan with the user, then continue.
 
@@ -51,7 +55,8 @@ Keep contract artefacts in the same branch as the code that changes them. If the
 
 1. Run every test the plan lists, then ask the user to run the full suite (`php artisan test --compact`), as `CLAUDE.md` asks.
 2. Check each done-when line in the plan and tick the ones proven; say how each was proven.
-3. Set the plan's Status to **In review** and run `backend-task-review`.
-4. Summarise for the user: steps done by mode (A ones only listed), what other teams must be told, and anything left.
+3. For E steps, review at the END of the task: compare the lead's files with the prepared version and explain each real difference (a behaviour difference is a defect to fix; formatting is left to Pint), then run the tests. Renames he made on purpose are accepted and recorded in the progress log.
+4. Set the plan's Status to **In review** and run `backend-task-review`.
+5. Summarise for the user: steps done by mode (A ones only listed), what other teams must be told, and anything left. If any E part may still be unclear to him, add one line: ask for the `code-explanation` skill ("اشرح لي الكود" plus the route, command or service), which walks one feature as a full chain in Arabic.
 
 Do not push, open a PR or merge until the user asks.

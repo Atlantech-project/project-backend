@@ -58,7 +58,7 @@ Work out and write down:
 - **Other teams:** what this task needs from AI, Frontend, Mobile, UI/UX or QA (contract, data, decision), and what this task changes that they use. List the contract artefacts the PR must update (OpenAPI CT-02, SSE list CT-05, status vocabulary CT-21, `schema.sql` CT-17, mock scenarios CT-19, readiness pack CT-23).
 - **Impact:** later backend tasks that build on this one, shared services it creates or changes, behaviour they rely on.
 - **Conflicts and risks:** any place where two sources disagree (for example the SQL and a diagram, a contract and a decision), any decision the task needs that is still Open, any dependency not merged. Propose a resolution for each; never pick one silently.
-- **Steps:** an ordered list small enough that each is one reviewable change, each with a mode A / B / C / D and a reason. Use the rules in the `backend-task-execute` skill; when unsure, choose the stricter mode.
+- **Steps:** an ordered list small enough that each is one reviewable change, each with a mode A / B / C / D / E and a reason. Use the rules in the `backend-task-execute` skill; when unsure, choose the stricter mode. Propose **E** (the lead types the code) for core logic he must be able to explain (services, locks, transactions, business-rule requests, the authorizing routes) and a Claude mode for the mechanical parts; the lead approves or changes each.
 - **Tests:** the Pest tests that prove each done-when line, including every error code and the licence-mode case.
 
 ## 5. Ask before work starts

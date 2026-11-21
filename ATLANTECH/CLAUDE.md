@@ -153,7 +153,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 This section is maintained by the Backend Team, outside the Boost block (Boost regenerates only between its markers).
 
-- **Every task follows** `backend-task-plan` → `backend-task-execute` → `backend-task-review`, in that order. No code without `docs/tasks/<ID>.md` at status Ready; open questions are asked before coding; steps run in modes A/B/C/D and stop at C for the lead's approval.
+- **Every task follows** `backend-task-plan` → `backend-task-execute` → `backend-task-review`, in that order. No code without `docs/tasks/<ID>.md` at status Ready; open questions are asked before coding; steps run in modes A/B/C/D/E and stop at C for the lead's approval; in mode E the lead types the code (see the `manual-execution` skill).
 - **Task memory:** `docs/tasks/<ID>.md` holds the plan, answers, progress log and review. A new session reads it first and continues; plan files are part of the workflow (the "only create documentation when asked" rule above does not apply to them).
 - **Sources:** the project documents are in `docs/reference/` (copies; run `node docs/reference/sync-check.mjs` first). Follow its Source of truth rules: approved CT or Closed DEC first, then the Master Roadmap, then team documents; PROPOSED never wins; a missing document means the Master Roadmap, said explicitly; nothing covers it means ask.
 - **Reading:** follow the `context-rules` skill: `node docs/reference/lookup.mjs <ID>` first, then only the split file or line range it names; cite `file:lines` for every claim.
