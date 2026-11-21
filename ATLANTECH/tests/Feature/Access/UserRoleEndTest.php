@@ -75,7 +75,7 @@ it('refuses to end or replace the last active Port Admin role with 409 CONFLICT,
         ->and($row->after_state)->toMatchArray(['code' => 'CONFLICT', 'reason' => 'last_port_admin']);
 })->with(['end', 'replace']);
 
-it('answers the last-admin refusal over HTTP when two admins end each other and only one can win', function () {
+it('refuses the second of two admins ending each other, one after the other, so one admin remains', function () {
     $second = makeUserWithRole(Role::PortGm);
 
     endRole($this, $this->admin, $second)->assertOk();
