@@ -13,6 +13,7 @@
 use App\Modules\Access\Http\Controllers\AuthController;
 use App\Modules\Access\Http\Controllers\MobileAuthController;
 use App\Modules\Access\Http\Controllers\UserController;
+use App\Modules\Access\Http\Controllers\UserRoleController;
 use App\Modules\Access\Http\Middleware\EnsureMobileHeaders;
 use App\Modules\MasterData\Http\Controllers\SystemInfoController;
 use App\Modules\Shared\Http\Controllers\AuditLogController;
@@ -37,5 +38,7 @@ Route::middleware('port.api')->group(function () {
         Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
         Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->middleware('version.token:user')->name('users.deactivate');
         Route::post('users/{user}/activate', [UserController::class, 'activate'])->middleware('version.token:user')->name('users.activate');
+        Route::post('users/{user}/roles', [UserRoleController::class, 'assign'])->middleware('version.token:user')->name('users.roles.assign');
+        Route::post('users/{user}/roles/end', [UserRoleController::class, 'end'])->middleware('version.token:user')->name('users.roles.end');
     });
 });
