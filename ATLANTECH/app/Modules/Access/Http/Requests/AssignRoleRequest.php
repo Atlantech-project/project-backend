@@ -22,7 +22,8 @@ class AssignRoleRequest extends FormRequest
      */
     public function rules(): array
     {
-        $terminalScoped = Role::tryFrom((string) $this->input('role'))?->isTerminalScoped() ?? false;
+        $role = $this->input('role');
+        $terminalScoped = is_string($role) && (Role::tryFrom($role)?->isTerminalScoped() ?? false);
 
         return [
             'role' => ['required', 'string', Rule::enum(Role::class)],

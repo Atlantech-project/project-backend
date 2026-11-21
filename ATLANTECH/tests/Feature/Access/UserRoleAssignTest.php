@@ -80,6 +80,7 @@ it('refuses a bad terminal_id with 422 and changes nothing', function (array $bo
     'terminal_id on a harbour role' => [['role' => 'PORT_STAFF', 'terminal_id' => 5], 'terminal_id'],
     'terminal without an organization unit' => [['role' => 'TERMINAL_OFFICER', 'terminal_id' => 987654], 'terminal_id'],
     'unknown role' => [['role' => 'KING'], 'role'],
+    'role sent as an array' => [['role' => ['PORT_GM']], 'role'],
 ]);
 
 it('is a no-op for the role and unit the user already holds: same version, no new row, no audit row', function () {
