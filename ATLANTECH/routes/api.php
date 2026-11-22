@@ -13,6 +13,7 @@
 use App\Modules\Access\Http\Controllers\AuthController;
 use App\Modules\Access\Http\Controllers\MobileAuthController;
 use App\Modules\Access\Http\Controllers\UserController;
+use App\Modules\Access\Http\Controllers\UserDeviceController;
 use App\Modules\Access\Http\Controllers\UserRoleController;
 use App\Modules\Access\Http\Middleware\EnsureMobileHeaders;
 use App\Modules\MasterData\Http\Controllers\SystemInfoController;
@@ -40,5 +41,12 @@ Route::middleware('port.api')->group(function () {
         Route::post('users/{user}/activate', [UserController::class, 'activate'])->middleware('version.token:user')->name('users.activate');
         Route::post('users/{user}/roles', [UserRoleController::class, 'assign'])->middleware('version.token:user')->name('users.roles.assign');
         Route::post('users/{user}/roles/end', [UserRoleController::class, 'end'])->middleware('version.token:user')->name('users.roles.end');
+    });
+
+    Route::middleware('ability:devices.manage')->scopeBindings()->group(function () {
+        Route::get('users/{user}/devices', [UserDeviceController::class, 'index'])->name('users.devices.index');
+        Route::post('users/{user}/devices/revoke-all', [UserDeviceController::class, 'revokeAll'])->name('users.devices.revoke-all');
+        Route::post('users/{user}/devices/{device}/revoke', [UserDeviceController::class, 'revoke'])->name('users.devices.revoke');
+        Route::post('users/{user}/devices/{device}/restore', [UserDeviceController::class, 'restore'])->name('users.devices.restore');
     });
 });
