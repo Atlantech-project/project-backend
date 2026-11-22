@@ -71,6 +71,28 @@ it('answers 403 to every role except the Port Admin, and 404 for an unknown user
     $this->actingAs($this->admin, 'web')->getJson('/api/v1/users/999999/devices')->assertNotFound();
 });
 
+it('answers 403 before 404 to a role that may not manage devices, so it cannot learn whether a row exists', function () {
+    $stranger = deviceWithTokens(makeUserWithRole(Role::TugMaster));
+    $staff = makeUserWithRole(Role::PortStaff);
+
+    $this->actingAs($staff, 'web')->getJson('/api/v1/users/999999/devices')->assertForbidden();
+    $this->actingAs($staff, 'web')->postJson("/api/v1/users/{$this->owner->id}/devices/{$stranger->id}/revoke")->assertForbidden();
+    $this->actingAs($staff, 'web')->postJson("/api/v1/users/{$this->owner->id}/devices/{$stranger->id}/restore")->assertForbidden();
+});
+
+it('pages the list with per_page and meta, and refuses a bad per_page with 422', function () {
+    deviceWithTokens($this->owner);
+    deviceWithTokens($this->owner);
+    deviceWithTokens($this->owner);
+
+    $this->actingAs($this->admin, 'web')->getJson("/api/v1/users/{$this->owner->id}/devices?per_page=2&page=2")
+        ->assertOk()
+        ->assertJsonPath('meta', ['page' => 2, 'per_page' => 2, 'total' => 3])
+        ->assertJsonCount(1, 'data');
+
+    $this->actingAs($this->admin, 'web')->getJson("/api/v1/users/{$this->owner->id}/devices?per_page=0")->assertStatus(422);
+});
+
 it('revokes one device: flag, cleared push fields, its tokens revoked, others untouched, audited without the push token', function () {
     $device = deviceWithTokens($this->owner, 2);
     $untouched = deviceWithTokens($this->owner);
@@ -187,4 +209,5 @@ it('revoke and revoke-all are allowed while the licence is READ_ONLY (pass-throu
 
     $this->actingAs($this->admin, 'web')->postJson("/api/v1/users/{$this->owner->id}/devices/{$device->id}/revoke")->assertOk();
     $this->actingAs($this->admin, 'web')->postJson("/api/v1/users/{$this->owner->id}/devices/revoke-all")->assertOk();
+    $this->actingAs($this->admin, 'web')->postJson("/api/v1/users/{$this->owner->id}/devices/{$device->id}/restore")->assertOk();
 });
