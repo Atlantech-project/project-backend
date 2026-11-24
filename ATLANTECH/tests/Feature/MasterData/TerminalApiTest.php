@@ -5,6 +5,7 @@ use App\Modules\Access\Enums\UnitType;
 use App\Modules\Access\Models\OrganizationUnit;
 use App\Modules\MasterData\Models\Berth;
 use App\Modules\MasterData\Models\Terminal;
+use App\Modules\MasterData\Services\TerminalService;
 use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Models\AuditLog;
 use App\Modules\Shared\Support\VersionToken;
@@ -157,4 +158,13 @@ it('shows a terminal-scoped user only their terminal, in the list and by id', fu
     $this->actingAs(makeUserWithRole(Role::PortStaff), 'web')->getJson('/api/v1/terminals')
         ->assertOk()
         ->assertJsonCount(2, 'data');
+});
+
+it('never changes code or type through the service, even if they reach it', function () {
+    $terminal = Terminal::factory()->create(['code' => 'KEEP', 'terminal_type' => 'CONTAINER']);
+
+    $updated = app(TerminalService::class)->update($terminal, ['name' => 'New name', 'code' => 'CHANGED', 'terminal_type' => 'NON_CONTAINER'], VersionToken::of($terminal), $this->admin->id);
+
+    expect($updated->fresh()->only(['code', 'name']))->toBe(['code' => 'KEEP', 'name' => 'New name'])
+        ->and($updated->fresh()->terminal_type->value)->toBe('CONTAINER');
 });

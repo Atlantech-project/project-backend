@@ -6,6 +6,7 @@ use App\Modules\MasterData\Models\Berth;
 use App\Modules\MasterData\Models\NavigationChannel;
 use App\Modules\MasterData\Models\SafetyConstraint;
 use App\Modules\MasterData\Models\Terminal;
+use App\Modules\Recommendation\Models\RecommendationOption;
 use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Models\AuditLog;
 use App\Modules\Shared\Support\VersionToken;
@@ -261,4 +262,20 @@ it('answers 403 to writes from every role except the Port Admin', function () {
     $terminal = Terminal::factory()->create();
 
     $this->actingAs(makeUserWithRole(Role::PortStaff), 'web')->postJson('/api/v1/berths', berthBody([$terminal->id]))->assertForbidden();
+});
+
+it('refuses removing a terminal a recommendation option uses with 409 CONFLICT', function () {
+    [$first, $second] = Terminal::factory()->count(2)->create();
+    $berth = linkedBerth($first, $second);
+    $option = RecommendationOption::factory()->make(['berth_id' => $berth->id, 'terminal_id' => $second->id])->getAttributes();
+    DB::statement('SET FOREIGN_KEY_CHECKS=0');
+    DB::table('recommendation_options')->insert(collect($option)->map(fn ($value) => $value instanceof BackedEnum ? $value->value : $value)->all());
+    DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+    $this->actingAs($this->admin, 'web')
+        ->putJson("/api/v1/berths/{$berth->id}", ['terminal_ids' => [$first->id], 'version' => VersionToken::of($berth)])
+        ->assertConflict()
+        ->assertJsonPath('code', 'CONFLICT');
+
+    expect($berth->fresh()->terminals()->count())->toBe(2);
 });
