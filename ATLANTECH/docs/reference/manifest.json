@@ -1,6 +1,6 @@
 {
   "sourceRoot": "E:/collage/GRADUATION PROGECT",
-  "syncedAt": "2026-11-08",
+  "syncedAt": "2026-11-24",
   "watch": [
     "Code Notes",
     "Documentation"
@@ -24,7 +24,7 @@
     {
       "path": "backend/Coding_Notes_and_Mapping.md",
       "source": "Code Notes/Coding_Notes_and_Mapping.md",
-      "sha1": "2d5932964d72b658c81742bbe0da40b4f7ff1129"
+      "sha1": "d9f983c078f9370c6b1958f47f9e804d3dd46c44"
     },
     {
       "path": "contracts/ATLANTECH_Contracts.md",

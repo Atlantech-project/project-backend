@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | Draft (open: Q-D to Q-G in section 8; none blocks the start) |
+| Status | Ready (Q-D waits for the later read task; nothing blocks the start) |
 | Phase / package | Outside the roadmap · follow-up of P1-C1 Q10 and P1-C4 |
 | Sprint · feature | Sprint 3 proposed (lead decides) · FT-02 Sign-in and session |
 | Effort (plan) | 1.5 days (estimate) |
@@ -139,15 +139,15 @@ Contract artefacts to update in the same PR: `schema.sql` (CT-17), the table own
 
 - A later read endpoint or screen for the events builds on this table; it needs its own contract, role (probably `PORT_GM`) and a privacy decision on the IP (Q-D).
 - `PersonalAccessToken::revoke()` changes signature; the six places are all in `Access` and are updated here. Any later code that revokes a token must pass a reason.
-- The table count in the guide (92 port tables) and the database diagram groups (F05b, `FRAMEWORK_IN_GROUPS`) change by one (Q-F).
+- Q-F decided: `sign_in_events` is a framework table like `personal_access_tokens`, so the count of 92 port tables does not change. In the guide (F05, F05b) it is drawn and described in the Access group and listed in `FRAMEWORK_IN_GROUPS`, as `personal_access_tokens` is. Consequence to remember: when the read task for the Port Admin comes, the table is not part of the port data model the AI and Frontend teams know, and its contract must say so.
 - `IdempotentWrite` reads `revoked_at` only; unaffected.
 
 ## 7. Conflicts and risks
 
 | Finding | Sources that disagree | Proposed resolution | Decided by |
 | --- | --- | --- | --- |
-| Q10 says successful sign-ins are not audited; this task records them elsewhere | P1-C1 Q10 vs the new table | Not a conflict: the decision was about `audit_logs`, which stays untouched. Record the amendment in Coding Notes section 9 so nobody reads Q10 as "no trail at all". | Proposed; the lead confirms in Q-G |
-| Pruning rows vs "no hard delete" | FR-GL-03 vs the prune command | FR-GL-03 lists users, admins, tokens, ports and master data; events are none of them. Confirm in Q-E. | Open |
+| Q10 says successful sign-ins are not audited; this task records them elsewhere | P1-C1 Q10 vs the new table | Not a conflict: the decision was about `audit_logs`, which stays untouched. Record the amendment in Coding Notes section 9 so nobody reads Q10 as "no trail at all". | Marwan · 2026-11-24 (Q-G) |
+| Pruning rows vs "no hard delete" | FR-GL-03 vs the prune command | FR-GL-03 lists users, admins, tokens, ports and master data; events are none of them, and the audit log is not touched. Allowed. | Marwan · 2026-11-24 (Q-E) |
 | An IP address is personal data | none in the documents | Stored for 180 days only, and not exposed by any endpoint in this task. A read endpoint must decide who sees it (Q-D). | Open |
 | A forced failure of the recorder inside the mobile transaction would roll back the token | design | The mobile insert is inside the transaction by design (token and event together); the "log and carry on" rule applies to the web and logout paths and to errors that are not the transaction's own. Settle the exact rule in step 3, with the test described above. | Developer, in review |
 | `sanctum:prune-expired` must never be scheduled (P1-C3) | P1-C3 | Unchanged; this task adds its own prune for events only. | Existing rule |
@@ -162,15 +162,15 @@ Contract artefacts to update in the same PR: `schema.sql` (CT-17), the table own
 | Q-B | If the insert of an event fails, should sign-in still succeed? | Yes: log the error and carry on (it is a trail, not the audit). | Marwan · 2026-11-24 |
 | Q-C | Store the IP? | Yes, 45 characters, pruned with the row after 180 days. | Marwan · 2026-11-24 |
 | Q-D | Who may later read the events (probably `PORT_GM`) and may they see the IP? Decide when the read task is planned. | Open | |
-| Q-E | Confirm that pruning `sign_in_events` after 180 days is outside FR-GL-03 and NFR-SEC-6. | Open | |
-| Q-F | Does the new table count among the port tables (92 becomes 93) or among the framework tables like `personal_access_tokens`? Recommendation: a port table, because the Backend owns it and the Port Admin will read it. | Open | |
-| Q-G | Add a row to Coding Notes section 9 stating that Q10 concerns `audit_logs` only? Recommendation: yes. | Open | |
+| Q-E | Confirm that pruning `sign_in_events` after 180 days is outside FR-GL-03 and NFR-SEC-6. | Yes, allowed. The table is a helper record, not business data and not the audit log. | Marwan · 2026-11-24 |
+| Q-F | Does the new table count among the port tables (92 becomes 93) or among the framework tables like `personal_access_tokens`? | Framework table (the count stays 92). Where it is drawn and described: see section 6. | Marwan · 2026-11-24 |
+| Q-G | Add a row to Coding Notes section 9 stating that Q10 concerns `audit_logs` only? | Yes. Row added for P1-C1 and P1-C4 and synced into `docs/reference` in the same PR as this plan. | Marwan · 2026-11-24 |
 
 ## 9. Progress log
 
 | Date | Step | Result |
 | --- | --- | --- |
-| 2026-11-24 | Plan | Written from the code on `develop` `554b09c`; Q1 and Q2 answered by the lead. Nothing built. |
+| 2026-11-24 | Plan | Written from the code on `develop` `554b09c`; Q1, Q2, Q-A, Q-B, Q-C, Q-E, Q-F and Q-G answered by the lead; Q-D waits for the read task. Status Ready. Nothing built. |
 
 ## 10. Review
 
