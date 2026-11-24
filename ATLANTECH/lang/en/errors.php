@@ -47,5 +47,6 @@ return [
         'terminal_in_use' => 'This terminal cannot be removed from the berth because safety constraints or recommendations use the pair.',
         'terminal_inactive' => 'A berth cannot be linked to an inactive terminal.',
         'datum_mismatch' => 'The berth depth datum must match the depth datum of the navigation channel.',
+        'loa_exceeds_length' => 'The maximum vessel length cannot be longer than the berth.',
     ],
 ];
