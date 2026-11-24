@@ -40,4 +40,12 @@ return [
         'cannot_deactivate_self' => 'You cannot deactivate your own account.',
         'last_port_admin' => 'At least one active Port Admin must remain.',
     ],
+    'terminals' => [
+        'terminal_inactive' => 'This terminal is inactive. Its data can be viewed but not changed.',
+    ],
+    'berths' => [
+        'terminal_in_use' => 'This terminal cannot be removed from the berth because safety constraints or recommendations use the pair.',
+        'terminal_inactive' => 'A berth cannot be linked to an inactive terminal.',
+        'datum_mismatch' => 'The berth depth datum must match the depth datum of the navigation channel.',
+    ],
 ];
