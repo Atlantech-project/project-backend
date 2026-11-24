@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | Draft (open questions in section 8) |
+| Status | Draft (open: Q-D to Q-G in section 8; none blocks the start) |
 | Phase / package | Outside the roadmap · follow-up of P1-C1 Q10 and P1-C4 |
 | Sprint · feature | Sprint 3 proposed (lead decides) · FT-02 Sign-in and session |
 | Effort (plan) | 1.5 days (estimate) |
@@ -158,9 +158,9 @@ Contract artefacts to update in the same PR: `schema.sql` (CT-17), the table own
 | --- | --- | --- | --- |
 | Q1 | Which alternatives? | A separate `sign_in_events` table plus `revoked_reason` on tokens; 180 days; nothing in `audit_logs` | Marwan · 2026-11-24 |
 | Q2 | Add `last_sign_in_at` and `last_sign_in_channel` to `users`? | No. The last event is one query on `sign_in_events`, and a write on `users` at every sign-in would touch the version token. | Marwan · 2026-11-24 |
-| Q-A | Sprint and ID: this is not in the roadmap. Which sprint, and is `SIGNIN-LOG-01` the right ID? Recommendation: Sprint 3, as a backend support task. | Open | |
-| Q-B | If the insert of an event fails, should sign-in still succeed? Recommendation: yes, log and carry on (it is a trail, not the audit). | Open | |
-| Q-C | Store the IP? Recommendation: yes, 45 characters, pruned with the row. | Open | |
+| Q-A | Sprint and ID: this is not in the roadmap. Which sprint, and is `SIGNIN-LOG-01` the right ID? | Sprint 3, as a backend support task. The ID `SIGNIN-LOG-01` stays until the lead renames it. | Marwan · 2026-11-24 |
+| Q-B | If the insert of an event fails, should sign-in still succeed? | Yes: log the error and carry on (it is a trail, not the audit). | Marwan · 2026-11-24 |
+| Q-C | Store the IP? | Yes, 45 characters, pruned with the row after 180 days. | Marwan · 2026-11-24 |
 | Q-D | Who may later read the events (probably `PORT_GM`) and may they see the IP? Decide when the read task is planned. | Open | |
 | Q-E | Confirm that pruning `sign_in_events` after 180 days is outside FR-GL-03 and NFR-SEC-6. | Open | |
 | Q-F | Does the new table count among the port tables (92 becomes 93) or among the framework tables like `personal_access_tokens`? Recommendation: a port table, because the Backend owns it and the Port Admin will read it. | Open | |
