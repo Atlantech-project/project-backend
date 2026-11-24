@@ -140,4 +140,5 @@ These notes correct the task files, which stay as they are. Where a note and a t
 | P1-C3 | Add `personal_access_tokens` to CT-17. Let the password change and logout routes accept the Bearer token | CT-04 v1.1 |
 | P1-C5 | `GET /api/v1/system/info` is also the connectivity check, so there is no `GET /system/ping` | CT-04 v1.1 · DEC-58 |
 | P2-E3 | Revoke-all revokes each non-revoked device and its tokens only. Ignore "every other live mobile token with no device": `personal_access_tokens.user_device_id` is NOT NULL, so such tokens cannot exist | `database/migrations/2026_11_05_100000_create_personal_access_tokens_table.php` |
+| P1-C1 · P1-C4 | The decision "no audit row for a successful sign-in or sign-out" (Q10) concerns `audit_logs` only. SIGNIN-LOG-01 records them in `sign_in_events` (180 days) and sets `personal_access_tokens.revoked_reason`, so read Q10 as "not in the audit log", not "no trace" | P1-C1 Q10 · `docs/tasks/SIGNIN-LOG-01.md` |
 | Seeds (section 7) | The `status_type` statuses are `STARTED` and `DONE`, not `COMPLETED`, including for `TERMINAL_OPS` | CT-07 · DEC-39 |
