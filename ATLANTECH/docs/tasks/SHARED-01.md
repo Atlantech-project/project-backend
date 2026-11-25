@@ -189,6 +189,10 @@ Contract artefacts: none (no endpoint, no table, no status value, no AI payload)
 ## 9. Progress log
 
 - 2026-11-25 · Step 1 (A) · branch from `origin/develop` `9576ba3`; plan Ready after PR #74. Done.
+- 2026-11-25 · E group prepared in a throwaway worktree: `ResourceKind`, `ResourceChanged`, `PeriodOverlap`; 53 tests pass (`PeriodOverlapTest`, `ResourceChangedTest`, `ModuleArchitectureTest`) on a private schema database; Pint clean. Mutation check: without `ShouldDispatchAfterCommit` 3 of the 4 event tests fail.
+- 2026-11-25 · Step 3 (C) · `useTestingTransactionManager()` in `tests/Pest.php` and `tests/Feature/Shared/ResourceChangedTest.php` (4 tests, one more than planned: nested transactions wait for the outermost commit). Committed; fails until step 2 is typed. Waiting for the lead's approval of the approach.
+- 2026-11-25 · Step 5 (B) · `tests/Unit/Modules/Shared/PeriodOverlapTest.php`: 9 + 8 + 11 cases each checked in both orders, plus invalid input. The shift function also rejects start = end and times that are not `HH:MM[:SS]` (`InvalidArgumentException`). Committed; fails until step 4 is typed.
+- 2026-11-25 · Step 6 (A) · F15 rows 48, 50, 189 and the `SharedServiceProvider` comment updated. Committed.
 
 ## 10. Review
 
