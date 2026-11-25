@@ -208,3 +208,5 @@ Contract artefacts: none (no endpoint, no table, no status value, no AI payload)
 - Note: R7 (DST) stays with P2-F3.
 
 The agent could not run PHP; Pint and the three test files were run in this session (53 passed). Full suite: run by the lead.
+
+Full suite by the lead (2026-11-25): 5 failed, 1002 passed. Four were `PublishStatusVocabularyTest`: the CT-21 generator reads every enum under `Modules/*/Enums` and fails on one that names no `table.column`, so `ResourceKind` needs the `@not-stored` tag (as `Ability`, `AccessRefusalReason`). A defect in the prepared version, missed because the plan's test list did not include the generator test; fixed after the review (docblock only, no behaviour change); `PublishStatusVocabularyTest` passes. The fifth, `ContractsSchemaTest`, is environmental: a scratch database `atlantech_schema_test` left over from an earlier interrupted run makes `atlantech:contracts-schema` refuse to start; the command works with a new scratch name.
