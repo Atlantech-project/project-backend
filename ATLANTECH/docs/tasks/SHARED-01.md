@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | In review (code and tests done 2026-11-25; `backend-task-review` next) |
+| Status | Ready for PR (review 2026-11-25: no blocker or must-fix) |
 | Phase / package | Cross-cutting, outside the roadmap task list: the shared prerequisite carved out of P2-F7 (event class) and P2-F3 / P2-F5 / P2-F6 (overlap rule). No ID in `backend/atlantech_backend_tasks.md`; ID `SHARED-01` (Q1, Mariam 2026-11-25) |
 | Sprint · feature | Sprint 3 · FT-05 (master data) |
 | Effort (plan) | 0.5 day |
@@ -27,7 +27,7 @@ This PR adds the two classes and their tests only. No endpoint, no migration, an
 - [x] Dispatched outside any transaction, it reaches listeners at once.
 - [x] The overlap helper answers correctly for the three shapes used in Sprint 3 (section 3, "Overlap rule"): datetime periods with an exclusive end, date periods with an inclusive end, open ends (`NULL` = no end), and time-of-day shifts that cross midnight. One unit test per case, including touching edges (end of one = start of the other).
 - [x] Neither class imports another module (`ModuleArchitectureTest` green); Pint clean.
-- [x] `SharedServiceProvider` doc comment and `docs/guide/F15_not_built_yet_and_next.md` rows 48 and 50 no longer say the event is missing (Q6).
+- [x] `SharedServiceProvider` doc comment and `docs/guide/F15_not_built_yet_and_next.md` rows 48, 50 and 189 no longer say the event is missing (Q6).
 
 **Out of scope:** dispatching the event from the berth service (P2-F2, Marwan) and from the tug, pilot and equipment services (P2-F7, Mariam); the listener and the C-02 job (P4-K5, P3-I1); the actual no-overlap checks with their queries, locks and 409/422 answers (P2-F3, P2-F5, P2-F6); any SSE or Reverb broadcast of resource changes (Realtime tasks, CT-05).
 
@@ -198,4 +198,13 @@ Contract artefacts: none (no endpoint, no table, no status value, no AI payload)
 
 ## 10. Review
 
-<Filled by `backend-task-review`.>
+2026-11-25 · `backend-task-review` (task-reviewer agent) on `89b6e38` against `origin/develop` `9576ba3`. **Verdict: Ready for PR.** Blocker 0, Must fix 0, Should fix 1, Note 5.
+
+- Should fix (fixed): the done-when line named F15 rows 48 and 50 only; the diff also changes row 189. Done-when text updated.
+- Note: `docs/guide/F01_runtime_and_platform.md:142` still lists `ResourceChanged` under Shared; still true, left as is (outside Q6).
+- Note: `EQUIPMENT` is not a CT-10 type (Q4, R5): P4-K5 must not send it to Part 2 under CT-10 v1.
+- Note: a tug-master shift change goes out as `TUG` with the tug id (CT-10, DEC-32; R4): P2-F7 dispatches `ResourceKind::Tug` for it.
+- Note: nothing dispatches the event and no listener is registered yet (out of scope by design).
+- Note: R7 (DST) stays with P2-F3.
+
+The agent could not run PHP; Pint and the three test files were run in this session (53 passed). Full suite: run by the lead.
