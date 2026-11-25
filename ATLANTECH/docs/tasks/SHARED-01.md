@@ -2,7 +2,7 @@
 
 | | |
 | --- | --- |
-| Status | Ready (lead's answers 2026-11-25; approved by Marwan, sprint lead, by merging the plan PR #74) |
+| Status | In review (code and tests done 2026-11-25; `backend-task-review` next) |
 | Phase / package | Cross-cutting, outside the roadmap task list: the shared prerequisite carved out of P2-F7 (event class) and P2-F3 / P2-F5 / P2-F6 (overlap rule). No ID in `backend/atlantech_backend_tasks.md`; ID `SHARED-01` (Q1, Mariam 2026-11-25) |
 | Sprint · feature | Sprint 3 · FT-05 (master data) |
 | Effort (plan) | 0.5 day |
@@ -22,12 +22,12 @@ This PR adds the two classes and their tests only. No endpoint, no migration, an
 
 **Done when:**
 
-- [ ] `ResourceChanged` exists in `App\Modules\Shared\Events`, carries the resource kind (a Shared enum: `BERTH`, `TUG`, `PILOT`, `EQUIPMENT`), the resource id and the actor id (Q3), and implements `ShouldDispatchAfterCommit`.
-- [ ] Dispatched inside `AuditService::transaction()`, it reaches its listeners only after the commit; when the transaction rolls back (an exception after the dispatch), no listener runs. Proved by a feature test on the MySQL schema database.
-- [ ] Dispatched outside any transaction, it reaches listeners at once.
-- [ ] The overlap helper answers correctly for the three shapes used in Sprint 3 (section 3, "Overlap rule"): datetime periods with an exclusive end, date periods with an inclusive end, open ends (`NULL` = no end), and time-of-day shifts that cross midnight. One unit test per case, including touching edges (end of one = start of the other).
-- [ ] Neither class imports another module (`ModuleArchitectureTest` green); Pint clean.
-- [ ] `SharedServiceProvider` doc comment and `docs/guide/F15_not_built_yet_and_next.md` rows 48 and 50 no longer say the event is missing (Q6).
+- [x] `ResourceChanged` exists in `App\Modules\Shared\Events`, carries the resource kind (a Shared enum: `BERTH`, `TUG`, `PILOT`, `EQUIPMENT`), the resource id and the actor id (Q3), and implements `ShouldDispatchAfterCommit`.
+- [x] Dispatched inside `AuditService::transaction()`, it reaches its listeners only after the commit; when the transaction rolls back (an exception after the dispatch), no listener runs. Proved by a feature test on the MySQL schema database.
+- [x] Dispatched outside any transaction, it reaches listeners at once.
+- [x] The overlap helper answers correctly for the three shapes used in Sprint 3 (section 3, "Overlap rule"): datetime periods with an exclusive end, date periods with an inclusive end, open ends (`NULL` = no end), and time-of-day shifts that cross midnight. One unit test per case, including touching edges (end of one = start of the other).
+- [x] Neither class imports another module (`ModuleArchitectureTest` green); Pint clean.
+- [x] `SharedServiceProvider` doc comment and `docs/guide/F15_not_built_yet_and_next.md` rows 48 and 50 no longer say the event is missing (Q6).
 
 **Out of scope:** dispatching the event from the berth service (P2-F2, Marwan) and from the tug, pilot and equipment services (P2-F7, Mariam); the listener and the C-02 job (P4-K5, P3-I1); the actual no-overlap checks with their queries, locks and 409/422 answers (P2-F3, P2-F5, P2-F6); any SSE or Reverb broadcast of resource changes (Realtime tasks, CT-05).
 
@@ -190,9 +190,11 @@ Contract artefacts: none (no endpoint, no table, no status value, no AI payload)
 
 - 2026-11-25 · Step 1 (A) · branch from `origin/develop` `9576ba3`; plan Ready after PR #74. Done.
 - 2026-11-25 · E group prepared in a throwaway worktree: `ResourceKind`, `ResourceChanged`, `PeriodOverlap`; 53 tests pass (`PeriodOverlapTest`, `ResourceChangedTest`, `ModuleArchitectureTest`) on a private schema database; Pint clean. Mutation check: without `ShouldDispatchAfterCommit` 3 of the 4 event tests fail.
-- 2026-11-25 · Step 3 (C) · `useTestingTransactionManager()` in `tests/Pest.php` and `tests/Feature/Shared/ResourceChangedTest.php` (4 tests, one more than planned: nested transactions wait for the outermost commit). Committed; fails until step 2 is typed. Waiting for the lead's approval of the approach.
+- 2026-11-25 · Step 3 (C) · `useTestingTransactionManager()` in `tests/Pest.php` and `tests/Feature/Shared/ResourceChangedTest.php` (4 tests, one more than planned: nested transactions wait for the outermost commit). Committed; fails until step 2 is typed. Approved by the lead (Mariam, 2026-11-25).
 - 2026-11-25 · Step 5 (B) · `tests/Unit/Modules/Shared/PeriodOverlapTest.php`: 9 + 8 + 11 cases each checked in both orders, plus invalid input. The shift function also rejects start = end and times that are not `HH:MM[:SS]` (`InvalidArgumentException`). Committed; fails until step 4 is typed.
 - 2026-11-25 · Step 6 (A) · F15 rows 48, 50, 189 and the `SharedServiceProvider` comment updated. Committed.
+- 2026-11-25 · Steps 2 and 4 (E) · typed by the lead in four parts (enum, event, `PeriodOverlap` in three pieces). Compared with the prepared version: identical except two missing blank lines in `PeriodOverlap`, fixed by Pint (`class_attributes_separation`); no behaviour difference, no renames. Committed `208b06d`, `bb40e5a`.
+- 2026-11-25 · Finish · `PeriodOverlapTest`, `ResourceChangedTest`, `ModuleArchitectureTest`: 53 passed (290 assertions) on the private database `atlantech_testing_shared01`. Done-when: the event lines by `ResourceChangedTest` (after commit, nested, rollback, no transaction, payload); the overlap line by the three `PeriodOverlapTest` datasets; the architecture line by `ModuleArchitectureTest` and Pint; the docs line by commit `1df627d`. Full suite: to be run by the lead.
 
 ## 10. Review
 
