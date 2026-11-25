@@ -5,6 +5,7 @@ use App\Modules\Access\Enums\UnitType;
 use App\Modules\Access\Models\OrganizationUnit;
 use App\Modules\Access\Models\User;
 use App\Modules\Access\Models\UserRoleAssignment;
+use Illuminate\Foundation\Testing\DatabaseTransactionsManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -102,4 +103,18 @@ function makeUserWithRole(?Role $role, array $attributes = [], ?OrganizationUnit
     UserRoleAssignment::factory()->for($user)->for($unit)->create(['role' => $role, 'unit_type' => $unit->unit_type]);
 
     return $user;
+}
+
+/**
+ * Let after-commit work (`ShouldDispatchAfterCommit` events, `afterCommit` jobs and callbacks) run inside a test that wraps itself in
+ * `DB::beginTransaction()`: Laravel's testing transaction manager ignores that outer transaction, so a commit of the code's own
+ * transaction runs the callbacks and a rollback drops them, as in production. Call it after `useSchemaDatabase()` and before
+ * `DB::beginTransaction()`.
+ */
+function useTestingTransactionManager(): void
+{
+    $manager = new DatabaseTransactionsManager([DB::getDefaultConnection()]);
+
+    app()->instance('db.transactions', $manager);
+    DB::connection()->setTransactionManager($manager);
 }
