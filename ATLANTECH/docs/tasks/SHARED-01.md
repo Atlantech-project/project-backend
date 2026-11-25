@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| Status | Draft: lead's answers recorded (section 8, 2026-11-25); waiting for Marwan's approval (sprint lead) before Ready |
+| Status | Ready (lead's answers 2026-11-25; approved by Marwan, sprint lead, by merging the plan PR #74) |
 | Phase / package | Cross-cutting, outside the roadmap task list: the shared prerequisite carved out of P2-F7 (event class) and P2-F3 / P2-F5 / P2-F6 (overlap rule). No ID in `backend/atlantech_backend_tasks.md`; ID `SHARED-01` (Q1, Mariam 2026-11-25) |
 | Sprint · feature | Sprint 3 · FT-05 (master data) |
 | Effort (plan) | 0.5 day |
-| Branch | `feature/SHARED-01-resource-changed-overlap` (from `origin/develop` `554b09c`) |
+| Branch | `feature/SHARED-01-resource-changed-overlap` (from `origin/develop` `9576ba3`) |
 | Depends on | P2-D2, P2-D3 (merged: write chain, `AuditService::transaction`) |
 | Blocked by | Nothing in code; the answers in section 8 |
 | Unblocks | P2-F3 (Mariam: port-shift overlap), P2-F5 (Marwan: safety-constraint overlap), P2-F6 (Menna: productivity-profile overlap), P2-F2 and P2-F7 (berth / tug / pilot / equipment dispatch), later P4-K5 (the listener) |
@@ -178,17 +178,17 @@ Contract artefacts: none (no endpoint, no table, no status value, no AI payload)
 
 | # | Question | Answer | Answered by / date |
 | --- | --- | --- | --- |
-| Q1 | The task has no roadmap ID. Name it `SHARED-01` (branch `feature/SHARED-01-resource-changed-overlap`)? | Yes: `SHARED-01`, branch `feature/SHARED-01-resource-changed-overlap` | Mariam · 2026-11-25; Marwan: pending |
-| Q2 | Overlap edges: datetime end exclusive (touching allowed), date end inclusive (same day overlaps), shifts touching at the hour allowed, `NULL` end = open. Agreed? One helper with three functions? | Yes. `instants()` (P2-F5): touching is **not** an overlap. `dates()` (P2-F6): the same day at the edge **is** an overlap and is rejected. `timesOfDay()` (P2-F3): no date on `port_shifts` (it is the daily template; the date lives in `pilot_schedules` / `tug_master_schedules.shift_date`); keep the no-overlap check against typing mistakes, back-to-back shifts allowed. `NULL` end = open for ever: a new period overlapping an open one is rejected and the admin closes the old one first; the helper defines the rule, the error answer and endpoint are Marwan's (P2-F5). One class, three functions | Mariam · 2026-11-25; Marwan: pending |
-| Q3 | Event payload `kind`, `resourceId`, `actorId` only (CT-10 sends no "what changed")? When P2-F2/F7 dispatch: every create and update, or only availability changes (status, quantities, assignment)? | Payload `kind`, `resourceId`, `actorId` only. When to dispatch is left to P2-F2 / P2-F7 (R3, R4) | Mariam · 2026-11-25; Marwan: pending |
-| Q4 | `ResourceKind` = `BERTH`, `TUG`, `PILOT` (CT-10) plus backend-only `EQUIPMENT`; internal, not in CT-21? | Yes, `EQUIPMENT` included; the enum is extended later if a new resource kind appears. The event carries `equipment.id` only: the category (`equipment_categories.equipment_role` VESSEL_HANDLING / CARGO_TRANSPORT / TRANSFER_SYSTEM) is read from the database by the listener, so new categories need no enum change. Internal, not in CT-21 | Mariam · 2026-11-25; Marwan: pending |
-| Q5 | Event tests: use the testing transaction manager through a Pest helper (R1)? | Yes | Mariam · 2026-11-25; Marwan: pending |
-| Q6 | Update `docs/guide/F15` and the provider comment in this PR? | Yes, in this PR | Mariam · 2026-11-25; Marwan: pending |
-| Q7 | Anything you know about this task that the documents don't say? | No | Mariam · 2026-11-25; Marwan: pending |
+| Q1 | The task has no roadmap ID. Name it `SHARED-01` (branch `feature/SHARED-01-resource-changed-overlap`)? | Yes: `SHARED-01`, branch `feature/SHARED-01-resource-changed-overlap` | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q2 | Overlap edges: datetime end exclusive (touching allowed), date end inclusive (same day overlaps), shifts touching at the hour allowed, `NULL` end = open. Agreed? One helper with three functions? | Yes. `instants()` (P2-F5): touching is **not** an overlap. `dates()` (P2-F6): the same day at the edge **is** an overlap and is rejected. `timesOfDay()` (P2-F3): no date on `port_shifts` (it is the daily template; the date lives in `pilot_schedules` / `tug_master_schedules.shift_date`); keep the no-overlap check against typing mistakes, back-to-back shifts allowed. `NULL` end = open for ever: a new period overlapping an open one is rejected and the admin closes the old one first; the helper defines the rule, the error answer and endpoint are Marwan's (P2-F5). One class, three functions | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q3 | Event payload `kind`, `resourceId`, `actorId` only (CT-10 sends no "what changed")? When P2-F2/F7 dispatch: every create and update, or only availability changes (status, quantities, assignment)? | Payload `kind`, `resourceId`, `actorId` only. When to dispatch is left to P2-F2 / P2-F7 (R3, R4) | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q4 | `ResourceKind` = `BERTH`, `TUG`, `PILOT` (CT-10) plus backend-only `EQUIPMENT`; internal, not in CT-21? | Yes, `EQUIPMENT` included; the enum is extended later if a new resource kind appears. The event carries `equipment.id` only: the category (`equipment_categories.equipment_role` VESSEL_HANDLING / CARGO_TRANSPORT / TRANSFER_SYSTEM) is read from the database by the listener, so new categories need no enum change. Internal, not in CT-21 | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q5 | Event tests: use the testing transaction manager through a Pest helper (R1)? | Yes | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q6 | Update `docs/guide/F15` and the provider comment in this PR? | Yes, in this PR | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q7 | Anything you know about this task that the documents don't say? | No | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
 
 ## 9. Progress log
 
-<Filled by `backend-task-execute`.>
+- 2026-11-25 · Step 1 (A) · branch from `origin/develop` `9576ba3`; plan Ready after PR #74. Done.
 
 ## 10. Review
 
