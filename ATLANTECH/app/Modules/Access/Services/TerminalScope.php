@@ -8,6 +8,7 @@ use App\Modules\Shared\Errors\ApiProblemException;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Terminal isolation (FR-AC-15, AIBD-024): a `TERMINAL_*` user reaches only their own terminal's records, every other
@@ -18,7 +19,9 @@ class TerminalScope
     public function __construct(private readonly AccessRefusal $refusal) {}
 
     /**
-     * @throws ApiProblemException 403 FORBIDDEN (`terminal_out_of_scope`, or `no_active_role`).
+     * A terminal-scoped user may read an inactive terminal but not write in it (P2-F2 Q8); port-wide roles are not limited.
+     *
+     * @throws ApiProblemException 403 FORBIDDEN (`terminal_out_of_scope`, or `no_active_role`); 409 CONFLICT (`terminal_inactive`).
      */
     public function authorize(Request $request, User $user, int $terminalId): void
     {
@@ -30,6 +33,10 @@ class TerminalScope
 
         if (! $scope->canReachTerminal($terminalId)) {
             $this->refusal->refuse($request, $user, AccessRefusalReason::TerminalOutOfScope);
+        }
+
+        if ($scope->isTerminalScoped() && ! $request->isMethodSafe() && $this->isInactive($terminalId)) {
+            $this->refusal->refuseInactiveTerminal($request, $user, $terminalId);
         }
     }
 
@@ -50,5 +57,13 @@ class TerminalScope
         }
 
         return $scope->isTerminalScoped() ? $query->whereIn($column, $scope->terminalIds) : $query;
+    }
+
+    /**
+     * `terminals` belongs to MasterData, a later module, so it is read through the query builder (ModuleArchitectureTest).
+     */
+    private function isInactive(int $terminalId): bool
+    {
+        return DB::table('terminals')->where('id', $terminalId)->where('is_active', false)->exists();
     }
 }

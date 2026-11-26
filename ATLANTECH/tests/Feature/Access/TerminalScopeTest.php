@@ -149,3 +149,32 @@ it('keeps terminal_ids in the profile as before', function () {
         ->assertOk()
         ->assertJsonPath('terminal_ids', [$unit->terminal_id]);
 });
+
+it('refuses a terminal user writing inside their inactive terminal with 409 CONFLICT, audited, and still lets them read it', function () {
+    $unit = OrganizationUnit::factory()->create();
+    DB::table('terminals')->where('id', $unit->terminal_id)->update(['is_active' => false]);
+    $user = makeUserWithRole(Role::TerminalAdmin, unit: $unit);
+
+    $this->actingAs($user, 'web')
+        ->postJson('/api/v1/test/body-terminal', ['terminal_id' => $unit->terminal_id])
+        ->assertConflict()
+        ->assertJsonPath('code', 'CONFLICT');
+
+    $row = AuditLog::query()->sole();
+    expect($row->entity_type)->toBe('terminals')
+        ->and($row->entity_id)->toBe($unit->terminal_id)
+        ->and($row->after_state)->toMatchArray(['status' => 409, 'code' => 'CONFLICT', 'reason' => 'terminal_inactive']);
+
+    $this->actingAs($user, 'web')
+        ->getJson("/api/v1/test/terminals/{$unit->terminal_id}")
+        ->assertOk();
+});
+
+it('lets a port-wide role write about an inactive terminal', function () {
+    $unit = OrganizationUnit::factory()->create();
+    DB::table('terminals')->where('id', $unit->terminal_id)->update(['is_active' => false]);
+
+    $this->actingAs(makeUserWithRole(Role::PortStaff), 'web')
+        ->postJson('/api/v1/test/body-terminal', ['terminal_id' => $unit->terminal_id])
+        ->assertOk();
+});

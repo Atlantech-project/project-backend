@@ -34,4 +34,24 @@ class AccessRefusal
 
         throw new ApiProblemException(ErrorCode::Forbidden);
     }
+
+    /**
+     * A terminal-scoped user writing inside an inactive terminal (P2-F2 Q8): the terminal is read-only for them.
+     *
+     * @throws ApiProblemException 409 CONFLICT, always.
+     */
+    public function refuseInactiveTerminal(Request $request, User $user, int $terminalId): never
+    {
+        $this->audit->rejectedAttempt(
+            $request->method().' /'.$request->path(),
+            ErrorCode::Conflict,
+            AccessRefusalReason::TerminalInactive->value,
+            $user->id,
+            $user->username,
+            'terminals',
+            $terminalId,
+        );
+
+        throw ApiProblemException::conflict('errors.terminals.terminal_inactive');
+    }
 }
