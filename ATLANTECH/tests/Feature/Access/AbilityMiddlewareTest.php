@@ -79,7 +79,7 @@ it('takes the abilities away when the role assignment has ended', function () {
     $this->actingAs($user->fresh(), 'web')->getJson('/api/v1/test/ability')->assertForbidden();
 });
 
-it('refuses the marine safety officer, who holds no ability yet', function () {
+it('refuses the marine safety officer on an ability the role does not hold', function () {
     $this->actingAs(makeUserWithRole(Role::MarineSafetyOfficer), 'web')
         ->getJson('/api/v1/test/ability')
         ->assertForbidden();

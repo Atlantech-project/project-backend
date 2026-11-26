@@ -29,12 +29,13 @@ it('lists every ability as a row and every role as a column', function () {
     }
 });
 
-it('marks the roles that hold an ability and says the marine safety officer holds none', function () {
+it('marks the roles that hold an ability, the port-wide marine safety officer included', function () {
     $this->artisan('atlantech:contracts-role-matrix', ['--output' => $this->output])->assertSuccessful();
 
     $document = file_get_contents($this->output);
 
-    expect($document)->toContain('- `MARINE_SAFETY_OFFICER`: none')
+    expect($document)->toContain('- `MARINE_SAFETY_OFFICER`: `port-state.read`, `safety-constraints.manage`')
+        ->and($document)->not->toContain('- `MARINE_SAFETY_OFFICER`: none')
         ->and($document)->toContain('- `MARINE_PILOT`: `tasks.own.read`, `tasks.own.update`')
         ->and($document)->toContain('- `PORT_GM`: `port-state.read`, `users.manage`');
 });
