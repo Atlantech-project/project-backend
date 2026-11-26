@@ -32,6 +32,7 @@ class TerminalController extends Controller
     {
         $filters = $request->validated();
         $query = Terminal::query()
+            ->withCount('berths')
             ->when(isset($filters['terminal_type']), fn ($query) => $query->where('terminal_type', $filters['terminal_type']))
             ->when(isset($filters['is_active']), fn ($query) => $query->where('is_active', $request->boolean('is_active')))
             ->when(isset($filters['q']), function ($query) use ($filters) {

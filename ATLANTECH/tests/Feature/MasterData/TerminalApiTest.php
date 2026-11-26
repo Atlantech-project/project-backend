@@ -160,6 +160,19 @@ it('shows a terminal-scoped user only their terminal, in the list and by id', fu
         ->assertJsonCount(2, 'data');
 });
 
+it('lists terminals with how many berths each may use, shared berths counted for both, and no berth list', function () {
+    [$first, $second] = Terminal::factory()->count(2)->create();
+    $shared = Berth::factory()->create();
+    $shared->terminals()->attach([$first->id, $second->id]);
+    Berth::factory()->create()->terminals()->attach($first->id);
+
+    $data = collect($this->actingAs($this->admin, 'web')->getJson('/api/v1/terminals')->assertOk()->json('data'))->keyBy('id');
+
+    expect($data[$first->id]['berths_count'])->toBe(2)
+        ->and($data[$second->id]['berths_count'])->toBe(1)
+        ->and($data[$first->id])->not->toHaveKey('berths');
+});
+
 it('never changes code or type through the service, even if they reach it', function () {
     $terminal = Terminal::factory()->create(['code' => 'KEEP', 'terminal_type' => 'CONTAINER']);
 

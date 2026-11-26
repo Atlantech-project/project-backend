@@ -889,7 +889,7 @@ paths:
             maxLength: 100
       responses:
         '200':
-          description: A page of terminals (without their berths).
+          description: A page of terminals with `berths_count`, without the berth list.
           content:
             application/json:
               schema:
@@ -1960,6 +1960,9 @@ components:
         version:
           type: string
           description: Opaque version token; send it back with every update.
+        berths_count:
+          type: integer
+          description: In the list only. How many berths the terminal may use (a shared berth counts for each of its terminals).
     TerminalDetail:
       allOf:
         - $ref: '#/components/schemas/Terminal'
