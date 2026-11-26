@@ -134,3 +134,13 @@ it('lets officers read but only the department manager write', function (string 
 
     $this->actingAs(makeUserWithRole($otherManager), 'web')->postJson("/api/v1/{$path}", $body)->assertForbidden();
 })->with('schedule kinds');
+
+it('answers 404 to a second removal of the same entry and audits the delete once', function (string $path, Role $managerRole, string $model, string $column, Closure $makePerson) {
+    $manager = makeUserWithRole($managerRole);
+    $entry = $model::query()->create([$column => $makePerson()->user_id, 'shift_date' => '2026-12-03', 'port_shift_id' => $this->shift->id, 'created_by' => $manager->id]);
+
+    $this->actingAs($manager, 'web')->deleteJson("/api/v1/{$path}/{$entry->id}")->assertNoContent();
+    $this->actingAs($manager, 'web')->deleteJson("/api/v1/{$path}/{$entry->id}")->assertNotFound();
+
+    expect(AuditLog::query()->where('action', AuditLogAction::Delete)->count())->toBe(1);
+})->with('schedule kinds');

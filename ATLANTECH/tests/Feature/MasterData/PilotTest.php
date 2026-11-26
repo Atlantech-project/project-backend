@@ -125,3 +125,17 @@ it('lists pilots by rank for the officer, who cannot write', function () {
 
     $this->actingAs($officer, 'web')->postJson('/api/v1/pilots', pilotBody())->assertForbidden();
 });
+
+it('answers 404 to every write on a former pilot whose role changed, so the last Port Admin cannot be deactivated through /pilots', function (string $method, string $suffix, array $body) {
+    $pilot = makePilot();
+    moveUserToHarbourRole($pilot->user, Role::PortGm);
+
+    $this->actingAs($this->manager, 'web')->json($method, "/api/v1/pilots/{$pilot->user_id}{$suffix}", [...$body, 'version' => VersionToken::of($pilot)])
+        ->assertNotFound();
+
+    expect($pilot->user->refresh()->is_active)->toBeTrue()
+        ->and($pilot->refresh()->pilot_rank)->toBe(PilotRank::Second);
+})->with([
+    'deactivate' => ['POST', '/deactivate', []],
+    'update' => ['PATCH', '', ['name' => 'Renamed', 'pilot_rank' => 'FIRST']],
+]);

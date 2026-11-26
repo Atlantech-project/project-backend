@@ -162,3 +162,48 @@ it('lists tug masters with their tug and is_active', function () {
 it('refuses writes from the Tug Officer and the Pilotage Manager', function (Role $role) {
     $this->actingAs(makeUserWithRole($role), 'web')->postJson('/api/v1/tug-masters', tugMasterBody())->assertForbidden();
 })->with([Role::TugOfficer, Role::PilotageManager]);
+
+it('refuses a new tug master at the plan limit, also with a tug, and saves nothing', function () {
+    $tugboat = Tugboat::factory()->create();
+    LicenseState::factory()->create(['max_users' => User::query()->where('is_active', true)->count()]);
+    $before = User::query()->count();
+
+    $this->actingAs($this->manager, 'web')->postJson('/api/v1/tug-masters', tugMasterBody(['tugboat_id' => $tugboat->id]))
+        ->assertStatus(422)
+        ->assertJsonPath('code', 'PLAN_LIMIT_EXCEEDED');
+
+    expect(User::query()->count())->toBe($before)
+        ->and($tugboat->tugMaster()->exists())->toBeFalse();
+});
+
+it('answers 409 VERSION_CONFLICT to a stale version on every tug master write', function (string $method, string $suffix, array $body) {
+    $master = makeTugMaster();
+    $stale = VersionToken::of($master);
+    $this->travel(1)->seconds();
+    $master->touch();
+
+    $this->actingAs($this->manager, 'web')->json($method, "/api/v1/tug-masters/{$master->user_id}{$suffix}", [...$body, 'version' => $stale])
+        ->assertStatus(409)
+        ->assertJsonPath('code', 'VERSION_CONFLICT');
+})->with([
+    'update' => ['PATCH', '', ['name' => 'X']],
+    'relink' => ['PUT', '/tugboat', ['tugboat_id' => null]],
+    'deactivate' => ['POST', '/deactivate', []],
+    'activate' => ['POST', '/activate', []],
+]);
+
+it('answers 404 to a former tug master whose role changed, but still lets the manager clear the stale link', function () {
+    $tugboat = Tugboat::factory()->create();
+    $other = Tugboat::factory()->create();
+    $master = makeTugMaster($tugboat);
+    moveUserToHarbourRole($master->user, Role::PortStaff);
+
+    $this->actingAs($this->manager, 'web')->postJson("/api/v1/tug-masters/{$master->user_id}/deactivate", ['version' => VersionToken::of($master)])->assertNotFound();
+    $this->actingAs($this->manager, 'web')->putJson("/api/v1/tug-masters/{$master->user_id}/tugboat", ['tugboat_id' => $other->id, 'version' => VersionToken::of($master)])->assertNotFound();
+
+    $this->actingAs($this->manager, 'web')->putJson("/api/v1/tug-masters/{$master->user_id}/tugboat", ['tugboat_id' => null, 'version' => VersionToken::of($master)])
+        ->assertOk()
+        ->assertJsonPath('tugboat', null);
+
+    expect($master->user->refresh()->is_active)->toBeTrue();
+});

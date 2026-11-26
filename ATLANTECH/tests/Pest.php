@@ -155,6 +155,21 @@ function makePilot(PilotRank $rank = PilotRank::Second, array $attributes = []):
 }
 
 /**
+ * End the user's active role an hour ago and give them `$role` in the Harbour Authority unit (P2-F3: the profile stays,
+ * as after a role change by the Port Admin).
+ */
+function moveUserToHarbourRole(User $user, Role $role): void
+{
+    UserRoleAssignment::query()->where('user_id', $user->id)->whereNull('active_to')
+        ->update(['active_from' => now()->subDay(), 'active_to' => now()->subHour()]);
+
+    $unit = OrganizationUnit::query()->where('unit_type', UnitType::HarbourAuthority)->first()
+        ?? OrganizationUnit::factory()->harbourAuthority()->create();
+
+    UserRoleAssignment::factory()->for($user)->for($unit)->create(['role' => $role, 'unit_type' => $unit->unit_type]);
+}
+
+/**
  * A tug master (user, active `TUG_MASTER` role, profile) for the P2-F3 tests, linked to `$tugboat` when given.
  *
  * @param  array<string, mixed>  $attributes  User attributes.
