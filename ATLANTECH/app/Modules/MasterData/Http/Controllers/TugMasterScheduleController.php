@@ -10,6 +10,7 @@ use App\Modules\MasterData\Http\Resources\ShiftScheduleResource;
 use App\Modules\MasterData\Models\TugMasterSchedule;
 use App\Modules\MasterData\Services\ShiftScheduleService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
@@ -53,9 +54,9 @@ class TugMasterScheduleController extends Controller
     /**
      * DELETE /api/v1/tug-master-schedules/{tugMasterSchedule}: 204; 401, 403, 404, 422 (`errors.schedules.past_date`), 423.
      */
-    public function destroy(TugMasterSchedule $tugMasterSchedule): Response
+    public function destroy(Request $request, TugMasterSchedule $tugMasterSchedule): Response
     {
-        $this->schedules->remove($tugMasterSchedule, request()->user()->id);
+        $this->schedules->remove($tugMasterSchedule, $request->user()->id);
 
         return response()->noContent();
     }

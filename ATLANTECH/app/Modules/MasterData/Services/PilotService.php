@@ -43,7 +43,7 @@ class PilotService
     {
         return $this->audit->transaction(function () use ($target, $data, $version, $actorId): PilotProfile {
             $pilot = VersionToken::lockAndAssert($target, $version);
-            $userChanged = $this->crew->updateUser($this->crew->lockUser($pilot->user_id), $data, $actorId);
+            $userChanged = $this->crew->updateUser($this->crew->lockMember($pilot->user_id, Role::MarinePilot), $data, $actorId);
 
             $pilot->fill(Arr::only($data, ['pilot_rank']));
 
@@ -66,7 +66,7 @@ class PilotService
         return $this->audit->transaction(function () use ($target, $active, $version, $actorId): PilotProfile {
             $pilot = VersionToken::lockAndAssert($target, $version);
 
-            if ($this->crew->setActive($this->crew->lockUser($pilot->user_id), $active, $actorId)) {
+            if ($this->crew->setActive($this->crew->lockMember($pilot->user_id, Role::MarinePilot), $active, $actorId)) {
                 $pilot->touch();
             }
 

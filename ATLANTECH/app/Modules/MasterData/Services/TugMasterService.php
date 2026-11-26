@@ -54,7 +54,7 @@ class TugMasterService
         return $this->audit->transaction(function () use ($target, $data, $version, $actorId): TugMasterProfile {
             $master = VersionToken::lockAndAssert($target, $version);
 
-            if ($this->crew->updateUser($this->crew->lockUser($master->user_id), $data, $actorId)) {
+            if ($this->crew->updateUser($this->crew->lockMember($master->user_id, Role::TugMaster), $data, $actorId)) {
                 $master->touch();
             }
 
@@ -63,7 +63,9 @@ class TugMasterService
     }
 
     /**
-     * Link the tug master to a tug, move them from their current tug (which becomes free), or unlink them with null.
+     * Link the tug master to a tug, move them from their current tug (which becomes free), or unlink them with null. Linking
+     * needs the user to still hold `TUG_MASTER` (404 otherwise); unlinking does not, so a stale link of a former tug
+     * master can still be cleared.
      *
      * @throws ValidationException 422 `errors.tug_masters.tug_taken` on `tugboat_id`.
      */
@@ -77,6 +79,7 @@ class TugMasterService
             }
 
             if ($tugboatId !== null) {
+                $this->crew->lockMember($master->user_id, Role::TugMaster);
                 $this->assertTugboatFree($tugboatId, $master->user_id);
             }
 
@@ -95,7 +98,7 @@ class TugMasterService
     {
         return $this->audit->transaction(function () use ($target, $active, $version, $actorId): TugMasterProfile {
             $master = VersionToken::lockAndAssert($target, $version);
-            $userChanged = $this->crew->setActive($this->crew->lockUser($master->user_id), $active, $actorId);
+            $userChanged = $this->crew->setActive($this->crew->lockMember($master->user_id, Role::TugMaster), $active, $actorId);
 
             if (! $active && $master->assigned_tugboat_id !== null) {
                 $master->update(['assigned_tugboat_id' => null]);
@@ -109,6 +112,9 @@ class TugMasterService
     }
 
     /**
+     * Both reads are locking reads. A plain read here would fix the transaction's snapshot (REPEATABLE READ) before the
+     * plan limit counts active users in `create()`, so two creates at once could both pass the limit.
+     *
      * @throws ValidationException 422 `errors.tug_masters.tug_taken` on `tugboat_id`.
      */
     private function assertTugboatFree(int $tugboatId, ?int $exceptUserId): void
@@ -118,6 +124,7 @@ class TugMasterService
         $taken = TugMasterProfile::query()
             ->where('assigned_tugboat_id', $tugboatId)
             ->when($exceptUserId !== null, fn ($query) => $query->whereKeyNot($exceptUserId))
+            ->lockForUpdate()
             ->exists();
 
         if ($taken) {

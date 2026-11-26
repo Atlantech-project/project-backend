@@ -10,6 +10,7 @@ use App\Modules\MasterData\Http\Resources\ShiftScheduleResource;
 use App\Modules\MasterData\Models\PilotSchedule;
 use App\Modules\MasterData\Services\ShiftScheduleService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 /**
@@ -53,9 +54,9 @@ class PilotScheduleController extends Controller
     /**
      * DELETE /api/v1/pilot-schedules/{pilotSchedule}: 204; 401, 403, 404, 422 (`errors.schedules.past_date`), 423.
      */
-    public function destroy(PilotSchedule $pilotSchedule): Response
+    public function destroy(Request $request, PilotSchedule $pilotSchedule): Response
     {
-        $this->schedules->remove($pilotSchedule, request()->user()->id);
+        $this->schedules->remove($pilotSchedule, $request->user()->id);
 
         return response()->noContent();
     }

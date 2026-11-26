@@ -10,6 +10,7 @@ use App\Modules\Access\Models\UserRoleAssignment;
 use App\Modules\Access\Services\UserAdministrationService;
 use App\Modules\Shared\Audit\AuditService;
 use App\Modules\Shared\Support\UserLimitCheck;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Arr;
 
 /**
@@ -47,9 +48,23 @@ class CrewMemberService
         return $created;
     }
 
-    public function lockUser(int $userId): User
+    /**
+     * Lock the user of a pilot or tug master profile and check that the user still holds `$role`. A profile stays when the
+     * Port Admin gives its user another role (P2-E2), so the route binding alone does not prove the department: without
+     * this check a Pilotage Manager could deactivate a former pilot who is now the last Port Admin. Role changes lock the
+     * same user row, so the role read here cannot change before this transaction ends.
+     *
+     * @throws ModelNotFoundException 404 when the user no longer holds `$role` (Q5).
+     */
+    public function lockMember(int $userId, Role $role): User
     {
-        return User::query()->whereKey($userId)->lockForUpdate()->firstOrFail();
+        $user = User::query()->whereKey($userId)->lockForUpdate()->firstOrFail();
+
+        if ($user->activeRoleAssignment()->first()?->role !== $role) {
+            throw (new ModelNotFoundException)->setModel(User::class, [$userId]);
+        }
+
+        return $user;
     }
 
     /**

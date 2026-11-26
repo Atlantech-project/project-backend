@@ -12,6 +12,7 @@ use App\Modules\MasterData\Models\TugMasterSchedule;
 use App\Modules\Shared\Audit\AuditService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -48,17 +49,22 @@ class ShiftScheduleService
     }
 
     /**
+     * The entry is re-read under a row lock, so two removals at once delete and audit it once; the second answers 404.
+     *
      * @throws ValidationException 422 `errors.schedules.past_date` on `shift_date`: past entries are history.
+     * @throws ModelNotFoundException 404 when another request removed the entry first.
      */
     public function remove(PilotSchedule|TugMasterSchedule $entry, int $actorId): void
     {
         $this->audit->transaction(function () use ($entry, $actorId): void {
-            if ($entry->shift_date->toDateString() < PortClock::today()) {
+            $locked = $entry->newQuery()->whereKey($entry->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($locked->shift_date->toDateString() < PortClock::today()) {
                 throw ValidationException::withMessages(['shift_date' => ['errors.schedules.past_date']]);
             }
 
-            $entry->delete();
-            $this->audit->recordDeleted($entry, $actorId);
+            $locked->delete();
+            $this->audit->recordDeleted($locked, $actorId);
         });
     }
 
