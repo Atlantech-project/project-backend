@@ -7,7 +7,8 @@ use App\Modules\Access\Enums\Role;
 
 /**
  * The role-to-ability matrix (P2-D1). No inheritance between roles (a manager holds only the manager
- * functions). `MARINE_SAFETY_OFFICER` is Non-Container only and holds nothing until that work starts.
+ * functions). `MARINE_SAFETY_OFFICER` is port-wide (FRD v3, FR-MD-14): the port picture and the safety constraints,
+ * environmental limits, UKC parameters and tide set activation (P2-D1 Q7 reversed, 2026-11-26).
  * A change here changes the expected table in `RolePermissionsTest` and `contracts/role-matrix.md`.
  */
 final class RolePermissions
@@ -39,7 +40,10 @@ final class RolePermissions
                 Ability::PlansCancel,
                 Ability::DeviationsReview,
             ],
-            Role::MarineSafetyOfficer => [],
+            Role::MarineSafetyOfficer => [
+                Ability::PortStateRead,
+                Ability::SafetyConstraintsManage,
+            ],
             Role::PilotageManager => [
                 Ability::PortStateRead,
                 Ability::PilotRosterManage,
