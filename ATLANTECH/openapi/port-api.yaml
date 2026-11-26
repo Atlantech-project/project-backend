@@ -8,7 +8,7 @@
 openapi: 3.0.3
 info:
   title: ATLANTECH Port API
-  version: '1.12.0'
+  version: '1.13.0'
   description: |
     The port API used by the web app (Vue) and the mobile app (Flutter).
 
