@@ -5,6 +5,12 @@ use App\Modules\Access\Enums\UnitType;
 use App\Modules\Access\Models\OrganizationUnit;
 use App\Modules\Access\Models\User;
 use App\Modules\Access\Models\UserRoleAssignment;
+use App\Modules\MasterData\Enums\PilotRank;
+use App\Modules\MasterData\Models\PilotProfile;
+use App\Modules\MasterData\Models\PortProfile;
+use App\Modules\MasterData\Models\Tugboat;
+use App\Modules\MasterData\Models\TugMasterProfile;
+use App\Modules\MasterData\Services\PortClock;
 use Illuminate\Foundation\Testing\DatabaseTransactionsManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -117,4 +123,45 @@ function useTestingTransactionManager(): void
 
     app()->instance('db.transactions', $manager);
     DB::connection()->setTransactionManager($manager);
+}
+
+/**
+ * The port profile row (id 1) with a real IANA time zone, so `PortClock::today()` works (P2-F3). Call it inside the
+ * test transaction.
+ */
+function usePortProfile(string $timezone = 'Africa/Cairo'): PortProfile
+{
+    $profile = PortProfile::query()->find(PortClock::PORT_PROFILE_ID);
+
+    if ($profile === null) {
+        return PortProfile::factory()->create(['timezone' => $timezone]);
+    }
+
+    $profile->update(['timezone' => $timezone]);
+
+    return $profile;
+}
+
+/**
+ * A pilot (user, active `MARINE_PILOT` role, profile) for the P2-F3 tests.
+ *
+ * @param  array<string, mixed>  $attributes  User attributes.
+ */
+function makePilot(PilotRank $rank = PilotRank::Second, array $attributes = []): PilotProfile
+{
+    $user = makeUserWithRole(Role::MarinePilot, $attributes);
+
+    return PilotProfile::query()->create(['user_id' => $user->id, 'pilot_rank' => $rank])->refresh();
+}
+
+/**
+ * A tug master (user, active `TUG_MASTER` role, profile) for the P2-F3 tests, linked to `$tugboat` when given.
+ *
+ * @param  array<string, mixed>  $attributes  User attributes.
+ */
+function makeTugMaster(?Tugboat $tugboat = null, array $attributes = []): TugMasterProfile
+{
+    $user = makeUserWithRole(Role::TugMaster, $attributes);
+
+    return TugMasterProfile::query()->create(['user_id' => $user->id, 'assigned_tugboat_id' => $tugboat?->id])->refresh();
 }
