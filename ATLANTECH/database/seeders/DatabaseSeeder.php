@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PortSettingsSeeder::class,
             ReferenceDataSeeder::class,
+            PilotRankLimitSeeder::class,
             FirstPortAdminSeeder::class,
         ]);
 
