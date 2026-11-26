@@ -2,11 +2,11 @@
 
 | | |
 | --- | --- |
-| Status | Draft: lead's answers recorded (section 8, 2026-11-25); waiting for Marwan's approval (sprint lead) before Ready |
+| Status | Ready for PR (review 2026-11-25: no blocker or must-fix) |
 | Phase / package | Cross-cutting, outside the roadmap task list: the shared prerequisite carved out of P2-F7 (event class) and P2-F3 / P2-F5 / P2-F6 (overlap rule). No ID in `backend/atlantech_backend_tasks.md`; ID `SHARED-01` (Q1, Mariam 2026-11-25) |
 | Sprint · feature | Sprint 3 · FT-05 (master data) |
 | Effort (plan) | 0.5 day |
-| Branch | `feature/SHARED-01-resource-changed-overlap` (from `origin/develop` `554b09c`) |
+| Branch | `feature/SHARED-01-resource-changed-overlap` (from `origin/develop` `9576ba3`) |
 | Depends on | P2-D2, P2-D3 (merged: write chain, `AuditService::transaction`) |
 | Blocked by | Nothing in code; the answers in section 8 |
 | Unblocks | P2-F3 (Mariam: port-shift overlap), P2-F5 (Marwan: safety-constraint overlap), P2-F6 (Menna: productivity-profile overlap), P2-F2 and P2-F7 (berth / tug / pilot / equipment dispatch), later P4-K5 (the listener) |
@@ -22,12 +22,12 @@ This PR adds the two classes and their tests only. No endpoint, no migration, an
 
 **Done when:**
 
-- [ ] `ResourceChanged` exists in `App\Modules\Shared\Events`, carries the resource kind (a Shared enum: `BERTH`, `TUG`, `PILOT`, `EQUIPMENT`), the resource id and the actor id (Q3), and implements `ShouldDispatchAfterCommit`.
-- [ ] Dispatched inside `AuditService::transaction()`, it reaches its listeners only after the commit; when the transaction rolls back (an exception after the dispatch), no listener runs. Proved by a feature test on the MySQL schema database.
-- [ ] Dispatched outside any transaction, it reaches listeners at once.
-- [ ] The overlap helper answers correctly for the three shapes used in Sprint 3 (section 3, "Overlap rule"): datetime periods with an exclusive end, date periods with an inclusive end, open ends (`NULL` = no end), and time-of-day shifts that cross midnight. One unit test per case, including touching edges (end of one = start of the other).
-- [ ] Neither class imports another module (`ModuleArchitectureTest` green); Pint clean.
-- [ ] `SharedServiceProvider` doc comment and `docs/guide/F15_not_built_yet_and_next.md` rows 48 and 50 no longer say the event is missing (Q6).
+- [x] `ResourceChanged` exists in `App\Modules\Shared\Events`, carries the resource kind (a Shared enum: `BERTH`, `TUG`, `PILOT`, `EQUIPMENT`), the resource id and the actor id (Q3), and implements `ShouldDispatchAfterCommit`.
+- [x] Dispatched inside `AuditService::transaction()`, it reaches its listeners only after the commit; when the transaction rolls back (an exception after the dispatch), no listener runs. Proved by a feature test on the MySQL schema database.
+- [x] Dispatched outside any transaction, it reaches listeners at once.
+- [x] The overlap helper answers correctly for the three shapes used in Sprint 3 (section 3, "Overlap rule"): datetime periods with an exclusive end, date periods with an inclusive end, open ends (`NULL` = no end), and time-of-day shifts that cross midnight. One unit test per case, including touching edges (end of one = start of the other).
+- [x] Neither class imports another module (`ModuleArchitectureTest` green); Pint clean.
+- [x] `SharedServiceProvider` doc comment and `docs/guide/F15_not_built_yet_and_next.md` rows 48, 50 and 189 no longer say the event is missing (Q6).
 
 **Out of scope:** dispatching the event from the berth service (P2-F2, Marwan) and from the tug, pilot and equipment services (P2-F7, Mariam); the listener and the C-02 job (P4-K5, P3-I1); the actual no-overlap checks with their queries, locks and 409/422 answers (P2-F3, P2-F5, P2-F6); any SSE or Reverb broadcast of resource changes (Realtime tasks, CT-05).
 
@@ -178,18 +178,35 @@ Contract artefacts: none (no endpoint, no table, no status value, no AI payload)
 
 | # | Question | Answer | Answered by / date |
 | --- | --- | --- | --- |
-| Q1 | The task has no roadmap ID. Name it `SHARED-01` (branch `feature/SHARED-01-resource-changed-overlap`)? | Yes: `SHARED-01`, branch `feature/SHARED-01-resource-changed-overlap` | Mariam · 2026-11-25; Marwan: pending |
-| Q2 | Overlap edges: datetime end exclusive (touching allowed), date end inclusive (same day overlaps), shifts touching at the hour allowed, `NULL` end = open. Agreed? One helper with three functions? | Yes. `instants()` (P2-F5): touching is **not** an overlap. `dates()` (P2-F6): the same day at the edge **is** an overlap and is rejected. `timesOfDay()` (P2-F3): no date on `port_shifts` (it is the daily template; the date lives in `pilot_schedules` / `tug_master_schedules.shift_date`); keep the no-overlap check against typing mistakes, back-to-back shifts allowed. `NULL` end = open for ever: a new period overlapping an open one is rejected and the admin closes the old one first; the helper defines the rule, the error answer and endpoint are Marwan's (P2-F5). One class, three functions | Mariam · 2026-11-25; Marwan: pending |
-| Q3 | Event payload `kind`, `resourceId`, `actorId` only (CT-10 sends no "what changed")? When P2-F2/F7 dispatch: every create and update, or only availability changes (status, quantities, assignment)? | Payload `kind`, `resourceId`, `actorId` only. When to dispatch is left to P2-F2 / P2-F7 (R3, R4) | Mariam · 2026-11-25; Marwan: pending |
-| Q4 | `ResourceKind` = `BERTH`, `TUG`, `PILOT` (CT-10) plus backend-only `EQUIPMENT`; internal, not in CT-21? | Yes, `EQUIPMENT` included; the enum is extended later if a new resource kind appears. The event carries `equipment.id` only: the category (`equipment_categories.equipment_role` VESSEL_HANDLING / CARGO_TRANSPORT / TRANSFER_SYSTEM) is read from the database by the listener, so new categories need no enum change. Internal, not in CT-21 | Mariam · 2026-11-25; Marwan: pending |
-| Q5 | Event tests: use the testing transaction manager through a Pest helper (R1)? | Yes | Mariam · 2026-11-25; Marwan: pending |
-| Q6 | Update `docs/guide/F15` and the provider comment in this PR? | Yes, in this PR | Mariam · 2026-11-25; Marwan: pending |
-| Q7 | Anything you know about this task that the documents don't say? | No | Mariam · 2026-11-25; Marwan: pending |
+| Q1 | The task has no roadmap ID. Name it `SHARED-01` (branch `feature/SHARED-01-resource-changed-overlap`)? | Yes: `SHARED-01`, branch `feature/SHARED-01-resource-changed-overlap` | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q2 | Overlap edges: datetime end exclusive (touching allowed), date end inclusive (same day overlaps), shifts touching at the hour allowed, `NULL` end = open. Agreed? One helper with three functions? | Yes. `instants()` (P2-F5): touching is **not** an overlap. `dates()` (P2-F6): the same day at the edge **is** an overlap and is rejected. `timesOfDay()` (P2-F3): no date on `port_shifts` (it is the daily template; the date lives in `pilot_schedules` / `tug_master_schedules.shift_date`); keep the no-overlap check against typing mistakes, back-to-back shifts allowed. `NULL` end = open for ever: a new period overlapping an open one is rejected and the admin closes the old one first; the helper defines the rule, the error answer and endpoint are Marwan's (P2-F5). One class, three functions | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q3 | Event payload `kind`, `resourceId`, `actorId` only (CT-10 sends no "what changed")? When P2-F2/F7 dispatch: every create and update, or only availability changes (status, quantities, assignment)? | Payload `kind`, `resourceId`, `actorId` only. When to dispatch is left to P2-F2 / P2-F7 (R3, R4) | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q4 | `ResourceKind` = `BERTH`, `TUG`, `PILOT` (CT-10) plus backend-only `EQUIPMENT`; internal, not in CT-21? | Yes, `EQUIPMENT` included; the enum is extended later if a new resource kind appears. The event carries `equipment.id` only: the category (`equipment_categories.equipment_role` VESSEL_HANDLING / CARGO_TRANSPORT / TRANSFER_SYSTEM) is read from the database by the listener, so new categories need no enum change. Internal, not in CT-21 | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q5 | Event tests: use the testing transaction manager through a Pest helper (R1)? | Yes | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q6 | Update `docs/guide/F15` and the provider comment in this PR? | Yes, in this PR | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
+| Q7 | Anything you know about this task that the documents don't say? | No | Mariam · 2026-11-25; Marwan approved (merged PR #74) · 2026-11-25 |
 
 ## 9. Progress log
 
-<Filled by `backend-task-execute`.>
+- 2026-11-25 · Step 1 (A) · branch from `origin/develop` `9576ba3`; plan Ready after PR #74. Done.
+- 2026-11-25 · E group prepared in a throwaway worktree: `ResourceKind`, `ResourceChanged`, `PeriodOverlap`; 53 tests pass (`PeriodOverlapTest`, `ResourceChangedTest`, `ModuleArchitectureTest`) on a private schema database; Pint clean. Mutation check: without `ShouldDispatchAfterCommit` 3 of the 4 event tests fail.
+- 2026-11-25 · Step 3 (C) · `useTestingTransactionManager()` in `tests/Pest.php` and `tests/Feature/Shared/ResourceChangedTest.php` (4 tests, one more than planned: nested transactions wait for the outermost commit). Committed; fails until step 2 is typed. Approved by the lead (Mariam, 2026-11-25).
+- 2026-11-25 · Step 5 (B) · `tests/Unit/Modules/Shared/PeriodOverlapTest.php`: 9 + 8 + 11 cases each checked in both orders, plus invalid input. The shift function also rejects start = end and times that are not `HH:MM[:SS]` (`InvalidArgumentException`). Committed; fails until step 4 is typed.
+- 2026-11-25 · Step 6 (A) · F15 rows 48, 50, 189 and the `SharedServiceProvider` comment updated. Committed.
+- 2026-11-25 · Steps 2 and 4 (E) · typed by the lead in four parts (enum, event, `PeriodOverlap` in three pieces). Compared with the prepared version: identical except two missing blank lines in `PeriodOverlap`, fixed by Pint (`class_attributes_separation`); no behaviour difference, no renames. Committed `208b06d`, `bb40e5a`.
+- 2026-11-25 · Finish · `PeriodOverlapTest`, `ResourceChangedTest`, `ModuleArchitectureTest`: 53 passed (290 assertions) on the private database `atlantech_testing_shared01`. Done-when: the event lines by `ResourceChangedTest` (after commit, nested, rollback, no transaction, payload); the overlap line by the three `PeriodOverlapTest` datasets; the architecture line by `ModuleArchitectureTest` and Pint; the docs line by commit `1df627d`. Full suite: to be run by the lead.
 
 ## 10. Review
 
-<Filled by `backend-task-review`.>
+2026-11-25 · `backend-task-review` (task-reviewer agent) on `89b6e38` against `origin/develop` `9576ba3`. **Verdict: Ready for PR.** Blocker 0, Must fix 0, Should fix 1, Note 5.
+
+- Should fix (fixed): the done-when line named F15 rows 48 and 50 only; the diff also changes row 189. Done-when text updated.
+- Note: `docs/guide/F01_runtime_and_platform.md:142` still lists `ResourceChanged` under Shared; still true, left as is (outside Q6).
+- Note: `EQUIPMENT` is not a CT-10 type (Q4, R5): P4-K5 must not send it to Part 2 under CT-10 v1.
+- Note: a tug-master shift change goes out as `TUG` with the tug id (CT-10, DEC-32; R4): P2-F7 dispatches `ResourceKind::Tug` for it.
+- Note: nothing dispatches the event and no listener is registered yet (out of scope by design).
+- Note: R7 (DST) stays with P2-F3.
+
+The agent could not run PHP; Pint and the three test files were run in this session (53 passed). Full suite: run by the lead.
+
+Full suite by the lead (2026-11-25): 5 failed, 1002 passed. Four were `PublishStatusVocabularyTest`: the CT-21 generator reads every enum under `Modules/*/Enums` and fails on one that names no `table.column`, so `ResourceKind` needs the `@not-stored` tag (as `Ability`, `AccessRefusalReason`). A defect in the prepared version, missed because the plan's test list did not include the generator test; fixed after the review (docblock only, no behaviour change); `PublishStatusVocabularyTest` passes. The fifth, `ContractsSchemaTest`, is environmental: a scratch database `atlantech_schema_test` left over from an earlier interrupted run makes `atlantech:contracts-schema` refuse to start; the command works with a new scratch name.
