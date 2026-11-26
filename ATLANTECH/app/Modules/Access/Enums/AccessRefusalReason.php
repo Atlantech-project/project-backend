@@ -14,4 +14,5 @@ enum AccessRefusalReason: string
     case RoleNotAllowed = 'role_not_allowed';
     case TerminalOutOfScope = 'terminal_out_of_scope';
     case NotOwnTask = 'not_own_task';
+    case TerminalInactive = 'terminal_inactive';
 }
