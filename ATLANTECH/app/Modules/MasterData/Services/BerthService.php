@@ -10,8 +10,10 @@ use App\Modules\MasterData\Models\SafetyConstraint;
 use App\Modules\MasterData\Models\Terminal;
 use App\Modules\Shared\Audit\AuditService;
 use App\Modules\Shared\Enums\AuditLogAction;
+use App\Modules\Shared\Enums\ResourceKind;
 use App\Modules\Shared\Errors\ApiProblemException;
 use App\Modules\Shared\Errors\ErrorCode;
+use App\Modules\Shared\Events\ResourceChanged;
 use App\Modules\Shared\Support\VersionToken;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -49,6 +51,7 @@ class BerthService
                 ...$berth->attributesToArray(),
                 'terminal_ids' => $terminalIds,
             ]);
+            ResourceChanged::dispatch(ResourceKind::Berth, $berth->id, $actorId);
 
             return $berth;
         });
@@ -96,6 +99,10 @@ class BerthService
                 $this->audit->record(AuditLogAction::Update, $locked->getTable(), $locked->id, $actor->id, ['terminal_ids' => $oldIds], ['terminal_ids' => $newIds]);
             }
 
+            if ($locked->wasChanged()) {
+                ResourceChanged::dispatch(ResourceKind::Berth, $locked->id, $actor->id);
+            }
+
             return $locked;
         });
 
@@ -122,6 +129,7 @@ class BerthService
 
             $locked->update(['status' => $status]);
             $this->audit->recordUpdated($locked, $actorId);
+            ResourceChanged::dispatch(ResourceKind::Berth, $locked->id, $actorId);
 
             return $locked;
         });

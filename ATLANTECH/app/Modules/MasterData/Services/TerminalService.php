@@ -5,6 +5,8 @@ namespace App\Modules\MasterData\Services;
 use App\Modules\Access\Enums\UnitType;
 use App\Modules\MasterData\Models\Terminal;
 use App\Modules\Shared\Audit\AuditService;
+use App\Modules\Shared\Enums\ResourceKind;
+use App\Modules\Shared\Events\ResourceChanged;
 use App\Modules\Shared\Support\VersionToken;
 use Illuminate\Support\Arr;
 
@@ -78,6 +80,10 @@ class TerminalService
 
             $locked->update(['is_active' => $active]);
             $this->audit->recordUpdated($locked, $actorId);
+
+            foreach ($locked->berths()->pluck('berths.id') as $berthId) {
+                ResourceChanged::dispatch(ResourceKind::Berth, (int) $berthId, $actorId);
+            }
 
             return $locked;
         });
