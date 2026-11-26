@@ -11,6 +11,7 @@ use App\Modules\MasterData\Models\PortProfile;
 use App\Modules\MasterData\Models\PortShift;
 use App\Modules\MasterData\Models\Tugboat;
 use App\Modules\MasterData\Models\TugMasterProfile;
+use App\Modules\MasterData\Models\TugMasterSchedule;
 use App\Modules\MasterData\Services\PilotRankLimitService;
 use App\Modules\MasterData\Services\PilotService;
 use App\Modules\MasterData\Services\PortClock;
@@ -46,6 +47,7 @@ afterEach(function () {
 
     $userIds = User::query()->where('id', '>', $this->lastUserId)->pluck('id')->all();
     PilotSchedule::query()->delete();
+    TugMasterSchedule::query()->delete();
     PilotProfile::query()->delete();
     TugMasterProfile::query()->delete();
     Tugboat::query()->delete();
@@ -138,4 +140,16 @@ it('deactivates a pilot only after taking the user row, so a role change at the 
         ->toThrow(QueryException::class, 'Lock wait timeout');
 
     expect($pilot->user->refresh()->is_active)->toBeTrue();
+});
+
+it('reads the role with a locking read, so activating a pilot cannot count active users on an older snapshot', function () {
+    $pilot = makePilot(attributes: ['is_active' => false]);
+    $assignment = UserRoleAssignment::query()->where('user_id', $pilot->user_id)->whereNull('active_to')->sole();
+
+    holdLock('select id from user_role_assignments where id = ? for update', [$assignment->id]);
+
+    expect(fn () => app(PilotService::class)->setActive($pilot, true, VersionToken::of($pilot), $this->actor->id))
+        ->toThrow(QueryException::class, 'Lock wait timeout');
+
+    expect($pilot->user->refresh()->is_active)->toBeFalse();
 });
