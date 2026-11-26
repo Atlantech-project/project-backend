@@ -45,7 +45,7 @@ It does **not** publish anything to PortHub by itself in CI (publishing is a man
 ### 3.3 `PublishRoleMatrix` (`app/Modules/Access/Console/PublishRoleMatrix.php`)
 
 - Command `atlantech:contracts-role-matrix {--output=}`; script `contracts:role-matrix`. Registered in `AccessServiceProvider`. Default output `base_path('../../contracts/role-matrix.md')`.
-- Constants: `VERSION = 'v1.0'` and `CHANGE_LOG` (a list of `[version, date, text]`; one row today: "First version: 12 roles, 27 abilities (P2-D1)…"). **Add a row and bump `VERSION` whenever the matrix changes.**
+- Constants: `VERSION = 'v1.1'` and `CHANGE_LOG` (a list of `[version, date, text]`; one row today: "First version: 12 roles, 27 abilities (P2-D1)…"). **Add a row and bump `VERSION` whenever the matrix changes.**
 - `handle(): int` as the pattern; `document(): string` builds the Markdown: a header table (Version, Status "Draft: for review by Frontend and QA", Owner, Reviewers, Source), a generated-file note, a table "Ability by role" (one row per `Ability`, one column per `Role`, `yes` where `RolePermissions::allows`), a list "Abilities of each role" (`RolePermissions::abilitiesFor`), a "Rules that go with the matrix" section (open routes, terminal scope roles from `Role::isTerminalScoped()`, field roles from `isFieldRole()`, the Marine Safety Officer note, the check order, terminal type, audit), and the change log.
 - Why: Frontend (menus, FE-022) and QA (FE-102) need the matrix; the code (`RolePermissions`, F09) is the truth.
 

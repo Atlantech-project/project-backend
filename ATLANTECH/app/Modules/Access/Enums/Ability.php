@@ -27,6 +27,9 @@ enum Ability: string
     // Port set-up
     case PortSetupManage = 'port-setup.manage';
 
+    // Safety limits (Marine Safety Officer, port-wide: FR-MD-14)
+    case SafetyConstraintsManage = 'safety-constraints.manage';
+
     // Pilotage
     case PilotRosterManage = 'pilot-roster.manage';
     case PilotageAssign = 'pilotage.assign';

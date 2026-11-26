@@ -12,7 +12,7 @@ use App\Modules\Access\Services\RolePermissions;
  */
 function expectedRoleMatrix(): array
 {
-    $office = ['PORT_GM', 'PORT_STAFF', 'PILOTAGE_MANAGER', 'PILOTAGE_OFFICER', 'TUG_MANAGER', 'TUG_OFFICER', 'TERMINAL_ADMIN', 'TERMINAL_OFFICER'];
+    $office = ['PORT_GM', 'PORT_STAFF', 'MARINE_SAFETY_OFFICER', 'PILOTAGE_MANAGER', 'PILOTAGE_OFFICER', 'TUG_MANAGER', 'TUG_OFFICER', 'TERMINAL_ADMIN', 'TERMINAL_OFFICER'];
 
     return [
         'port-state.read' => $office,
@@ -23,6 +23,7 @@ function expectedRoleMatrix(): array
         'ai-model.review' => ['PORT_GM'],
         'plans.safety-exception' => ['PORT_GM'],
         'port-setup.manage' => ['PORT_GM'],
+        'safety-constraints.manage' => ['MARINE_SAFETY_OFFICER'],
         'pilot-roster.manage' => ['PILOTAGE_MANAGER'],
         'pilotage.assign' => ['PILOTAGE_OFFICER'],
         'tug-fleet.manage' => ['TUG_MANAGER'],
@@ -47,7 +48,7 @@ function expectedRoleMatrix(): array
 
 it('lists every ability in the expected table and nothing else', function () {
     expect(array_keys(expectedRoleMatrix()))->toEqualCanonicalizing(array_map(fn (Ability $a) => $a->value, Ability::cases()))
-        ->and(Ability::cases())->toHaveCount(27)
+        ->and(Ability::cases())->toHaveCount(28)
         ->and(Role::cases())->toHaveCount(12);
 });
 
@@ -79,8 +80,10 @@ it('grants every ability to at least one role', function () {
     }
 });
 
-it('gives the marine safety officer no ability until the Non-Container work starts', function () {
-    expect(RolePermissions::abilitiesFor(Role::MarineSafetyOfficer))->toBe([]);
+it('gives the marine safety officer the port picture and the safety limits, port-wide (FR-MD-14, Q7 reversed)', function () {
+    expect(RolePermissions::abilitiesFor(Role::MarineSafetyOfficer))->toBe([Ability::PortStateRead, Ability::SafetyConstraintsManage])
+        ->and(Role::MarineSafetyOfficer->isTerminalScoped())->toBeFalse()
+        ->and(Role::MarineSafetyOfficer->isFieldRole())->toBeFalse();
 });
 
 it('keeps field roles to own-task abilities, plus terminal status for the supervisor', function () {
