@@ -21,6 +21,7 @@ class RoleAssignmentService
         private readonly AuditService $audit,
         private readonly PortAdminGuard $admins,
         private readonly RoleEndHandler $roleEnd,
+        private readonly RoleStartHandler $roleStart,
     ) {}
 
     /**
@@ -60,8 +61,12 @@ class RoleAssignmentService
             $this->audit->recordCreated($assignment, $actor->id);
             $user->touch();
 
-            if ($current !== null && $current->role !== $role) {
-                $this->roleEnd->roleEnded($user->id, $current->role, $actor->id);
+            if ($current?->role !== $role) {
+                if ($current !== null) {
+                    $this->roleEnd->roleEnded($user->id, $current->role, $actor->id);
+                }
+
+                $this->roleStart->roleStarted($user->id, $role, $actor->id);
             }
 
             return $user;

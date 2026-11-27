@@ -21,6 +21,7 @@ class UserAdministrationService
         private readonly PortAdminGuard $admins,
         private readonly UserLimitCheck $userLimit,
         private readonly RoleEndHandler $roleEnd,
+        private readonly RoleStartHandler $roleStart,
     ) {}
 
     /**
@@ -99,6 +100,12 @@ class UserAdministrationService
 
             $user->update(['is_active' => true]);
             $this->audit->recordUpdated($user, $actor->id);
+
+            $role = $user->activeRoleAssignment()->lockForUpdate()->first()?->role;
+
+            if ($role !== null) {
+                $this->roleStart->roleStarted($user->id, $role, $actor->id);
+            }
 
             return $user;
         });

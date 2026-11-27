@@ -3,6 +3,8 @@
 namespace App\Modules\MasterData;
 
 use App\Modules\Access\Services\RoleEndHandler;
+use App\Modules\Access\Services\RoleStartHandler;
+use App\Modules\MasterData\Services\PilotReturnRoleStartHandler;
 use App\Modules\MasterData\Services\PortSettingMinAppVersion;
 use App\Modules\MasterData\Services\TugLinkRoleEndHandler;
 use App\Modules\Shared\Support\MinAppVersionSource;
@@ -17,5 +19,6 @@ class MasterDataServiceProvider extends ServiceProvider
     {
         $this->app->bind(MinAppVersionSource::class, PortSettingMinAppVersion::class);
         $this->app->bind(RoleEndHandler::class, TugLinkRoleEndHandler::class);
+        $this->app->bind(RoleStartHandler::class, PilotReturnRoleStartHandler::class);
     }
 }
