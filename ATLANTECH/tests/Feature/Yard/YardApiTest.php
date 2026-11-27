@@ -235,7 +235,9 @@ it('creates every slot of a block, then grows and shrinks it without touching th
     expect(slotAt($block, 1)->id)->toBe($kept)
         ->and(slotAt($block, 1)->status)->toBe(YardSlotStatus::Blocked)
         ->and(AuditLog::query()->where('entity_type', 'yard_blocks')->latest('id')->first()->after_state)
-        ->toMatchArray(['added' => 4, 'removed' => 4, 'slots' => 12]);
+        ->toMatchArray(['added' => 4, 'removed' => 4, 'slots' => 12])
+        ->and(AuditLog::query()->where('entity_type', 'yard_blocks')->latest('id')->first()->before_state)
+        ->toBe(['slots' => 12, 'bays' => 3, 'rows' => 2, 'tiers' => 2]);
 });
 
 it('refuses to remove a blocked slot or slots while a yard run is in progress, changes nothing and audits the refusal', function (string $reason, Closure $arrange) {
