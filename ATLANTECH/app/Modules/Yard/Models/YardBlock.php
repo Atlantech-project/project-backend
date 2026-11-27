@@ -3,6 +3,7 @@
 namespace App\Modules\Yard\Models;
 
 use Database\Factories\Yard\YardBlockFactory;
+use Illuminate\Database\Eloquent\Attributes\DateFormat;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -14,13 +15,31 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * The `yard_blocks` table.
  */
-#[Table(name: 'yard_blocks', timestamps: false)]
+#[Table(name: 'yard_blocks')]
+#[DateFormat('Y-m-d H:i:s.u')]
 #[Fillable(['yard_zone_id', 'code'])]
 #[UseFactory(YardBlockFactory::class)]
 class YardBlock extends Model
 {
     /** @use HasFactory<YardBlockFactory> */
     use HasFactory;
+
+    /**
+     * The table has no created_at column.
+     *
+     * @var string|null
+     */
+    public const CREATED_AT = null;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'updated_at' => 'datetime',
+        ];
+    }
 
     /**
      * @return BelongsTo<YardZone, $this>

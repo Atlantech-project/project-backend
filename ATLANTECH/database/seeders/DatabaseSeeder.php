@@ -25,11 +25,12 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PortSettingsSeeder::class,
             ReferenceDataSeeder::class,
+            PilotRankLimitSeeder::class,
             FirstPortAdminSeeder::class,
         ]);
 
         if (config('seeding.demo_port')) {
-            $this->call([DemoPortSeeder::class, DemoPeopleSeeder::class]);
+            $this->call([DemoPortSeeder::class, DemoPeopleSeeder::class, DemoYardSeeder::class]);
         }
     }
 }

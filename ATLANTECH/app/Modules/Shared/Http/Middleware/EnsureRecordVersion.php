@@ -87,7 +87,7 @@ class EnsureRecordVersion
             $user?->getAuthIdentifier(),
             $user?->getAttribute('username'),
             $record->getTable(),
-            $record->getKey(),
+            is_int($record->getKey()) ? $record->getKey() : null,
         );
     }
 }
