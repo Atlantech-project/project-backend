@@ -40,7 +40,7 @@ class NavigationChannelController extends Controller
      */
     public function store(StoreNavigationChannelRequest $request): JsonResponse
     {
-        $channel = $this->channels->create($request->validated(), $request->user()->id);
+        $channel = $this->channels->create($request->validated(), $request->user(), $request->method().' /'.$request->path());
 
         return (new NavigationChannelResource($channel->load('channelWaypointsByChannel')))->response()->setStatusCode(201);
     }
@@ -51,7 +51,7 @@ class NavigationChannelController extends Controller
     public function update(UpdateNavigationChannelRequest $request, NavigationChannel $channel): NavigationChannelResource
     {
         $data = $request->safe()->except('version');
-        $updated = $this->channels->update($channel, $data, $request->validated('version'), $request->user()->id);
+        $updated = $this->channels->update($channel, $data, $request->validated('version'), $request->user(), $request->method().' /'.$request->path());
 
         return new NavigationChannelResource($updated->load('channelWaypointsByChannel'));
     }

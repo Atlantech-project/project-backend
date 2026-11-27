@@ -2,6 +2,7 @@
 
 namespace App\Modules\MasterData\Services;
 
+use App\Modules\Access\Models\User;
 use App\Modules\MasterData\Models\Berth;
 use App\Modules\MasterData\Models\ChannelWaypoint;
 use App\Modules\MasterData\Models\NavigationChannel;
@@ -20,35 +21,37 @@ class NavigationChannelService
 {
     private const array ATTRIBUTES = ['name', 'depth', 'depth_datum', 'width', 'speed_limit_knots', 'is_active'];
 
-    public function __construct(private readonly AuditService $audit) {}
+    public function __construct(private readonly AuditService $audit, private readonly RuleRefusal $refusals) {}
 
     /**
      * @param  array{name: string, depth: numeric, depth_datum: string, width: numeric, speed_limit_knots: numeric, is_active?: bool}  $data
+     * @param  string  $route  Method and path of the request, for the audit row of a refusal.
      *
-     * @throws ValidationException 422 `errors.navigation_channels.datum_mismatch`.
+     * @throws ValidationException 422 `errors.navigation_channels.datum_mismatch`, audited.
      */
-    public function create(array $data, int $actorId): NavigationChannel
+    public function create(array $data, User $actor, string $route): NavigationChannel
     {
-        return $this->audit->transaction(function () use ($data, $actorId): NavigationChannel {
+        return $this->refusals->audited(fn () => $this->audit->transaction(function () use ($data, $actor): NavigationChannel {
             $channel = new NavigationChannel(['is_active' => true, ...Arr::only($data, self::ATTRIBUTES)]);
             $this->assertDatumMatchesBerths($channel);
 
             $channel->save();
             $channel->refresh();
-            $this->audit->recordCreated($channel, $actorId);
+            $this->audit->recordCreated($channel, $actor->id);
 
             return $channel;
-        });
+        }), $actor, $route, 'navigation_channels', null);
     }
 
     /**
      * @param  array{name?: string, depth?: numeric, depth_datum?: string, width?: numeric, speed_limit_knots?: numeric, is_active?: bool}  $data
+     * @param  string  $route  Method and path of the request, for the audit row of a refusal.
      *
-     * @throws ValidationException 422 `errors.navigation_channels.datum_mismatch`.
+     * @throws ValidationException 422 `errors.navigation_channels.datum_mismatch`, audited.
      */
-    public function update(NavigationChannel $channel, array $data, string $version, int $actorId): NavigationChannel
+    public function update(NavigationChannel $channel, array $data, string $version, User $actor, string $route): NavigationChannel
     {
-        return $this->audit->transaction(function () use ($channel, $data, $version, $actorId): NavigationChannel {
+        return $this->refusals->audited(fn () => $this->audit->transaction(function () use ($channel, $data, $version, $actor): NavigationChannel {
             $locked = VersionToken::lockAndAssert($channel, $version);
 
             $locked->fill(Arr::only($data, self::ATTRIBUTES));
@@ -58,10 +61,10 @@ class NavigationChannelService
             }
 
             $locked->save();
-            $this->audit->recordUpdated($locked, $actorId);
+            $this->audit->recordUpdated($locked, $actor->id);
 
             return $locked->refresh();
-        });
+        }), $actor, $route, 'navigation_channels', $channel->id);
     }
 
     /**

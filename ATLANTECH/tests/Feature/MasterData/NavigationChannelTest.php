@@ -103,7 +103,12 @@ it('refuses an active channel whose datum differs from any berth, even an inacti
         ->assertStatus(422)
         ->assertJsonPath('errors.depth_datum.0', 'errors.navigation_channels.datum_mismatch');
 
-    expect(NavigationChannel::query()->count())->toBe(0);
+    $row = AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->sole();
+
+    expect(NavigationChannel::query()->count())->toBe(0)
+        ->and($row->actor_id)->toBe($this->admin->id)
+        ->and($row->entity_type)->toBe('navigation_channels')
+        ->and($row->after_state)->toMatchArray(['route' => 'POST /api/v1/navigation-channels', 'status' => 422, 'code' => 'VALIDATION_FAILED', 'reason' => 'datum_mismatch']);
 })->with([
     'active berth' => [[]],
     'inactive berth' => [['status' => 'INACTIVE']],
@@ -122,7 +127,8 @@ it('refuses to change the datum of an active channel, or to activate a channel w
         ->assertStatus(422);
 
     expect($active->fresh()->depth_datum)->toBe('LAT')
-        ->and($off->fresh()->is_active)->toBeFalse();
+        ->and($off->fresh()->is_active)->toBeFalse()
+        ->and(AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->pluck('entity_id')->sort()->values()->all())->toBe([$active->id, $off->id]);
 });
 
 it('edits an inactive channel whose datum differs, and other fields of a channel', function () {

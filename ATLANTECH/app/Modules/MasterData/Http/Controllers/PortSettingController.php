@@ -31,6 +31,8 @@ class PortSettingController extends Controller
      */
     public function update(UpdatePortSettingRequest $request, PortSetting $setting): PortSettingResource
     {
-        return new PortSettingResource($this->settings->update($setting, $request->input('value'), $request->validated('version'), $request->user()->id));
+        $updated = $this->settings->update($setting, $request->input('value'), $request->validated('version'), $request->user(), $request->method().' /'.$request->path());
+
+        return new PortSettingResource($updated);
     }
 }

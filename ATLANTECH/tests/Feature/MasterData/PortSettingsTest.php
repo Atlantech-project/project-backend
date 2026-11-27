@@ -82,7 +82,12 @@ it('refuses a value of the wrong type with 422 and keeps the old one', function 
 
     putSetting($setting, $sent)->assertStatus(422)->assertJsonPath('errors.value.0', 'errors.port_settings.'.$key);
 
-    expect($setting->fresh()->setting_value)->toBe('1')->and($setting->fresh()->updated_by)->toBeNull();
+    $row = AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->sole();
+
+    expect($setting->fresh()->setting_value)->toBe('1')
+        ->and($setting->fresh()->updated_by)->toBeNull()
+        ->and($row->entity_id)->toBe($setting->id)
+        ->and($row->after_state)->toMatchArray(['status' => 422, 'code' => 'VALIDATION_FAILED', 'reason' => $key]);
 })->with([
     'int with a fraction' => [PortSettingValueType::Int, 1.5, 'invalid_int'],
     'int from words' => [PortSettingValueType::Int, 'ten', 'invalid_int'],
