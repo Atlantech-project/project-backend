@@ -19,6 +19,7 @@ use App\Modules\Access\Http\Middleware\EnsureMobileHeaders;
 use App\Modules\MasterData\Http\Controllers\BerthController;
 use App\Modules\MasterData\Http\Controllers\SystemInfoController;
 use App\Modules\MasterData\Http\Controllers\TerminalController;
+use App\Modules\MasterData\Http\Controllers\VesselController;
 use App\Modules\Shared\Http\Controllers\AuditLogController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +51,7 @@ Route::middleware('port.api')->group(function () {
         Route::get('terminals/{terminal}', [TerminalController::class, 'show'])->middleware('terminal.scope')->name('terminals.show');
         Route::get('berths', [BerthController::class, 'index'])->name('berths.index');
         Route::get('berths/{berth}', [BerthController::class, 'show'])->name('berths.show');
+        Route::get('vessels/{vessel}', [VesselController::class, 'show'])->name('vessels.show');
     });
 
     Route::middleware('ability:port-setup.manage')->group(function () {
@@ -63,6 +65,8 @@ Route::middleware('port.api')->group(function () {
         Route::post('berths/{berth}/activate', [BerthController::class, 'activate'])->middleware('version.token:berth')->name('berths.activate');
         Route::post('berths/{berth}/maintenance', [BerthController::class, 'maintenance'])->middleware('version.token:berth')->name('berths.maintenance');
     });
+
+    Route::put('vessels/{vessel}', [VesselController::class, 'update'])->middleware(['ability:baplie.manage', 'version.token:vessel'])->name('vessels.update');
 
     Route::middleware('ability:devices.manage')->scopeBindings()->group(function () {
         Route::get('users/{user}/devices', [UserDeviceController::class, 'index'])->name('users.devices.index');
