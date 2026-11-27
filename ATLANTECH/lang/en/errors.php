@@ -43,6 +43,10 @@ return [
     'terminals' => [
         'terminal_inactive' => 'This terminal is inactive. Its data can be viewed but not changed.',
     ],
+    'vessels' => [
+        'already_set' => 'This value is already recorded for the vessel and cannot be changed.',
+        'beam_not_below_loa' => 'The beam must be less than the length overall.',
+    ],
     'berths' => [
         'terminal_in_use' => 'This terminal cannot be removed from the berth because safety constraints or recommendations use the pair.',
         'terminal_inactive' => 'A berth cannot be linked to an inactive terminal.',
