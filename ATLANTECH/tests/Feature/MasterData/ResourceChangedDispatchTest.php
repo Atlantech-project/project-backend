@@ -7,6 +7,7 @@ use App\Modules\Access\Services\RoleStartHandler;
 use App\Modules\MasterData\Enums\PilotRank;
 use App\Modules\MasterData\Models\CapabilityType;
 use App\Modules\MasterData\Models\EquipmentCategory;
+use App\Modules\MasterData\Models\PilotProfile;
 use App\Modules\MasterData\Models\PilotRankLimit;
 use App\Modules\MasterData\Models\PilotSchedule;
 use App\Modules\MasterData\Models\PortShift;
@@ -359,6 +360,48 @@ it('announces nothing for a forbidden or stale request', function () {
     $this->actingAs($this->admin, 'web')
         ->postJson("/api/v1/users/{$pilot->user_id}/deactivate", ['version' => '2026-01-01T00:00:00.000000Z'])
         ->assertStatus(409);
+
+    expect(announced())->toBe([]);
+});
+
+it('announces both the tug and the pilot when a linked tug master is given the pilot role', function () {
+    $tugboat = Tugboat::factory()->create();
+    $master = makeTugMaster($tugboat);
+    PilotProfile::query()->create(['user_id' => $master->user_id, 'pilot_rank' => PilotRank::Third]);
+    $this->travel(1)->seconds();
+
+    postUser($master->user_id, 'roles', ['role' => 'MARINE_PILOT'])->assertOk();
+
+    expect(announced())->toBe([...pilotEvents($master->user_id), ...tugEvents($tugboat)]);
+});
+
+it('announces nothing for a refused tug link or equipment on a terminal that is not a container terminal', function () {
+    $tugboat = Tugboat::factory()->create();
+    makeTugMaster($tugboat);
+    $other = makeTugMaster(Tugboat::factory()->create());
+
+    $this->actingAs($this->tugManager, 'web')
+        ->putJson("/api/v1/tug-masters/{$other->user_id}/tugboat", ['tugboat_id' => $tugboat->id, 'version' => VersionToken::of($other)])
+        ->assertStatus(422);
+
+    $terminal = Terminal::factory()->create(['terminal_type' => TerminalType::NonContainer, 'is_active' => true]);
+    $unit = OrganizationUnit::query()->where('terminal_id', $terminal->id)->first()
+        ?? OrganizationUnit::factory()->create(['terminal_id' => $terminal->id]);
+    $this->actingAs(makeUserWithRole(Role::TerminalAdmin, unit: $unit), 'web')
+        ->postJson("/api/v1/terminals/{$terminal->id}/equipment", [
+            'equipment_category_id' => EquipmentCategory::factory()->create()->id,
+            'quantity' => 5, 'maintenance_quantity' => 0, 'blocked_quantity' => 0,
+            'capabilities' => [['capability_type_id' => CapabilityType::factory()->create()->id, 'value' => 65]],
+        ])
+        ->assertStatus(422);
+
+    expect(announced())->toBe([]);
+});
+
+it('announces nothing when /users deactivates a pilot who is already inactive', function () {
+    $pilot = makePilot(attributes: ['is_active' => false]);
+
+    postUser($pilot->user_id, 'deactivate')->assertOk();
 
     expect(announced())->toBe([]);
 });
