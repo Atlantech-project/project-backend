@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Port tug fleet (shared Marine Services resource).
@@ -53,5 +54,15 @@ class Tugboat extends Model
     public function tugMasterProfilesByAssignedTugboat(): HasMany
     {
         return $this->hasMany(TugMasterProfile::class, 'assigned_tugboat_id');
+    }
+
+    /**
+     * The tug's one tug master (`tug_master_profiles.assigned_tugboat_id` is UNIQUE, FR-MD-08), or null.
+     *
+     * @return HasOne<TugMasterProfile, $this>
+     */
+    public function tugMaster(): HasOne
+    {
+        return $this->hasOne(TugMasterProfile::class, 'assigned_tugboat_id');
     }
 }
