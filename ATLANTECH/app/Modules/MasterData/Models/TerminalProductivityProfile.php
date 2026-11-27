@@ -5,6 +5,7 @@ namespace App\Modules\MasterData\Models;
 use App\Modules\MasterData\Enums\TerminalProductivityProfileRateUnit;
 use App\Modules\Shared\Enums\TerminalType;
 use Database\Factories\MasterData\TerminalProductivityProfileFactory;
+use Illuminate\Database\Eloquent\Attributes\DateFormat;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -15,13 +16,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Inputs for the AI service-time calculation (Module 15). Overlapping periods rejected by the backend.
  */
-#[Table(name: 'terminal_productivity_profiles', timestamps: false)]
+#[Table(name: 'terminal_productivity_profiles')]
+#[DateFormat('Y-m-d H:i:s.u')]
 #[Fillable(['terminal_id', 'terminal_type', 'vessel_type_id', 'productivity_rate', 'rate_unit', 'fixed_overhead_minutes', 'valid_from', 'valid_to'])]
 #[UseFactory(TerminalProductivityProfileFactory::class)]
 class TerminalProductivityProfile extends Model
 {
     /** @use HasFactory<TerminalProductivityProfileFactory> */
     use HasFactory;
+
+    /**
+     * The table has no `created_at` column; `updated_at` is the version token for the 409 check.
+     *
+     * @var string|null
+     */
+    public const CREATED_AT = null;
 
     /**
      * @return array<string, string>
@@ -34,6 +43,7 @@ class TerminalProductivityProfile extends Model
             'rate_unit' => TerminalProductivityProfileRateUnit::class,
             'valid_from' => 'date',
             'valid_to' => 'date',
+            'updated_at' => 'datetime',
         ];
     }
 
