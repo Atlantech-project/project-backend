@@ -167,7 +167,7 @@ test('the version token updated_at is DATETIME(6) and moves on every update on t
         'berths', 'tugboats', 'safety_constraints', 'port_shifts', 'equipment', 'storage_facilities',
         'pilot_profiles', 'tug_master_profiles', 'pilot_rank_limits', 'yard_slots',
         'berthing_requests', 'vessels', 'baplie_files', 'entry_window_proposals', 'recommendations',
-        'terminal_recommendations', 'operational_plans', 'plan_components',
+        'terminal_recommendations', 'operational_plans', 'plan_components', 'terminal_productivity_profiles',
     ];
 
     $tokens = DB::table('information_schema.COLUMNS')

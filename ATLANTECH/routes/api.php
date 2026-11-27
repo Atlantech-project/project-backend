@@ -17,6 +17,10 @@ use App\Modules\Access\Http\Controllers\UserDeviceController;
 use App\Modules\Access\Http\Controllers\UserRoleController;
 use App\Modules\Access\Http\Middleware\EnsureMobileHeaders;
 use App\Modules\MasterData\Http\Controllers\BerthController;
+use App\Modules\MasterData\Http\Controllers\NavigationChannelController;
+use App\Modules\MasterData\Http\Controllers\PortProfileController;
+use App\Modules\MasterData\Http\Controllers\PortSettingController;
+use App\Modules\MasterData\Http\Controllers\ProductivityProfileController;
 use App\Modules\MasterData\Http\Controllers\SystemInfoController;
 use App\Modules\MasterData\Http\Controllers\TerminalController;
 use App\Modules\Shared\Http\Controllers\AuditLogController;
@@ -48,8 +52,11 @@ Route::middleware('port.api')->group(function () {
     Route::middleware('ability:port-state.read')->group(function () {
         Route::get('terminals', [TerminalController::class, 'index'])->name('terminals.index');
         Route::get('terminals/{terminal}', [TerminalController::class, 'show'])->middleware('terminal.scope')->name('terminals.show');
+        Route::get('terminals/{terminal}/productivity-profiles', [ProductivityProfileController::class, 'index'])->middleware('terminal.scope')->name('terminals.productivity-profiles.index');
         Route::get('berths', [BerthController::class, 'index'])->name('berths.index');
         Route::get('berths/{berth}', [BerthController::class, 'show'])->name('berths.show');
+        Route::get('port-profile', [PortProfileController::class, 'show'])->name('port-profile.show');
+        Route::get('navigation-channels', [NavigationChannelController::class, 'index'])->name('navigation-channels.index');
     });
 
     Route::middleware('ability:port-setup.manage')->group(function () {
@@ -62,6 +69,19 @@ Route::middleware('port.api')->group(function () {
         Route::post('berths/{berth}/deactivate', [BerthController::class, 'deactivate'])->middleware('version.token:berth')->name('berths.deactivate');
         Route::post('berths/{berth}/activate', [BerthController::class, 'activate'])->middleware('version.token:berth')->name('berths.activate');
         Route::post('berths/{berth}/maintenance', [BerthController::class, 'maintenance'])->middleware('version.token:berth')->name('berths.maintenance');
+        Route::get('port-settings', [PortSettingController::class, 'index'])->name('port-settings.index');
+        Route::put('port-settings/{setting:setting_key}', [PortSettingController::class, 'update'])->middleware('version.token:setting')->name('port-settings.update');
+        Route::put('port-profile/{portProfile}', [PortProfileController::class, 'update'])->middleware('version.token:portProfile')->name('port-profile.update');
+        Route::post('navigation-channels', [NavigationChannelController::class, 'store'])->name('navigation-channels.store');
+        Route::put('navigation-channels/{channel}', [NavigationChannelController::class, 'update'])->middleware('version.token:channel')->name('navigation-channels.update');
+        Route::post('navigation-channels/{channel}/deactivate', [NavigationChannelController::class, 'deactivate'])->middleware('version.token:channel')->name('navigation-channels.deactivate');
+        Route::post('navigation-channels/{channel}/activate', [NavigationChannelController::class, 'activate'])->middleware('version.token:channel')->name('navigation-channels.activate');
+        Route::put('navigation-channels/{channel}/waypoints', [NavigationChannelController::class, 'replaceWaypoints'])->middleware('version.token:channel')->name('navigation-channels.waypoints.replace');
+    });
+
+    Route::middleware(['ability:equipment.manage', 'terminal.scope'])->scopeBindings()->group(function () {
+        Route::post('terminals/{terminal}/productivity-profiles', [ProductivityProfileController::class, 'store'])->name('terminals.productivity-profiles.store');
+        Route::put('terminals/{terminal}/productivity-profiles/{terminalProductivityProfile}', [ProductivityProfileController::class, 'update'])->middleware('version.token:terminalProductivityProfile')->name('terminals.productivity-profiles.update');
     });
 
     Route::middleware('ability:devices.manage')->scopeBindings()->group(function () {
