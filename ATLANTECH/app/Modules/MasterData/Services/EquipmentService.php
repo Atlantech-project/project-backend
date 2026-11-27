@@ -7,6 +7,7 @@ use App\Modules\MasterData\Models\Terminal;
 use App\Modules\Shared\Audit\AuditService;
 use App\Modules\Shared\Enums\TerminalType;
 use App\Modules\Shared\Support\VersionToken;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 
@@ -31,7 +32,11 @@ class EquipmentService
         $this->assertContainerTerminal($terminal);
 
         return $this->audit->transaction(function () use ($terminal, $data, $actorId): Equipment {
-            $equipment = $terminal->equipment()->create(Arr::only($data, ['equipment_category_id', ...self::QUANTITIES]));
+            try {
+                $equipment = $terminal->equipment()->create(Arr::only($data, ['equipment_category_id', ...self::QUANTITIES]));
+            } catch (UniqueConstraintViolationException) {
+                throw ValidationException::withMessages(['equipment_category_id' => ['validation.unique']]);
+            }
             $equipment->refresh();
             $this->audit->recordCreated($equipment, $actorId);
             $this->syncCapabilities($equipment, $data['capabilities'], $actorId);
