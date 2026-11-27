@@ -43,6 +43,10 @@ return [
     'terminals' => [
         'terminal_inactive' => 'This terminal is inactive. Its data can be viewed but not changed.',
     ],
+    'equipment' => [
+        'units_exceed_quantity' => 'Units in maintenance and blocked units together cannot exceed the quantity.',
+        'not_container_terminal' => 'Equipment can only be managed on a container terminal.',
+    ],
     'berths' => [
         'terminal_in_use' => 'This terminal cannot be removed from the berth because safety constraints or recommendations use the pair.',
         'terminal_inactive' => 'A berth cannot be linked to an inactive terminal.',
