@@ -8,7 +8,7 @@
 openapi: 3.0.3
 info:
   title: ATLANTECH Port API
-  version: '1.12.0'
+  version: '1.13.0'
   description: |
     The port API used by the web app (Vue) and the mobile app (Flutter).
 
@@ -1412,6 +1412,79 @@ paths:
                 $ref: '#/components/schemas/SystemInfo'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/port-profile:
+    get:
+      tags: [Master data]
+      operationId: portProfileShow
+      summary: Show the port profile
+      description: The port's profile (P-26). 503 while the port is not provisioned yet.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The port profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortProfile'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '426':
+          $ref: '#/components/responses/AppUpdateRequired'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/port-profile/{portProfile}:
+    put:
+      tags: [Master data]
+      operationId: portProfileUpdate
+      summary: Update the port profile
+      description: >-
+        The Port Admin changes `name`, `latitude`, `longitude`, `timezone` and `boundary_coordinates`; a field that is not
+        sent keeps its value. `id`, `public_id`, `port_code` and `governorate_code` come from the SaaS registry and are 422.
+        There is one profile: the path takes the `id` of the GET answer, any other is 404. A Bearer request needs an
+        `Idempotency-Key`.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: portProfile
+          in: path
+          required: true
+          description: The profile's `id` (1).
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/XsrfTokenWebOnly'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePortProfileRequest'
+      responses:
+        '200':
+          description: The profile with the new `version`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortProfile'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/VersionConflict'
+        '419':
+          $ref: '#/components/responses/SessionExpired'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '426':
+          $ref: '#/components/responses/AppUpdateRequired'
 components:
   securitySchemes:
     cookieAuth:
@@ -1713,6 +1786,73 @@ components:
           example: '2026-12-02T10:00:00.000000Z'
         user:
           $ref: '#/components/schemas/UserProfile'
+    PortProfile:
+      type: object
+      description: The port's profile (P-26). One row per port server.
+      required: [id, public_id, port_code, governorate_code, name, latitude, longitude, timezone, boundary_coordinates, version]
+      properties:
+        id:
+          type: integer
+          example: 1
+        public_id:
+          type: string
+          format: uuid
+          description: The SaaS registry value; read-only.
+        port_code:
+          type: string
+          nullable: true
+          description: UN/LOCODE; read-only.
+          example: EGDAM
+        governorate_code:
+          type: string
+          description: ISO 3166-2:EG; read-only.
+          example: EG-DT
+        name:
+          type: string
+          example: Damietta Port
+        latitude:
+          type: number
+          example: 31.45
+        longitude:
+          type: number
+          example: 31.76
+        timezone:
+          type: string
+          description: IANA time zone.
+          example: Africa/Cairo
+        boundary_coordinates:
+          type: object
+          nullable: true
+          description: GeoJSON Polygon with [longitude, latitude] positions.
+        version:
+          type: string
+          example: '2026-11-27T10:15:04.123456Z'
+    UpdatePortProfileRequest:
+      type: object
+      required: [version]
+      properties:
+        name:
+          type: string
+          maxLength: 150
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        timezone:
+          type: string
+          maxLength: 64
+          example: Africa/Cairo
+        boundary_coordinates:
+          type: object
+          nullable: true
+          description: GeoJSON Polygon with closed rings of [longitude, latitude] positions.
+        version:
+          type: string
+          description: The `version` last read.
     SystemInfo:
       type: object
       description: Public port information (CT-04 v1.1).
