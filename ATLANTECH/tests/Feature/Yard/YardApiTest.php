@@ -284,7 +284,8 @@ it('blocks and unblocks one slot and a whole stack, by the officer too', functio
         ->postJson(yardUrl("yard-blocks/{$block->id}/stack-status"), ['bay' => 1, 'row_no' => 1, 'status' => 'BLOCKED'])
         ->assertOk()->assertJsonCount(3, 'data');
 
-    expect(YardSlot::query()->where('yard_block_id', $block->id)->where('status', 'BLOCKED')->count())->toBe(4);
+    expect(YardSlot::query()->where('yard_block_id', $block->id)->where('status', 'BLOCKED')->count())->toBe(4)
+        ->and(AuditLog::query()->where(['action' => AuditLogAction::Update, 'entity_type' => 'yard_slots'])->count())->toBe(4);
 
     $this->actingAs($this->officer, 'web')
         ->postJson(yardUrl("yard-blocks/{$block->id}/stack-status"), ['bay' => 9, 'row_no' => 1, 'status' => 'ACTIVE'])
