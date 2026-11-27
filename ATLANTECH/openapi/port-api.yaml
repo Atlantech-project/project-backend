@@ -1648,6 +1648,86 @@ paths:
           $ref: '#/components/responses/ValidationFailed'
         '426':
           $ref: '#/components/responses/AppUpdateRequired'
+  /api/v1/port-settings:
+    get:
+      tags: [Master data]
+      operationId: portSettingsList
+      summary: List the port settings
+      description: Settings ordered by key, for the Port Admin (P-62, DEC-12).
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: A page of settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortSettingPage'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '426':
+          $ref: '#/components/responses/AppUpdateRequired'
+  /api/v1/port-settings/{setting}:
+    put:
+      tags: [Master data]
+      operationId: portSettingsUpdate
+      summary: Change one setting's value
+      description: >-
+        Only the value changes; keys, types, limits and descriptions come from the seeds. The value must have the JSON
+        type of `value_type` (whole numbers and decimals may also be sent as text, at most 6 decimal places), stay within
+        `min` and `max`, and keep the cross-field rules (CT-18 section 4) when both keys of a rule exist:
+        `part1_min_window_minutes` is a multiple of `part1_time_step_minutes`, and `validation_result_ttl_seconds` is
+        greater than `validation_timeout_seconds`. `min_app_version` is `x.y.z`. A refused value is 422 on `value` with
+        an `errors.port_settings.*` key. The same value again changes nothing. A Bearer request needs an
+        `Idempotency-Key`.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: setting
+          in: path
+          required: true
+          description: The `setting_key`.
+          schema:
+            type: string
+            example: reminder_lead_minutes
+        - $ref: '#/components/parameters/XsrfTokenWebOnly'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePortSettingRequest'
+      responses:
+        '200':
+          description: The setting with the new `version`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortSetting'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/VersionConflict'
+        '419':
+          $ref: '#/components/responses/SessionExpired'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '426':
+          $ref: '#/components/responses/AppUpdateRequired'
 components:
   securitySchemes:
     cookieAuth:
@@ -2157,6 +2237,55 @@ components:
         version:
           type: string
           description: The channel's `version` last read.
+    PortSetting:
+      type: object
+      required: [setting_key, value_type, value, min, max, description, updated_by, version]
+      properties:
+        setting_key:
+          type: string
+          example: reminder_lead_minutes
+        value_type:
+          type: string
+          enum: [INT, DECIMAL, BOOL, STRING, JSON]
+        value:
+          description: Has the JSON type of `value_type`.
+          example: 120
+        min:
+          type: number
+          nullable: true
+        max:
+          type: number
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        updated_by:
+          type: integer
+          nullable: true
+          description: The user who last changed the value; null while it is the seeded default.
+        version:
+          type: string
+          example: '2026-11-27T10:15:04.123456Z'
+    PortSettingPage:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortSetting'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+    UpdatePortSettingRequest:
+      type: object
+      required: [value, version]
+      properties:
+        value:
+          description: The new value, with the JSON type of the setting's `value_type`.
+          example: 90
+        version:
+          type: string
+          description: The `version` last read.
     SystemInfo:
       type: object
       description: Public port information (CT-04 v1.1).

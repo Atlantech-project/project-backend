@@ -46,6 +46,19 @@ return [
     'navigation_channels' => [
         'datum_mismatch' => 'The channel depth datum must match the depth datum of every berth.',
     ],
+    'port_settings' => [
+        'invalid_int' => 'This setting needs a whole number.',
+        'invalid_decimal' => 'This setting needs a number with at most 6 decimal places.',
+        'invalid_bool' => 'This setting needs true or false.',
+        'invalid_string' => 'This setting needs some text.',
+        'invalid_json' => 'This setting needs a JSON object or list.',
+        'too_long' => 'The value is too long.',
+        'below_min' => 'The value is lower than the smallest allowed.',
+        'above_max' => 'The value is higher than the largest allowed.',
+        'app_version_format' => 'The app version must look like 1.2.3.',
+        'window_not_multiple_of_step' => 'The minimum window must be a multiple of the time step.',
+        'ttl_not_greater_than_timeout' => 'The validation result lifetime must be longer than the validation timeout.',
+    ],
     'berths' => [
         'terminal_in_use' => 'This terminal cannot be removed from the berth because safety constraints or recommendations use the pair.',
         'terminal_inactive' => 'A berth cannot be linked to an inactive terminal.',

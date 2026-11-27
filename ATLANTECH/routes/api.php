@@ -19,6 +19,7 @@ use App\Modules\Access\Http\Middleware\EnsureMobileHeaders;
 use App\Modules\MasterData\Http\Controllers\BerthController;
 use App\Modules\MasterData\Http\Controllers\NavigationChannelController;
 use App\Modules\MasterData\Http\Controllers\PortProfileController;
+use App\Modules\MasterData\Http\Controllers\PortSettingController;
 use App\Modules\MasterData\Http\Controllers\SystemInfoController;
 use App\Modules\MasterData\Http\Controllers\TerminalController;
 use App\Modules\Shared\Http\Controllers\AuditLogController;
@@ -66,6 +67,8 @@ Route::middleware('port.api')->group(function () {
         Route::post('berths/{berth}/deactivate', [BerthController::class, 'deactivate'])->middleware('version.token:berth')->name('berths.deactivate');
         Route::post('berths/{berth}/activate', [BerthController::class, 'activate'])->middleware('version.token:berth')->name('berths.activate');
         Route::post('berths/{berth}/maintenance', [BerthController::class, 'maintenance'])->middleware('version.token:berth')->name('berths.maintenance');
+        Route::get('port-settings', [PortSettingController::class, 'index'])->name('port-settings.index');
+        Route::put('port-settings/{setting:setting_key}', [PortSettingController::class, 'update'])->middleware('version.token:setting')->name('port-settings.update');
         Route::put('port-profile/{portProfile}', [PortProfileController::class, 'update'])->middleware('version.token:portProfile')->name('port-profile.update');
         Route::post('navigation-channels', [NavigationChannelController::class, 'store'])->name('navigation-channels.store');
         Route::put('navigation-channels/{channel}', [NavigationChannelController::class, 'update'])->middleware('version.token:channel')->name('navigation-channels.update');
