@@ -91,9 +91,28 @@ it('refuses a bad body with 422 and stores nothing', function (array $overrides,
     'typed available quantity' => [['available_quantity' => 3], 'available_quantity'],
     'unknown category' => [['equipment_category_id' => 999999], 'equipment_category_id'],
     'unknown capability type' => [['capabilities' => [['capability_type_id' => 999999, 'value' => 1]]], 'capabilities.0.capability_type_id'],
-    'repeated capability type' => [['capabilities' => [['capability_type_id' => 999999, 'value' => 1], ['capability_type_id' => 999999, 'value' => 2]]], 'capabilities.0.capability_type_id'],
-    'negative value' => [['capabilities' => [['capability_type_id' => 999999, 'value' => -1]]], 'capabilities.0.value'],
 ]);
+
+it('refuses a repeated capability type and a negative value with 422', function () {
+    $repeated = [['capability_type_id' => $this->lifting->id, 'value' => 1], ['capability_type_id' => $this->lifting->id, 'value' => 2]];
+
+    $errors = $this->actingAs($this->admin, 'web')
+        ->postJson(equipmentPath($this->terminal), equipmentBody(['equipment_category_id' => $this->category->id, 'capabilities' => $repeated]))
+        ->assertUnprocessable()
+        ->json('errors');
+
+    expect($errors['capabilities.0.capability_type_id'])->toBe(['validation.distinct']);
+
+    $this->actingAs($this->admin, 'web')
+        ->postJson(equipmentPath($this->terminal), equipmentBody([
+            'equipment_category_id' => $this->category->id,
+            'capabilities' => [['capability_type_id' => $this->lifting->id, 'value' => -1]],
+        ]))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrorFor('capabilities.0.value', 'errors');
+
+    expect(Equipment::query()->count())->toBe(0);
+});
 
 it('refuses a second row of the same category on a terminal with 422', function () {
     $existing = storedEquipment();
@@ -113,6 +132,41 @@ it('refuses equipment on a non-container terminal with 422', function () {
         ->assertJsonPath('errors.terminal', ['errors.equipment.not_container_terminal']);
 
     expect(Equipment::query()->count())->toBe(0);
+});
+
+it('refuses an update on a non-container terminal with 422 and changes nothing', function () {
+    $equipment = storedEquipment();
+    $this->terminal->update(['terminal_type' => TerminalType::NonContainer]);
+
+    $this->actingAs($this->admin, 'web')
+        ->putJson(equipmentPath($this->terminal, $equipment), equipmentBody(['quantity' => 9, 'version' => VersionToken::of($equipment)]))
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.terminal', ['errors.equipment.not_container_terminal']);
+
+    expect($equipment->refresh()->quantity)->toBe(5);
+});
+
+it('updates the quantities and a capability value, recomputes availability and audits both rows', function () {
+    $equipment = storedEquipment();
+    $before = VersionToken::of($equipment);
+
+    $this->actingAs($this->admin, 'web')
+        ->putJson(equipmentPath($this->terminal, $equipment), equipmentBody([
+            'quantity' => 9,
+            'capabilities' => [['capability_type_id' => $this->lifting->id, 'value' => 70]],
+            'version' => $before,
+        ]))
+        ->assertOk()
+        ->assertJsonPath('quantity', 9)
+        ->assertJsonPath('available_quantity', 7)
+        ->assertJsonPath('capabilities.0.value', 70)
+        ->assertJsonPath('version', fn (string $version) => $version !== $before);
+
+    $updates = AuditLog::query()->where('action', AuditLogAction::Update)->get();
+
+    expect($equipment->refresh()->quantity)->toBe(9)
+        ->and($updates->pluck('entity_type')->sort()->values()->all())->toBe(['equipment', 'equipment_capabilities'])
+        ->and($updates->firstWhere('entity_type', 'equipment')->after_state['quantity'])->toBe(9);
 });
 
 it('replaces the capability list, audits removed and added rows, and moves the version when only capabilities change', function () {

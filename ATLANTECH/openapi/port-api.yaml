@@ -1620,7 +1620,15 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/VersionConflict'
+          description: >-
+            409 VERSION_CONFLICT for a stale `version` (with `current`), or 409 CONFLICT for a terminal-scoped user writing
+            in an inactive terminal.
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/VersionConflictProblem'
+                  - $ref: '#/components/schemas/Problem'
         '422':
           $ref: '#/components/responses/ValidationFailed'
         '419':
