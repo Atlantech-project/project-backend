@@ -40,6 +40,22 @@ return [
         'cannot_deactivate_self' => 'You cannot deactivate your own account.',
         'last_port_admin' => 'At least one active Port Admin must remain.',
     ],
+    'tug_masters' => [
+        'tug_taken' => 'This tug already has a tug master. Unassign that tug master first.',
+    ],
+    'port_shifts' => [
+        'overlap' => 'This shift overlaps another active shift.',
+        'in_use' => 'Schedules from today on use this shift, so its times cannot change and it cannot be deactivated.',
+    ],
+    'pilot_rank_limits' => [
+        'order' => 'A more senior rank must be allowed at least the vessel length allowed to a more junior rank.',
+    ],
+    'schedules' => [
+        'past_date' => 'A schedule date cannot be before today in port time.',
+        'person_unavailable' => 'This person is not active in this role.',
+        'shift_inactive' => 'This shift is not active.',
+        'duplicate' => 'This person is already on this shift on this date.',
+    ],
     'terminals' => [
         'terminal_inactive' => 'This terminal is inactive. Its data can be viewed but not changed.',
     ],
