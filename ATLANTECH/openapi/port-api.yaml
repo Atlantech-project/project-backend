@@ -1449,8 +1449,8 @@ paths:
       description: >-
         Port Authority Staff change any particular; a field that is not sent keeps its value. `imo_number` is never edited
         (422). `call_sign` and `flag_state` are accepted only while empty (the BAPLIE worker fills them too); sending the
-        stored value again changes nothing, any other value is 422. `beam` stays below `loa`. 409 is a stale `version`.
-        A Bearer request needs an `Idempotency-Key`.
+        stored value again changes nothing, any other value is 422 `errors.vessels.already_set`. A `beam` not below `loa`
+        is 422 `errors.vessels.beam_not_below_loa`. 409 is a stale `version`. A Bearer request needs an `Idempotency-Key`.
       security:
         - cookieAuth: []
         - bearerAuth: []

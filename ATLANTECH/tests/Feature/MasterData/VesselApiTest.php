@@ -128,6 +128,20 @@ it('refuses an invalid value with 422 and changes nothing', function (array $cha
     'both, beam above length' => [['loa' => 100, 'beam' => 101], 'beam'],
 ]);
 
+it('names the broken rule in the 422, so the frontend can translate it', function () {
+    $vessel = storedVessel();
+    $vessel->forceFill(['call_sign' => 'SUXX'])->save();
+    $vessel = $vessel->fresh();
+
+    $this->actingAs($this->staff, 'web')->putJson("/api/v1/vessels/{$vessel->id}", vesselEdit($vessel, ['beam' => 300]))
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.beam.0', 'errors.vessels.beam_not_below_loa');
+
+    $this->actingAs($this->staff, 'web')->putJson("/api/v1/vessels/{$vessel->id}", vesselEdit($vessel, ['call_sign' => 'SUYY']))
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.call_sign.0', 'errors.vessels.already_set');
+});
+
 it('fills an empty call sign and flag, and accepts the same values again', function () {
     $vessel = storedVessel();
 

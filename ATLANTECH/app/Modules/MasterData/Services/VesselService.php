@@ -54,7 +54,7 @@ class VesselService
             }
 
             if ($stored !== null) {
-                throw ValidationException::withMessages([$column => __('errors.vessels.already_set')]);
+                throw ValidationException::withMessages([$column => 'errors.vessels.already_set']);
             }
 
             $vessel->forceFill([$column => $value]);
@@ -64,7 +64,7 @@ class VesselService
     private function assertBeamBelowLength(Vessel $vessel): void
     {
         if ((float) $vessel->beam >= (float) $vessel->loa) {
-            throw ValidationException::withMessages(['beam' => __('errors.vessels.beam_not_below_loa')]);
+            throw ValidationException::withMessages(['beam' => 'errors.vessels.beam_not_below_loa']);
         }
     }
 }
