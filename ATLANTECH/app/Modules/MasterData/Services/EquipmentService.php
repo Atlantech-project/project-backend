@@ -5,7 +5,9 @@ namespace App\Modules\MasterData\Services;
 use App\Modules\MasterData\Models\Equipment;
 use App\Modules\MasterData\Models\Terminal;
 use App\Modules\Shared\Audit\AuditService;
+use App\Modules\Shared\Enums\ResourceKind;
 use App\Modules\Shared\Enums\TerminalType;
+use App\Modules\Shared\Events\ResourceChanged;
 use App\Modules\Shared\Support\VersionToken;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
@@ -14,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * Creating and editing the equipment of a container terminal with its capabilities (P2-F4, FR-MD-11). The equipment row's
  * version covers its capabilities, so a change to a capability alone still moves `updated_at`. Equipment is never deleted.
- * `ResourceChanged` for equipment is P2-F7.
+ * New equipment, and a saved change of quantities or capabilities, dispatch `ResourceChanged` (P2-F7).
  */
 class EquipmentService
 {
@@ -40,6 +42,7 @@ class EquipmentService
             $equipment->refresh();
             $this->audit->recordCreated($equipment, $actorId);
             $this->syncCapabilities($equipment, $data['capabilities'], $actorId);
+            ResourceChanged::dispatch(ResourceKind::Equipment, $equipment->id, $actorId);
 
             return $equipment;
         });
@@ -65,8 +68,14 @@ class EquipmentService
                 $this->audit->recordUpdated($locked, $actorId);
             }
 
-            if ($this->syncCapabilities($locked, $data['capabilities'], $actorId) && ! $quantitiesChanged) {
+            $capabilitiesChanged = $this->syncCapabilities($locked, $data['capabilities'], $actorId);
+
+            if ($capabilitiesChanged && ! $quantitiesChanged) {
                 $locked->touch();
+            }
+
+            if ($quantitiesChanged || $capabilitiesChanged) {
+                ResourceChanged::dispatch(ResourceKind::Equipment, $locked->id, $actorId);
             }
 
             return $locked->refresh();

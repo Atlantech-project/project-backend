@@ -2,10 +2,14 @@
 
 namespace App\Modules\MasterData\Services;
 
+use App\Modules\Access\Enums\Role;
 use App\Modules\MasterData\Enums\PilotRank;
+use App\Modules\MasterData\Models\PilotProfile;
 use App\Modules\MasterData\Models\PilotRankLimit;
 use App\Modules\Shared\Audit\AuditService;
 use App\Modules\Shared\Enums\AuditLogAction;
+use App\Modules\Shared\Enums\ResourceKind;
+use App\Modules\Shared\Events\ResourceChanged;
 use App\Modules\Shared\Support\VersionToken;
 use Illuminate\Validation\ValidationException;
 
@@ -13,7 +17,8 @@ use Illuminate\Validation\ValidationException;
  * The largest vessel LOA each pilot rank may handle (P2-F3, FR-MD-09, AI-051). A more senior rank is never limited
  * more than a junior one: FIRST ≥ SECOND ≥ THIRD, NULL (no limit) counting as the largest (Q9). The three rows are
  * locked together, so two changes cannot each pass the check against the other's old value. The key is the rank, not a
- * number, so the audit row has no `entity_id` and names the rank in both states.
+ * number, so the audit row has no `entity_id` and names the rank in both states. A saved change dispatches
+ * `ResourceChanged` for each active pilot of the rank (P2-F7).
  */
 class PilotRankLimitService
 {
@@ -50,9 +55,21 @@ class PilotRankLimitService
                 ['pilot_rank' => $limit->pilot_rank->value, 'max_vessel_loa' => $before],
                 ['pilot_rank' => $limit->pilot_rank->value, 'max_vessel_loa' => $limit->max_vessel_loa],
             );
+            $this->announceActivePilots($limit->pilot_rank, $actorId);
 
             return $limit;
         });
+    }
+
+    private function announceActivePilots(PilotRank $rank, int $actorId): void
+    {
+        PilotProfile::query()
+            ->where('pilot_rank', $rank)
+            ->whereHas('user', fn ($user) => $user->where('is_active', true)
+                ->whereHas('activeRoleAssignment', fn ($assignment) => $assignment->where('role', Role::MarinePilot)))
+            ->orderBy('user_id')
+            ->pluck('user_id')
+            ->each(fn (int $userId) => ResourceChanged::dispatch(ResourceKind::Pilot, $userId, $actorId));
     }
 
     /**

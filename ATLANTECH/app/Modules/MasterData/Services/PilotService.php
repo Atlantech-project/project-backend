@@ -5,13 +5,16 @@ namespace App\Modules\MasterData\Services;
 use App\Modules\Access\Enums\Role;
 use App\Modules\MasterData\Models\PilotProfile;
 use App\Modules\Shared\Audit\AuditService;
+use App\Modules\Shared\Enums\ResourceKind;
+use App\Modules\Shared\Events\ResourceChanged;
 use App\Modules\Shared\Support\VersionToken;
 use Illuminate\Support\Arr;
 
 /**
  * The pilot roster of the Pilotage Manager (P2-F3, FR-MD-09): create (user, `MARINE_PILOT` role and profile in one
  * transaction), update, promote and deactivate. The profile's `updated_at` is the version of the whole pilot, so a
- * change to the user alone also moves it. P2-F7 dispatches `ResourceChanged` (PILOT) after a saved change here.
+ * change to the user alone also moves it. A saved change of rank or of active state dispatches `ResourceChanged`
+ * (P2-F7); a new pilot, name or phone does not.
  */
 class PilotService
 {
@@ -50,6 +53,7 @@ class PilotService
             if ($pilot->isDirty()) {
                 $pilot->save();
                 $this->audit->recordUpdated($pilot, $actorId);
+                ResourceChanged::dispatch(ResourceKind::Pilot, $pilot->user_id, $actorId);
             } elseif ($userChanged) {
                 $pilot->touch();
             }
@@ -68,6 +72,7 @@ class PilotService
 
             if ($this->crew->setActive($this->crew->lockMember($pilot->user_id, Role::MarinePilot), $active, $actorId)) {
                 $pilot->touch();
+                ResourceChanged::dispatch(ResourceKind::Pilot, $pilot->user_id, $actorId);
             }
 
             return $pilot->refresh();
