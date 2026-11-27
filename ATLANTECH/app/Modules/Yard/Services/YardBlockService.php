@@ -101,7 +101,7 @@ class YardBlockService
                 'yard_blocks',
                 $locked->id,
                 $actor->id,
-                ['slots' => $slots->count()],
+                ['slots' => $slots->count(), 'bays' => (int) $slots->max('bay'), 'rows' => (int) $slots->max('row_no'), 'tiers' => (int) $slots->max('tier')],
                 [
                     'bays' => $bays, 'rows' => $rows, 'tiers' => $tiers,
                     'slots' => $bays * $rows * $tiers, 'added' => count($missing), 'removed' => $extra->count(),
