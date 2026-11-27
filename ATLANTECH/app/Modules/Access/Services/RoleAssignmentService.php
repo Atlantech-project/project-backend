@@ -20,6 +20,7 @@ class RoleAssignmentService
     public function __construct(
         private readonly AuditService $audit,
         private readonly PortAdminGuard $admins,
+        private readonly RoleEndHandler $roleEnd,
     ) {}
 
     /**
@@ -59,6 +60,10 @@ class RoleAssignmentService
             $this->audit->recordCreated($assignment, $actor->id);
             $user->touch();
 
+            if ($current !== null && $current->role !== $role) {
+                $this->roleEnd->roleEnded($user->id, $current->role, $actor->id);
+            }
+
             return $user;
         });
 
@@ -89,6 +94,7 @@ class RoleAssignmentService
 
             $this->close($current, $this->roleSwitchTime($current), $actor);
             $user->touch();
+            $this->roleEnd->roleEnded($user->id, $current->role, $actor->id);
 
             return $user;
         });

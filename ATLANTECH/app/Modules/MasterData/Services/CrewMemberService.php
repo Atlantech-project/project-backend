@@ -49,6 +49,14 @@ class CrewMemberService
     }
 
     /**
+     * Lock the user of a profile without checking the role, for a write that a former member may still receive.
+     */
+    public function lockUser(int $userId): User
+    {
+        return User::query()->whereKey($userId)->lockForUpdate()->firstOrFail();
+    }
+
+    /**
      * Lock the user of a pilot or tug master profile and check that the user still holds `$role`. A profile stays when the
      * Port Admin gives its user another role (P2-E2), so the route binding alone does not prove the department: without
      * this check a Pilotage Manager could deactivate a former pilot who is now the last Port Admin. Role changes lock the

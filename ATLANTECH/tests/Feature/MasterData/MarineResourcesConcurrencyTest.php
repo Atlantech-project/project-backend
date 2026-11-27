@@ -4,6 +4,8 @@ use App\Modules\Access\Enums\Role;
 use App\Modules\Access\Models\OrganizationUnit;
 use App\Modules\Access\Models\User;
 use App\Modules\Access\Models\UserRoleAssignment;
+use App\Modules\Access\Services\RoleAssignmentService;
+use App\Modules\Access\Services\UserAdministrationService;
 use App\Modules\MasterData\Models\PilotProfile;
 use App\Modules\MasterData\Models\PilotRankLimit;
 use App\Modules\MasterData\Models\PilotSchedule;
@@ -153,3 +155,45 @@ it('reads the role with a locking read, so activating a pilot cannot count activ
 
     expect($pilot->user->refresh()->is_active)->toBeFalse();
 });
+
+it('changes a user only after the tug master profile is free, so the link is never cleared on stale data', function (string $write) {
+    $tugboat = Tugboat::factory()->create();
+    $master = makeTugMaster($tugboat);
+    $user = $master->user;
+    $version = VersionToken::of($user);
+
+    holdLock('select user_id from tug_master_profiles where user_id = ? for update', [$master->user_id]);
+
+    $call = match ($write) {
+        'deactivate' => fn () => app(UserAdministrationService::class)->deactivate($user, $version, $this->actor, 'POST /x'),
+        'assign' => fn () => app(RoleAssignmentService::class)->assign($user, Role::PortStaff, null, $version, $this->actor, 'POST /x'),
+        'end' => fn () => app(RoleAssignmentService::class)->end($user, $version, $this->actor, 'POST /x'),
+    };
+
+    expect($call)->toThrow(QueryException::class, 'Lock wait timeout');
+
+    expect($master->refresh()->assigned_tugboat_id)->toBe($tugboat->id)
+        ->and($user->refresh()->is_active)->toBeTrue();
+})->with(['deactivate', 'assign', 'end']);
+
+it('locks the user before the tug master profile in every tug master write, the order of the /users routes', function (string $write) {
+    $master = makeTugMaster(Tugboat::factory()->create());
+    $queries = [];
+    DB::listen(function ($query) use (&$queries) {
+        if (str_contains($query->sql, 'for update')) {
+            $queries[] = $query->sql;
+        }
+    });
+    DB::beginTransaction();
+
+    match ($write) {
+        'update' => app(TugMasterService::class)->update($master, ['name' => 'New Name'], VersionToken::of($master), $this->actor->id),
+        'deactivate' => app(TugMasterService::class)->setActive($master, false, VersionToken::of($master), $this->actor->id),
+        'unlink' => app(TugMasterService::class)->assignTugboat($master, null, VersionToken::of($master), $this->actor->id),
+    };
+
+    DB::rollBack();
+
+    expect($queries[0])->toContain('from `users`')
+        ->and(collect($queries)->search(fn (string $sql) => str_contains($sql, 'from `tug_master_profiles`')))->toBeGreaterThan(0);
+})->with(['update', 'deactivate', 'unlink']);

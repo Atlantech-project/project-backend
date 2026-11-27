@@ -3,7 +3,6 @@
 namespace App\Modules\MasterData\Services;
 
 use App\Modules\Access\Enums\Role;
-use App\Modules\Access\Models\User;
 use App\Modules\MasterData\Models\Tugboat;
 use App\Modules\MasterData\Models\TugMasterProfile;
 use App\Modules\Shared\Audit\AuditService;
@@ -15,6 +14,9 @@ use Illuminate\Validation\ValidationException;
  * update, link to a tug and deactivate. A tug has at most one tug master: every link locks the tug row first, so two
  * links to the same tug run one after the other (the UNIQUE index is the last guard). Deactivating clears the link in
  * the same transaction. P2-F7 dispatches `ResourceChanged` as TUG with the tug id (CT-10) after a saved change here.
+ *
+ * Lock order (TUG-LINK-01): the user row, then the role assignment, then the profile. The `/users` routes lock in the same
+ * order before `TugLinkRoleEndHandler` clears the link; the other order would deadlock two writes on one tug master.
  */
 class TugMasterService
 {
@@ -35,7 +37,7 @@ class TugMasterService
             $tugboatId = $data['tugboat_id'] ?? null;
 
             if ($tugboatId !== null) {
-                $this->claimTugboat($tugboatId, null, $actorId);
+                $this->assertTugboatFree($tugboatId, null);
             }
 
             $created = $this->crew->createUser($data, Role::TugMaster, $actorId);
@@ -53,9 +55,10 @@ class TugMasterService
     public function update(TugMasterProfile $target, array $data, string $version, int $actorId): TugMasterProfile
     {
         return $this->audit->transaction(function () use ($target, $data, $version, $actorId): TugMasterProfile {
+            $user = $this->crew->lockMember($target->user_id, Role::TugMaster);
             $master = VersionToken::lockAndAssert($target, $version);
 
-            if ($this->crew->updateUser($this->crew->lockMember($master->user_id, Role::TugMaster), $data, $actorId)) {
+            if ($this->crew->updateUser($user, $data, $actorId)) {
                 $master->touch();
             }
 
@@ -73,6 +76,7 @@ class TugMasterService
     public function assignTugboat(TugMasterProfile $target, ?int $tugboatId, string $version, int $actorId): TugMasterProfile
     {
         return $this->audit->transaction(function () use ($target, $tugboatId, $version, $actorId): TugMasterProfile {
+            $this->crew->lockUser($target->user_id);
             $master = VersionToken::lockAndAssert($target, $version);
 
             if ($master->assigned_tugboat_id === $tugboatId) {
@@ -81,7 +85,7 @@ class TugMasterService
 
             if ($tugboatId !== null) {
                 $this->crew->lockMember($master->user_id, Role::TugMaster);
-                $this->claimTugboat($tugboatId, $master->user_id, $actorId);
+                $this->assertTugboatFree($tugboatId, $master->user_id);
             }
 
             $master->update(['assigned_tugboat_id' => $tugboatId]);
@@ -98,8 +102,9 @@ class TugMasterService
     public function setActive(TugMasterProfile $target, bool $active, string $version, int $actorId): TugMasterProfile
     {
         return $this->audit->transaction(function () use ($target, $active, $version, $actorId): TugMasterProfile {
+            $user = $this->crew->lockMember($target->user_id, Role::TugMaster);
             $master = VersionToken::lockAndAssert($target, $version);
-            $userChanged = $this->crew->setActive($this->crew->lockMember($master->user_id, Role::TugMaster), $active, $actorId);
+            $userChanged = $this->crew->setActive($user, $active, $actorId);
 
             if (! $active && $master->assigned_tugboat_id !== null) {
                 $master->update(['assigned_tugboat_id' => null]);
@@ -113,36 +118,23 @@ class TugMasterService
     }
 
     /**
-     * Make the tug free for a new link. It stays taken only while its holder is an active user who still holds
-     * `TUG_MASTER`. The `/users` routes leave the link of a user they deactivate or move to another role, so such a
-     * stale link is cleared here, with its own audit row, in the caller's transaction (TUG-LINK-01).
-     *
-     * Every read is a locking read. A plain read here would fix the transaction's snapshot (REPEATABLE READ) before the
+     * Both reads are locking reads. A plain read here would fix the transaction's snapshot (REPEATABLE READ) before the
      * plan limit counts active users in `create()`, so two creates at once could both pass the limit.
      *
      * @throws ValidationException 422 `errors.tug_masters.tug_taken` on `tugboat_id`.
      */
-    private function claimTugboat(int $tugboatId, ?int $exceptUserId, int $actorId): void
+    private function assertTugboatFree(int $tugboatId, ?int $exceptUserId): void
     {
         Tugboat::query()->whereKey($tugboatId)->lockForUpdate()->firstOrFail();
 
-        $holder = TugMasterProfile::query()
+        $taken = TugMasterProfile::query()
             ->where('assigned_tugboat_id', $tugboatId)
             ->when($exceptUserId !== null, fn ($query) => $query->whereKeyNot($exceptUserId))
             ->lockForUpdate()
-            ->first();
+            ->exists();
 
-        if ($holder === null) {
-            return;
-        }
-
-        $user = User::query()->whereKey($holder->user_id)->lockForUpdate()->firstOrFail();
-
-        if ($user->is_active && $user->activeRoleAssignment()->lockForUpdate()->first()?->role === Role::TugMaster) {
+        if ($taken) {
             throw ValidationException::withMessages(['tugboat_id' => ['errors.tug_masters.tug_taken']]);
         }
-
-        $holder->update(['assigned_tugboat_id' => null]);
-        $this->audit->recordUpdated($holder, $actorId);
     }
 }

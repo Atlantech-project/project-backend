@@ -8,7 +8,7 @@
 openapi: 3.0.3
 info:
   title: ATLANTECH Port API
-  version: '1.13.1'
+  version: '1.13.0'
   description: |
     The port API used by the web app (Vue) and the mobile app (Flutter).
 
@@ -1585,10 +1585,8 @@ paths:
       description: >-
         Tug Manager (`tug-fleet.manage`). One call creates the user, the `TUG_MASTER` role in Marine Services and the
         profile, optionally linked to a tug; the role is fixed by the endpoint. The one-time password is returned in this
-        response only. A tug whose tug master is active and still holds the role: 422 with
-        `errors.tug_masters.tug_taken` on `tugboat_id`. The link of an inactive or former tug master is cleared and the
-        tug is given to the new one. Above the plan's user limit: 422 PLAN_LIMIT_EXCEEDED. A Bearer request needs an
-        `Idempotency-Key`.
+        response only. A tug that already has a tug master: 422 with `errors.tug_masters.tug_taken` on `tugboat_id`.
+        Above the plan's user limit: 422 PLAN_LIMIT_EXCEEDED. A Bearer request needs an `Idempotency-Key`.
       security:
         - cookieAuth: []
         - bearerAuth: []
@@ -1698,9 +1696,8 @@ paths:
       summary: Link, move or unlink a tug master's tug
       description: >-
         One tug master per tug (FR-MD-08). A tug id links the tug master, or moves them from their current tug, which
-        becomes free in the same write; null unlinks. A tug whose other tug master is active and still holds the role:
-        422 with `errors.tug_masters.tug_taken` on `tugboat_id`; the link of an inactive or former tug master is cleared
-        in the same write. Same tug as now: 200, nothing changes.
+        becomes free in the same write; null unlinks. A tug that already has another tug master: 422 with
+        `errors.tug_masters.tug_taken` on `tugboat_id`. Same tug as now: 200, nothing changes.
       security:
         - cookieAuth: []
         - bearerAuth: []

@@ -2,12 +2,11 @@
 
 ## Decision, 2026-11-27 (replaces the design in sections 3, 4 and 6)
 
-- **The normal case is already met:** when the Tug Manager deactivates a tug master (`POST /tug-masters/{tugMaster}/deactivate`), the tug link is cleared in the same transaction (FR-MD-08, P2-F3).
-- **The exception:** when the Port Admin deactivates the user or changes the role through `/users`, the link is **not** cleared at that moment. It is handled from the tug side: when the Tug Manager links another tug master to that tug (create or relink) and the holder is inactive or no longer holds `TUG_MASTER`, the old link is cleared with its own audit row and the new one is saved, in one transaction. An active tug master still gives 422 `errors.tug_masters.tug_taken`.
-- **Code:** `TugMasterService` only. No event, no listener, no change in `Access`. The holder's user and role are read with locking reads (plan-limit snapshot rule). The lock order stays profile, then user.
-- **Until someone takes the tug:** reads still show the old tug master (`is_active` false when deactivated; nothing marks a role change). Planning is unaffected (DEC-32). A holder who is activated or gets the role back before that keeps the tug.
-- Section 8: Q2, Q3, Q5 no longer apply; Q4 is covered by the rule above. `ResourceChanged` stays with P2-F7 (Q6). OpenAPI: two descriptions reworded, 1.13.1 (Q7).
-- Decided by the user in chat, who asked for the code and the push. **Marwan's confirmation of this reading of FR-MD-08 is pending** (through the PR). Sections 1 and 3 to 8 below are the earlier proposal, kept for reference.
+- **Design: option B of section 3, an interface bound by MasterData** (like `UserLimitCheck`). It replaces the cleanup-on-next-link version of commit `40cc787`, because nothing guarantees that every reader of the link (the AI workers read the database directly) also checks the holder.
+- `Access\Services\RoleEndHandler::roleEnded(userId, role, actorId)` is called inside the transaction by `UserAdministrationService::deactivate` and `RoleAssignmentService::assign` / `end`. `MasterData\Services\TugLinkRoleEndHandler` clears the link of a tug master and writes the audit row. It is bound in `MasterDataServiceProvider`. The interface sits in Access, not Shared, because it takes the Access `Role` enum.
+- **Lock order:** `TugMasterService` now locks the user before the profile (`update`, `setActive`, `assignTugboat`, also on unlink), the order of the `/users` routes, so the two cannot deadlock on one tug master. R3 stays as a note.
+- A role change and a role end clear the link too (Q4). Links already stale are not cleaned; the manager unlinks them by hand (Q5). `ResourceChanged` stays with P2-F7 (Q6). OpenAPI is unchanged at 1.13.0 (Q7).
+- Decided by the user in chat, who asked for the code and the push. **Marwan has not confirmed** section 8 yet (through the PR). Sections 1 and 3 to 8 below are the earlier proposal, kept for reference: read "event" and "listener" as the interface and its implementation.
 
 | | |
 | --- | --- |
@@ -210,6 +209,7 @@ For Marwan. The proposal is Claude's; nothing is decided yet.
 
 - 2026-11-27: plan drafted (Draft). No code, no commit. Written in the shared checkout while it was on `feature/P2-F3-marine-resources`; this file is untracked and belongs to this task's branch, not to the P2-F3 PR.
 - 2026-11-27: implemented by Claude at the user's request (see the Decision at the top) on `feature/TUG-LINK-01-clear-tug-link`, stacked on `feature/P2-F3-marine-resources` (`8740557`). `claimTugboat` replaces `assertTugboatFree`; 7 new test cases. Pint clean; MasterData, Access, Api and Unit: 670 passed. Not run: full suite, Spectral. The PortHub OpenAPI copy (1.13.1) is not published. Pushed for the lead to open the PR after P2-F3 merges.
+- 2026-11-27: at the user's request, replaced with the interface design (see the Decision). `TugMasterService`, `TugMasterTest.php` and `openapi/port-api.yaml` restored to `8740557`, then the lock order changed. New `TugMasterLinkOnUserChangeTest.php` and 6 lock cases in `MarineResourcesConcurrencyTest.php`. Pint applied; MasterData, Access, Api and Unit: 680 passed. Not run: full suite, `backend-task-review`.
 
 ## 10. Review
 
