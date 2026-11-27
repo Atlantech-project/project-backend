@@ -17,6 +17,8 @@ use App\Modules\Access\Http\Controllers\UserDeviceController;
 use App\Modules\Access\Http\Controllers\UserRoleController;
 use App\Modules\Access\Http\Middleware\EnsureMobileHeaders;
 use App\Modules\MasterData\Http\Controllers\BerthController;
+use App\Modules\MasterData\Http\Controllers\EquipmentController;
+use App\Modules\MasterData\Http\Controllers\EquipmentReferenceController;
 use App\Modules\MasterData\Http\Controllers\SystemInfoController;
 use App\Modules\MasterData\Http\Controllers\TerminalController;
 use App\Modules\Shared\Http\Controllers\AuditLogController;
@@ -50,6 +52,16 @@ Route::middleware('port.api')->group(function () {
         Route::get('terminals/{terminal}', [TerminalController::class, 'show'])->middleware('terminal.scope')->name('terminals.show');
         Route::get('berths', [BerthController::class, 'index'])->name('berths.index');
         Route::get('berths/{berth}', [BerthController::class, 'show'])->name('berths.show');
+
+        Route::get('equipment-categories', [EquipmentReferenceController::class, 'categories'])->name('equipment-categories.index');
+        Route::get('capability-types', [EquipmentReferenceController::class, 'capabilityTypes'])->name('capability-types.index');
+        Route::get('terminals/{terminal}/equipment', [EquipmentController::class, 'index'])->middleware('terminal.scope')->name('terminals.equipment.index');
+        Route::get('terminals/{terminal}/equipment/{equipment}', [EquipmentController::class, 'show'])->middleware('terminal.scope')->scopeBindings()->name('terminals.equipment.show');
+    });
+
+    Route::middleware('ability:equipment.manage')->group(function () {
+        Route::post('terminals/{terminal}/equipment', [EquipmentController::class, 'store'])->middleware('terminal.scope')->name('terminals.equipment.store');
+        Route::put('terminals/{terminal}/equipment/{equipment}', [EquipmentController::class, 'update'])->middleware(['terminal.scope', 'version.token:equipment'])->scopeBindings()->name('terminals.equipment.update');
     });
 
     Route::middleware('ability:port-setup.manage')->group(function () {
