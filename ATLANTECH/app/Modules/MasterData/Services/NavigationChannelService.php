@@ -3,8 +3,10 @@
 namespace App\Modules\MasterData\Services;
 
 use App\Modules\MasterData\Models\Berth;
+use App\Modules\MasterData\Models\ChannelWaypoint;
 use App\Modules\MasterData\Models\NavigationChannel;
 use App\Modules\Shared\Audit\AuditService;
+use App\Modules\Shared\Enums\AuditLogAction;
 use App\Modules\Shared\Support\VersionToken;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
@@ -60,6 +62,64 @@ class NavigationChannelService
 
             return $locked->refresh();
         });
+    }
+
+    /**
+     * Save the whole waypoint list in travel order (P-26: add, reorder, remove). The waypoints are part of the channel:
+     * the change moves the channel's version, and its audit row keeps the old list, since removed rows are deleted. The
+     * same list again writes nothing.
+     *
+     * @param  list<array{label: string, latitude: numeric, longitude: numeric}>  $waypoints
+     */
+    public function replaceWaypoints(NavigationChannel $channel, array $waypoints, string $version, int $actorId): NavigationChannel
+    {
+        return $this->audit->transaction(function () use ($channel, $waypoints, $version, $actorId): NavigationChannel {
+            $locked = VersionToken::lockAndAssert($channel, $version);
+
+            $old = $this->waypointList($locked);
+            $new = [];
+
+            foreach ($waypoints as $index => $waypoint) {
+                $new[] = [
+                    'sequence_order' => $index + 1,
+                    'label' => $waypoint['label'],
+                    'latitude' => round((float) $waypoint['latitude'], 6),
+                    'longitude' => round((float) $waypoint['longitude'], 6),
+                ];
+            }
+
+            if ($old === $new) {
+                return $locked;
+            }
+
+            // Delete and insert: updating rows in place would collide on the unique order and label while reordering.
+            ChannelWaypoint::query()->where('channel_id', $locked->id)->delete();
+
+            foreach ($new as $waypoint) {
+                $locked->channelWaypointsByChannel()->create($waypoint);
+            }
+
+            $locked->touch();
+            $this->audit->record(AuditLogAction::Update, $locked->getTable(), $locked->id, $actorId, ['waypoints' => $old], ['waypoints' => $new]);
+
+            return $locked->refresh();
+        });
+    }
+
+    /**
+     * @return list<array{sequence_order: int, label: string, latitude: float, longitude: float}>
+     */
+    private function waypointList(NavigationChannel $channel): array
+    {
+        return ChannelWaypoint::query()->where('channel_id', $channel->id)->orderBy('sequence_order')->get()
+            ->map(fn (ChannelWaypoint $waypoint): array => [
+                'sequence_order' => (int) $waypoint->sequence_order,
+                'label' => $waypoint->label,
+                'latitude' => (float) $waypoint->latitude,
+                'longitude' => (float) $waypoint->longitude,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

@@ -69,6 +69,7 @@ Route::middleware('port.api')->group(function () {
         Route::put('port-profile/{portProfile}', [PortProfileController::class, 'update'])->middleware('version.token:portProfile')->name('port-profile.update');
         Route::post('navigation-channels', [NavigationChannelController::class, 'store'])->name('navigation-channels.store');
         Route::put('navigation-channels/{channel}', [NavigationChannelController::class, 'update'])->middleware('version.token:channel')->name('navigation-channels.update');
+        Route::put('navigation-channels/{channel}/waypoints', [NavigationChannelController::class, 'replaceWaypoints'])->middleware('version.token:channel')->name('navigation-channels.waypoints.replace');
     });
 
     Route::middleware('ability:devices.manage')->scopeBindings()->group(function () {

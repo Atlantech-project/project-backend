@@ -1600,6 +1600,54 @@ paths:
           $ref: '#/components/responses/ValidationFailed'
         '426':
           $ref: '#/components/responses/AppUpdateRequired'
+  /api/v1/navigation-channels/{channel}/waypoints:
+    put:
+      tags: [Master data]
+      operationId: navigationChannelsReplaceWaypoints
+      summary: Save the waypoints of a channel
+      description: >-
+        Sends the whole list in travel order (P-26: add, reorder, remove). The position in the list is the
+        `sequence_order`, which the client does not send. A waypoint left out is removed; an empty list removes all.
+        Labels are unique within the channel, without case. The change moves the channel's `version`; the same list again
+        changes nothing. A Bearer request needs an `Idempotency-Key`.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: channel
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/XsrfTokenWebOnly'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceChannelWaypointsRequest'
+      responses:
+        '200':
+          description: The channel with its waypoints and the new `version`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationChannel'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/VersionConflict'
+        '419':
+          $ref: '#/components/responses/SessionExpired'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '426':
+          $ref: '#/components/responses/AppUpdateRequired'
 components:
   securitySchemes:
     cookieAuth:
@@ -2083,6 +2131,32 @@ components:
         version:
           type: string
           description: The `version` last read.
+    ReplaceChannelWaypointsRequest:
+      type: object
+      required: [waypoints, version]
+      properties:
+        waypoints:
+          type: array
+          description: The whole list in travel order.
+          items:
+            type: object
+            required: [label, latitude, longitude]
+            properties:
+              label:
+                type: string
+                maxLength: 60
+                example: Fairway Buoy
+              latitude:
+                type: number
+                minimum: -90
+                maximum: 90
+              longitude:
+                type: number
+                minimum: -180
+                maximum: 180
+        version:
+          type: string
+          description: The channel's `version` last read.
     SystemInfo:
       type: object
       description: Public port information (CT-04 v1.1).

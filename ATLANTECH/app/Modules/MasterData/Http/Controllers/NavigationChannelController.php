@@ -4,6 +4,7 @@ namespace App\Modules\MasterData\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\MasterData\Http\Requests\NavigationChannelIndexRequest;
+use App\Modules\MasterData\Http\Requests\ReplaceChannelWaypointsRequest;
 use App\Modules\MasterData\Http\Requests\StoreNavigationChannelRequest;
 use App\Modules\MasterData\Http\Requests\UpdateNavigationChannelRequest;
 use App\Modules\MasterData\Http\Resources\NavigationChannelCollection;
@@ -51,6 +52,16 @@ class NavigationChannelController extends Controller
     {
         $data = $request->safe()->except('version');
         $updated = $this->channels->update($channel, $data, $request->validated('version'), $request->user()->id);
+
+        return new NavigationChannelResource($updated->load('channelWaypointsByChannel'));
+    }
+
+    /**
+     * PUT /api/v1/navigation-channels/{channel}/waypoints: the whole list; 404, 409 VERSION_CONFLICT, 422.
+     */
+    public function replaceWaypoints(ReplaceChannelWaypointsRequest $request, NavigationChannel $channel): NavigationChannelResource
+    {
+        $updated = $this->channels->replaceWaypoints($channel, $request->validated('waypoints'), $request->validated('version'), $request->user()->id);
 
         return new NavigationChannelResource($updated->load('channelWaypointsByChannel'));
     }
