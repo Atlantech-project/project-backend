@@ -10,6 +10,8 @@ use App\Modules\MasterData\Models\PortShift;
 use App\Modules\MasterData\Models\TugMasterProfile;
 use App\Modules\MasterData\Models\TugMasterSchedule;
 use App\Modules\Shared\Audit\AuditService;
+use App\Modules\Shared\Enums\ResourceKind;
+use App\Modules\Shared\Events\ResourceChanged;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -20,7 +22,8 @@ use Illuminate\Validation\ValidationException;
  * schedules follow the same rules. A batch is saved whole or not at all. An entry is refused when its date is before
  * today in port time, the person is inactive or no longer holds the role, the shift is inactive, or the entry exists.
  * The person rows are locked so the same entry cannot be added twice at once; the shift rows are read under a shared
- * lock, so a shift cannot be deactivated or retimed while entries for it are being added (Q8).
+ * lock, so a shift cannot be deactivated or retimed while entries for it are being added (Q8). Adding or removing
+ * entries dispatches `ResourceChanged` once per resource (P2-F7): the pilot, or the tug master's tug if one is linked.
  */
 class ShiftScheduleService
 {
@@ -65,6 +68,9 @@ class ShiftScheduleService
 
             $locked->delete();
             $this->audit->recordDeleted($locked, $actorId);
+
+            $userId = $locked instanceof PilotSchedule ? $locked->pilot_user_id : $locked->tug_master_user_id;
+            $this->announceScheduleChange($locked::class, [$userId], $actorId);
         });
     }
 
@@ -131,7 +137,32 @@ class ShiftScheduleService
                 $created->push($schedule);
             }
 
+            $this->announceScheduleChange($scheduleClass, $userIds, $actorId);
+
             return $created;
         });
+    }
+
+    /**
+     * A pilot is announced as itself; a tug master as the tug they are linked to, and not at all without one (CT-10).
+     *
+     * @param  class-string<PilotSchedule|TugMasterSchedule>  $scheduleClass
+     * @param  list<int>  $userIds  Each user once.
+     */
+    private function announceScheduleChange(string $scheduleClass, array $userIds, int $actorId): void
+    {
+        if ($scheduleClass === PilotSchedule::class) {
+            foreach ($userIds as $userId) {
+                ResourceChanged::dispatch(ResourceKind::Pilot, $userId, $actorId);
+            }
+
+            return;
+        }
+
+        $tugboatIds = TugMasterProfile::query()->whereKey($userIds)->whereNotNull('assigned_tugboat_id')->pluck('assigned_tugboat_id');
+
+        foreach ($tugboatIds as $tugboatId) {
+            ResourceChanged::dispatch(ResourceKind::Tug, $tugboatId, $actorId);
+        }
     }
 }

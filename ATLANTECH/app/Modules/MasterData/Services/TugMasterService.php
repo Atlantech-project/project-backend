@@ -6,6 +6,8 @@ use App\Modules\Access\Enums\Role;
 use App\Modules\MasterData\Models\Tugboat;
 use App\Modules\MasterData\Models\TugMasterProfile;
 use App\Modules\Shared\Audit\AuditService;
+use App\Modules\Shared\Enums\ResourceKind;
+use App\Modules\Shared\Events\ResourceChanged;
 use App\Modules\Shared\Support\VersionToken;
 use Illuminate\Validation\ValidationException;
 
@@ -13,7 +15,8 @@ use Illuminate\Validation\ValidationException;
  * Tug masters of the Tug Manager (P2-F3, FR-MD-08): create (user, `TUG_MASTER` role and profile in one transaction),
  * update, link to a tug and deactivate. A tug has at most one tug master: every link locks the tug row first, so two
  * links to the same tug run one after the other (the UNIQUE index is the last guard). Deactivating clears the link in
- * the same transaction. P2-F7 dispatches `ResourceChanged` as TUG with the tug id (CT-10) after a saved change here.
+ * the same transaction. A saved change of the link or of active state dispatches `ResourceChanged` as TUG with the tug
+ * id (CT-10, P2-F7), for the old and the new tug on a move; a new tug master, a name or a phone does not.
  *
  * Lock order (TUG-LINK-01): the user row, then the role assignment, then the profile. The `/users` routes lock in the same
  * order before `TugLinkRoleEndHandler` clears the link; the other order would deadlock two writes on one tug master.
@@ -88,8 +91,13 @@ class TugMasterService
                 $this->assertTugboatFree($tugboatId, $master->user_id);
             }
 
+            $previousTugboatId = $master->assigned_tugboat_id;
             $master->update(['assigned_tugboat_id' => $tugboatId]);
             $this->audit->recordUpdated($master, $actorId);
+
+            foreach (array_filter([$previousTugboatId, $tugboatId]) as $changedTugboatId) {
+                ResourceChanged::dispatch(ResourceKind::Tug, $changedTugboatId, $actorId);
+            }
 
             return $master->refresh();
         });
@@ -106,11 +114,17 @@ class TugMasterService
             $master = VersionToken::lockAndAssert($target, $version);
             $userChanged = $this->crew->setActive($user, $active, $actorId);
 
-            if (! $active && $master->assigned_tugboat_id !== null) {
+            $tugboatId = $master->assigned_tugboat_id;
+
+            if (! $active && $tugboatId !== null) {
                 $master->update(['assigned_tugboat_id' => null]);
                 $this->audit->recordUpdated($master, $actorId);
             } elseif ($userChanged) {
                 $master->touch();
+            }
+
+            if ($tugboatId !== null && ($userChanged || ! $active)) {
+                ResourceChanged::dispatch(ResourceKind::Tug, $tugboatId, $actorId);
             }
 
             return $master->refresh();
