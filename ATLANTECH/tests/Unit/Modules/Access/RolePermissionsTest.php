@@ -38,6 +38,7 @@ function expectedRoleMatrix(): array
         'deviations.review' => ['PORT_STAFF'],
         'equipment.manage' => ['TERMINAL_ADMIN'],
         'yard.manage' => ['TERMINAL_ADMIN'],
+        'yard-slot-status.update' => ['TERMINAL_ADMIN', 'TERMINAL_OFFICER'],
         'yard-recommendations.decide' => ['TERMINAL_OFFICER'],
         'tos-export.record' => ['TERMINAL_OFFICER'],
         'tasks.own.read' => ['MARINE_PILOT', 'TUG_MASTER', 'TERMINAL_SUPERVISOR'],
@@ -48,7 +49,7 @@ function expectedRoleMatrix(): array
 
 it('lists every ability in the expected table and nothing else', function () {
     expect(array_keys(expectedRoleMatrix()))->toEqualCanonicalizing(array_map(fn (Ability $a) => $a->value, Ability::cases()))
-        ->and(Ability::cases())->toHaveCount(28)
+        ->and(Ability::cases())->toHaveCount(29)
         ->and(Role::cases())->toHaveCount(12);
 });
 

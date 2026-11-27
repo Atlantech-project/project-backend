@@ -1,0 +1,49 @@
+{
+  "note": "Demo container yard for each container terminal of the demo port (DEC-29 G-03). Invented layout, not the real Damietta yard: regular blocks, bays, rows and tiers numbered from 1. Used to test the yard API and the AI yard solver before real data exists.",
+  "terminal_codes": ["DCT", "DIPCO", "DCHC"],
+  "yard": {
+    "code": "CY-1",
+    "name": "Container yard 1 (demo)"
+  },
+  "zones": [
+    {
+      "code": "GEN-A",
+      "type_code": "GENERAL",
+      "blocks": [
+        { "code": "A", "bays": 6, "rows": 4, "tiers": 4 },
+        { "code": "B", "bays": 6, "rows": 4, "tiers": 4 }
+      ]
+    },
+    {
+      "code": "RF-1",
+      "type_code": "REEFER",
+      "detail": { "total_power_plugs": 48, "power_type": "380-460V 3-phase" },
+      "blocks": [
+        { "code": "R1", "bays": 4, "rows": 3, "tiers": 3 }
+      ]
+    },
+    {
+      "code": "DG-1",
+      "type_code": "DANGEROUS_GOODS",
+      "detail": { "imdg_classes": ["3", "8"] },
+      "blocks": [
+        { "code": "D1", "bays": 3, "rows": 2, "tiers": 2 }
+      ]
+    },
+    {
+      "code": "OOG-1",
+      "type_code": "OOG",
+      "detail": { "max_length": 15.0, "max_width": 4.5, "max_height": 4.5, "max_weight": 60.0 },
+      "blocks": [
+        { "code": "O1", "bays": 3, "rows": 2, "tiers": 1 }
+      ]
+    },
+    {
+      "code": "MT-1",
+      "type_code": "EMPTY",
+      "blocks": [
+        { "code": "E1", "bays": 6, "rows": 4, "tiers": 5 }
+      ]
+    }
+  ]
+}
