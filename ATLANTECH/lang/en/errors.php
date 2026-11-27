@@ -59,6 +59,10 @@ return [
         'window_not_multiple_of_step' => 'The minimum window must be a multiple of the time step.',
         'ttl_not_greater_than_timeout' => 'The validation result lifetime must be longer than the validation timeout.',
     ],
+    'productivity_profiles' => [
+        'overlap' => 'This period overlaps another profile of the same vessel type at this terminal.',
+        'period_invalid' => 'The end date cannot be before the start date.',
+    ],
     'berths' => [
         'terminal_in_use' => 'This terminal cannot be removed from the berth because safety constraints or recommendations use the pair.',
         'terminal_inactive' => 'A berth cannot be linked to an inactive terminal.',
