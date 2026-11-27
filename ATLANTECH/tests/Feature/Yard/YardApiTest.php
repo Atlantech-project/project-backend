@@ -2,6 +2,7 @@
 
 use App\Modules\Access\Enums\Role;
 use App\Modules\Access\Models\OrganizationUnit;
+use App\Modules\MasterData\Models\Container;
 use App\Modules\MasterData\Models\ImdgClass;
 use App\Modules\MasterData\Models\StorageFacility;
 use App\Modules\MasterData\Models\StorageType;
@@ -427,4 +428,109 @@ it('lists the zone types and IMDG classes', function () {
     ImdgClass::query()->firstOrCreate(['code' => '3'], ['name' => 'Flammable liquids']);
     $this->actingAs($this->officer, 'web')->getJson('/api/v1/imdg-classes?per_page=100')
         ->assertOk()->assertJsonStructure(['data' => [['code', 'name']]]);
+});
+
+function putContainerIn(YardSlot $slot): void
+{
+    DB::table('yard_slots')->where('id', $slot->id)->update(['container_id' => Container::factory()->create()->id]);
+}
+
+function placeOn(YardBlock $block, ?YardSlot $slot = null): void
+{
+    DB::statement('SET FOREIGN_KEY_CHECKS=0');
+    DB::table('yard_placement_items')->insert([
+        'terminal_recommendation_id' => 1, 'rec_type' => 'YARD_PLACEMENT', 'manifest_entry_id' => fake()->unique()->numberBetween(1, 1_000_000),
+        'yard_block_id' => $block->id, 'yard_slot_id' => $slot?->id,
+    ]);
+    DB::statement('SET FOREIGN_KEY_CHECKS=1');
+}
+
+it('refuses to block a slot or a stack that holds a container, changes nothing and audits the refusal', function () {
+    $block = makeBlock(bays: 1, tiers: 2);
+    $slot = slotAt($block, 1, 1, 2);
+    putContainerIn($slot);
+
+    $this->actingAs($this->officer, 'web')
+        ->putJson(yardUrl("yard-slots/{$slot->id}"), ['status' => 'BLOCKED', 'version' => VersionToken::of($slot->refresh())])
+        ->assertConflict()->assertJsonPath('code', 'CONFLICT');
+    $this->actingAs($this->officer, 'web')
+        ->postJson(yardUrl("yard-blocks/{$block->id}/stack-status"), ['bay' => 1, 'row_no' => 1, 'status' => 'BLOCKED'])
+        ->assertConflict();
+
+    expect(YardSlot::query()->where('yard_block_id', $block->id)->where('status', 'BLOCKED')->count())->toBe(0)
+        ->and(AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->get()->map(fn (AuditLog $row) => $row->after_state['reason'])->all())
+        ->toBe(['slot_occupied', 'slot_occupied']);
+});
+
+it('refuses a shrink over a slot with a container or a placement, and a block delete with a placement on the block', function (string $case) {
+    $block = makeBlock(bays: 3);
+    match ($case) {
+        'container' => putContainerIn(slotAt($block, 3)),
+        'placement on the slot' => placeOn($block, slotAt($block, 3)),
+        'placement on the block' => placeOn($block),
+    };
+
+    $response = $case === 'placement on the block'
+        ? $this->actingAs($this->admin, 'web')->deleteJson(yardUrl("yard-blocks/{$block->id}"), ['version' => VersionToken::of($block->refresh())])
+        : $this->actingAs($this->admin, 'web')->putJson(yardUrl("yard-blocks/{$block->id}/layout"), ['bays' => 2, 'rows' => 1, 'tiers' => 1, 'version' => VersionToken::of($block->refresh())]);
+
+    $response->assertConflict()->assertJsonPath('code', 'CONFLICT');
+
+    expect(YardSlot::query()->where('yard_block_id', $block->id)->count())->toBe(3)
+        ->and(AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->sole()->after_state['reason'])->toBe('slots_in_use');
+})->with(['container', 'placement on the slot', 'placement on the block']);
+
+it('answers 409 to a stale version on every versioned yard write, and audits it', function (string $kind) {
+    $zone = makeZone();
+    $block = makeBlock($zone, bays: 1);
+    $slot = slotAt($block, 1);
+    $stale = '2020-01-01T00:00:00.000000Z';
+
+    [$method, $path, $body] = match ($kind) {
+        'zone update' => ['putJson', "yard-zones/{$zone->id}", ['code' => 'Z']],
+        'zone delete' => ['deleteJson', "yard-zones/{$zone->id}", []],
+        'block update' => ['putJson', "yard-blocks/{$block->id}", ['code' => 'B']],
+        'block delete' => ['deleteJson', "yard-blocks/{$block->id}", []],
+        'block layout' => ['putJson', "yard-blocks/{$block->id}/layout", ['bays' => 2, 'rows' => 1, 'tiers' => 1]],
+        'slot status' => ['putJson', "yard-slots/{$slot->id}", ['status' => 'BLOCKED']],
+    };
+
+    $this->actingAs($this->admin, 'web')->{$method}(yardUrl($path), [...$body, 'version' => $stale])
+        ->assertConflict()->assertJsonPath('code', 'VERSION_CONFLICT');
+
+    expect(AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->sole()->after_state['reason'])->toBe('stale_version')
+        ->and(YardSlot::query()->where('yard_block_id', $block->id)->count())->toBe(1)
+        ->and(YardZone::query()->whereKey($zone->id)->exists())->toBeTrue();
+})->with(['zone update', 'zone delete', 'block update', 'block delete', 'block layout', 'slot status']);
+
+it('creates and renames a block, refuses a repeated code with 422, and audits each write', function () {
+    $zone = makeZone();
+    $other = makeBlock($zone);
+
+    $id = $this->actingAs($this->admin, 'web')->postJson(yardUrl("yard-zones/{$zone->id}/blocks"), ['code' => 'A1'])
+        ->assertCreated()->assertJsonPath('slots_count', 0)->assertJsonPath('bays', 0)->json('id');
+    $block = YardBlock::query()->findOrFail($id);
+
+    $this->actingAs($this->admin, 'web')->postJson(yardUrl("yard-zones/{$zone->id}/blocks"), ['code' => 'A1'])
+        ->assertUnprocessable()->assertJsonValidationErrorFor('code', 'errors');
+    $this->actingAs($this->admin, 'web')->putJson(yardUrl("yard-blocks/{$block->id}"), ['code' => $other->code, 'version' => VersionToken::of($block)])
+        ->assertUnprocessable()->assertJsonValidationErrorFor('code', 'errors');
+    $this->actingAs($this->admin, 'web')->putJson(yardUrl("yard-blocks/{$block->id}"), ['code' => 'A2', 'version' => VersionToken::of($block)])
+        ->assertOk()->assertJsonPath('code', 'A2');
+
+    expect(AuditLog::query()->where('entity_type', 'yard_blocks')->get()->map(fn (AuditLog $row) => $row->action->value)->all())->toBe(['CREATE', 'UPDATE']);
+});
+
+it('audits a zone create with its detail and a slot status change', function () {
+    $yard = makeYard();
+    $this->actingAs($this->admin, 'web')
+        ->postJson(yardUrl("yards/{$yard->id}/zones"), ['code' => 'R', 'yard_zone_type_id' => $this->types['REEFER']->id, 'total_power_plugs' => 10, 'power_type' => null])
+        ->assertCreated();
+    $slot = slotAt(makeBlock(bays: 1), 1);
+    $this->actingAs($this->officer, 'web')
+        ->putJson(yardUrl("yard-slots/{$slot->id}"), ['status' => 'BLOCKED', 'version' => VersionToken::of($slot)])
+        ->assertOk();
+
+    expect(AuditLog::query()->where('action', AuditLogAction::Create)->pluck('entity_type')->sort()->values()->all())->toBe(['reefer_zone_details', 'yard_zones'])
+        ->and(AuditLog::query()->where(['action' => AuditLogAction::Update, 'entity_type' => 'yard_slots'])->sole()->after_state['status'])->toBe('BLOCKED');
 });
