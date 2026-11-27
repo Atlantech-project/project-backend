@@ -13,7 +13,7 @@ use Illuminate\Console\Command;
  */
 class PublishRoleMatrix extends Command
 {
-    private const string VERSION = 'v1.1';
+    private const string VERSION = 'v1.2';
 
     /**
      * Add a line here, with a new VERSION, whenever the matrix changes.
@@ -23,6 +23,7 @@ class PublishRoleMatrix extends Command
     private const array CHANGE_LOG = [
         ['v1.0', '2026-11-03', 'First version: 12 roles, 27 abilities (P2-D1). `MARINE_SAFETY_OFFICER` and `storage.manage` wait for the Non-Container work.'],
         ['v1.1', '2026-11-26', '28 abilities. `MARINE_SAFETY_OFFICER` is port-wide (FRD v3, FR-MD-14; P2-D1 Q7 reversed by the lead): `port-state.read` and the new `safety-constraints.manage` (safety constraints, environmental limits, UKC parameters, tide set activation, P2-F5). `storage.manage` still waits for the Non-Container work.'],
+        ['v1.2', '2026-11-27', '29 abilities. New `yard-slot-status.update` for `TERMINAL_ADMIN` and `TERMINAL_OFFICER`: block or unblock yard slots and stacks of their own terminal (DEC-29 rule 11, P2-F4). Changing the yard structure stays with `yard.manage`.'],
     ];
 
     /**
