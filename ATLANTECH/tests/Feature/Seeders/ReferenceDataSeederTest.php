@@ -21,7 +21,7 @@ it('loads every Backend section of reference-seed.json', function () {
 
     $expected = [
         'imdg_classes' => 20, 'container_size_types' => 13, 'vessel_types' => 6, 'cargo_types' => 7,
-        'yard_zone_types' => 4, 'storage_types' => 4, 'capability_types' => 4, 'equipment_categories' => 6,
+        'yard_zone_types' => 5, 'storage_types' => 4, 'capability_types' => 4, 'equipment_categories' => 6,
         'status_types' => 8, 'external_systems' => 1,
     ];
 
