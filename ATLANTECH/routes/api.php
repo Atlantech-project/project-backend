@@ -17,6 +17,7 @@ use App\Modules\Access\Http\Controllers\UserDeviceController;
 use App\Modules\Access\Http\Controllers\UserRoleController;
 use App\Modules\Access\Http\Middleware\EnsureMobileHeaders;
 use App\Modules\MasterData\Http\Controllers\BerthController;
+use App\Modules\MasterData\Http\Controllers\NavigationChannelController;
 use App\Modules\MasterData\Http\Controllers\PortProfileController;
 use App\Modules\MasterData\Http\Controllers\SystemInfoController;
 use App\Modules\MasterData\Http\Controllers\TerminalController;
@@ -52,6 +53,7 @@ Route::middleware('port.api')->group(function () {
         Route::get('berths', [BerthController::class, 'index'])->name('berths.index');
         Route::get('berths/{berth}', [BerthController::class, 'show'])->name('berths.show');
         Route::get('port-profile', [PortProfileController::class, 'show'])->name('port-profile.show');
+        Route::get('navigation-channels', [NavigationChannelController::class, 'index'])->name('navigation-channels.index');
     });
 
     Route::middleware('ability:port-setup.manage')->group(function () {
@@ -65,6 +67,8 @@ Route::middleware('port.api')->group(function () {
         Route::post('berths/{berth}/activate', [BerthController::class, 'activate'])->middleware('version.token:berth')->name('berths.activate');
         Route::post('berths/{berth}/maintenance', [BerthController::class, 'maintenance'])->middleware('version.token:berth')->name('berths.maintenance');
         Route::put('port-profile/{portProfile}', [PortProfileController::class, 'update'])->middleware('version.token:portProfile')->name('port-profile.update');
+        Route::post('navigation-channels', [NavigationChannelController::class, 'store'])->name('navigation-channels.store');
+        Route::put('navigation-channels/{channel}', [NavigationChannelController::class, 'update'])->middleware('version.token:channel')->name('navigation-channels.update');
     });
 
     Route::middleware('ability:devices.manage')->scopeBindings()->group(function () {

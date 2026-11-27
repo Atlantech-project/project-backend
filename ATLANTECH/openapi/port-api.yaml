@@ -1485,6 +1485,121 @@ paths:
           $ref: '#/components/responses/ValidationFailed'
         '426':
           $ref: '#/components/responses/AppUpdateRequired'
+  /api/v1/navigation-channels:
+    get:
+      tags: [Master data]
+      operationId: navigationChannelsList
+      summary: List navigation channels
+      description: Channels ordered by name, each with its waypoints in order (P-26).
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: is_active
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: A page of channels.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationChannelPage'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '426':
+          $ref: '#/components/responses/AppUpdateRequired'
+    post:
+      tags: [Master data]
+      operationId: navigationChannelsCreate
+      summary: Add a navigation channel
+      description: >-
+        The port adds as many channels as it has. An active channel must have the same `depth_datum` as every berth, or
+        422 `errors.navigation_channels.datum_mismatch`. A Bearer request needs an `Idempotency-Key`.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/XsrfTokenWebOnly'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreNavigationChannelRequest'
+      responses:
+        '201':
+          description: The new channel.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationChannel'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '419':
+          $ref: '#/components/responses/SessionExpired'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '426':
+          $ref: '#/components/responses/AppUpdateRequired'
+  /api/v1/navigation-channels/{channel}:
+    put:
+      tags: [Master data]
+      operationId: navigationChannelsUpdate
+      summary: Update a navigation channel
+      description: >-
+        Changes any field; a field that is not sent keeps its value. `is_active` turns the channel off or on; a channel is
+        never deleted. Changing `depth_datum` or activating the channel needs every berth to have the same datum (422).
+        A Bearer request needs an `Idempotency-Key`.
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - name: channel
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/XsrfTokenWebOnly'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNavigationChannelRequest'
+      responses:
+        '200':
+          description: The channel with the new `version`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationChannel'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/VersionConflict'
+        '419':
+          $ref: '#/components/responses/SessionExpired'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        '426':
+          $ref: '#/components/responses/AppUpdateRequired'
 components:
   securitySchemes:
     cookieAuth:
@@ -1850,6 +1965,121 @@ components:
           type: object
           nullable: true
           description: GeoJSON Polygon with closed rings of [longitude, latitude] positions.
+        version:
+          type: string
+          description: The `version` last read.
+    ChannelWaypoint:
+      type: object
+      required: [sequence_order, label, latitude, longitude]
+      properties:
+        sequence_order:
+          type: integer
+          minimum: 1
+        label:
+          type: string
+          maxLength: 60
+          example: Fairway Buoy
+        latitude:
+          type: number
+        longitude:
+          type: number
+    NavigationChannel:
+      type: object
+      required: [id, name, depth, depth_datum, width, speed_limit_knots, is_active, version, waypoints]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          maxLength: 100
+          example: Main Channel
+        depth:
+          type: number
+          description: Controlling charted depth in metres, below `depth_datum`.
+          example: 17.5
+        depth_datum:
+          type: string
+          maxLength: 40
+          example: LAT
+        width:
+          type: number
+          description: Metres.
+          example: 300
+        speed_limit_knots:
+          type: number
+          example: 8
+        is_active:
+          type: boolean
+          example: true
+        version:
+          type: string
+          example: '2026-11-27T10:15:04.123456Z'
+        waypoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelWaypoint'
+    NavigationChannelPage:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NavigationChannel'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+    StoreNavigationChannelRequest:
+      type: object
+      required: [name, depth, depth_datum, width, speed_limit_knots]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: Main Channel
+        depth:
+          type: number
+          description: Controlling charted depth in metres, below `depth_datum`.
+          example: 17.5
+        depth_datum:
+          type: string
+          maxLength: 40
+          example: LAT
+        width:
+          type: number
+          description: Metres.
+          example: 300
+        speed_limit_knots:
+          type: number
+          example: 8
+        is_active:
+          type: boolean
+          example: true
+    UpdateNavigationChannelRequest:
+      type: object
+      required: [version]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: Main Channel
+        depth:
+          type: number
+          description: Controlling charted depth in metres, below `depth_datum`.
+          example: 17.5
+        depth_datum:
+          type: string
+          maxLength: 40
+          example: LAT
+        width:
+          type: number
+          description: Metres.
+          example: 300
+        speed_limit_knots:
+          type: number
+          example: 8
+        is_active:
+          type: boolean
+          example: true
         version:
           type: string
           description: The `version` last read.
