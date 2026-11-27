@@ -345,3 +345,20 @@ it('announces new equipment and a change of quantities or capabilities, not an i
     $update(['maintenance_quantity' => 2, 'capabilities' => [['capability_type_id' => $capability->id, 'value' => 70]]]);
     expect(announced())->toBe([ResourceKind::Equipment->value.':'.$id]);
 });
+
+it('announces nothing for a forbidden or stale request', function () {
+    $tugboat = Tugboat::factory()->create();
+    $pilot = makePilot();
+
+    $this->actingAs($this->pilotageManager, 'web')
+        ->patchJson("/api/v1/tugboats/{$tugboat->id}", ['status' => 'MAINTENANCE', 'version' => VersionToken::of($tugboat)])
+        ->assertStatus(403);
+    $this->actingAs($this->tugManager, 'web')
+        ->patchJson("/api/v1/tugboats/{$tugboat->id}", ['status' => 'MAINTENANCE', 'version' => '2026-01-01T00:00:00.000000Z'])
+        ->assertStatus(409);
+    $this->actingAs($this->admin, 'web')
+        ->postJson("/api/v1/users/{$pilot->user_id}/deactivate", ['version' => '2026-01-01T00:00:00.000000Z'])
+        ->assertStatus(409);
+
+    expect(announced())->toBe([]);
+});
