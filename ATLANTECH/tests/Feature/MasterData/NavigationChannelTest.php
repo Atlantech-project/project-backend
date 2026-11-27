@@ -103,12 +103,7 @@ it('refuses an active channel whose datum differs from any berth, even an inacti
         ->assertStatus(422)
         ->assertJsonPath('errors.depth_datum.0', 'errors.navigation_channels.datum_mismatch');
 
-    $row = AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->sole();
-
-    expect(NavigationChannel::query()->count())->toBe(0)
-        ->and($row->actor_id)->toBe($this->admin->id)
-        ->and($row->entity_type)->toBe('navigation_channels')
-        ->and($row->after_state)->toMatchArray(['route' => 'POST /api/v1/navigation-channels', 'status' => 422, 'code' => 'VALIDATION_FAILED', 'reason' => 'datum_mismatch']);
+    expect(NavigationChannel::query()->count())->toBe(0);
 })->with([
     'active berth' => [[]],
     'inactive berth' => [['status' => 'INACTIVE']],
@@ -123,12 +118,12 @@ it('refuses to change the datum of an active channel, or to activate a channel w
         ->putJson("/api/v1/navigation-channels/{$active->id}", ['depth_datum' => 'MSL', 'version' => VersionToken::of($active)])
         ->assertStatus(422);
     $this->actingAs($this->admin, 'web')
-        ->putJson("/api/v1/navigation-channels/{$off->id}", ['is_active' => true, 'version' => VersionToken::of($off)])
-        ->assertStatus(422);
+        ->postJson("/api/v1/navigation-channels/{$off->id}/activate", ['version' => VersionToken::of($off)])
+        ->assertStatus(422)
+        ->assertJsonPath('errors.depth_datum.0', 'errors.navigation_channels.datum_mismatch');
 
     expect($active->fresh()->depth_datum)->toBe('LAT')
-        ->and($off->fresh()->is_active)->toBeFalse()
-        ->and(AuditLog::query()->where('action', AuditLogAction::RejectedAttempt)->pluck('entity_id')->sort()->values()->all())->toBe([$active->id, $off->id]);
+        ->and($off->fresh()->is_active)->toBeFalse();
 });
 
 it('edits an inactive channel whose datum differs, and other fields of a channel', function () {
@@ -147,6 +142,57 @@ it('edits an inactive channel whose datum differs, and other fields of a channel
     expect($response->json('version'))->toBe(VersionToken::of($off->fresh()))
         ->and((float) $row->before_state['depth'])->toBe(17.5)
         ->and((float) $row->after_state['depth'])->toBe(12.25);
+});
+
+it('refuses is_active in an update with 422', function () {
+    $channel = channelRow();
+
+    $this->actingAs($this->admin, 'web')
+        ->putJson("/api/v1/navigation-channels/{$channel->id}", ['is_active' => false, 'version' => VersionToken::of($channel)])
+        ->assertStatus(422)
+        ->assertJsonStructure(['errors' => ['is_active']]);
+
+    expect($channel->fresh()->is_active)->toBeTrue();
+});
+
+it('deactivates and activates a channel, each audited, and does nothing when already there', function () {
+    $channel = channelRow();
+    $url = "/api/v1/navigation-channels/{$channel->id}";
+
+    $version = $this->actingAs($this->admin, 'web')->postJson("{$url}/deactivate", ['version' => VersionToken::of($channel)])
+        ->assertOk()
+        ->assertJsonPath('is_active', false)
+        ->json('version');
+    $this->actingAs($this->admin, 'web')->postJson("{$url}/deactivate", ['version' => $version])
+        ->assertOk()
+        ->assertJsonPath('version', $version);
+    $this->actingAs($this->admin, 'web')->postJson("{$url}/activate", ['version' => $version])
+        ->assertOk()
+        ->assertJsonPath('is_active', true);
+
+    expect(AuditLog::query()->where('action', AuditLogAction::Update)->where('entity_type', 'navigation_channels')->count())->toBe(2);
+});
+
+it('lets the Port Admin change the datum of the port: channel off, berths, channel, channel on', function () {
+    $berth = Berth::factory()->create(['depth_datum' => 'LAT']);
+    $channel = channelRow();
+    $url = "/api/v1/navigation-channels/{$channel->id}";
+
+    $version = $this->actingAs($this->admin, 'web')->postJson("{$url}/deactivate", ['version' => VersionToken::of($channel)])->assertOk()->json('version');
+    $berth->update(['depth_datum' => 'MSL']);
+    $version = $this->actingAs($this->admin, 'web')->putJson($url, ['depth_datum' => 'MSL', 'version' => $version])->assertOk()->json('version');
+    $this->actingAs($this->admin, 'web')->postJson("{$url}/activate", ['version' => $version])->assertOk()->assertJsonPath('depth_datum', 'MSL');
+});
+
+it('answers 409 VERSION_CONFLICT to a stale version on deactivate', function () {
+    $channel = channelRow();
+    $stale = VersionToken::of($channel);
+    $this->actingAs($this->admin, 'web')->putJson("/api/v1/navigation-channels/{$channel->id}", ['width' => 310, 'version' => $stale])->assertOk();
+
+    $this->actingAs($this->admin, 'web')->postJson("/api/v1/navigation-channels/{$channel->id}/deactivate", ['version' => $stale])
+        ->assertStatus(409);
+
+    expect($channel->fresh()->is_active)->toBeTrue();
 });
 
 it('answers 409 VERSION_CONFLICT to a stale version', function () {
@@ -170,7 +216,12 @@ it('lets only the Port Admin write', function (Role $role) {
         ->putJson("/api/v1/navigation-channels/{$channel->id}", ['width' => 1, 'version' => VersionToken::of($channel)])
         ->assertForbidden();
 
-    expect(NavigationChannel::query()->count())->toBe(1);
+    $this->actingAs(makeUserWithRole($role), 'web')
+        ->postJson("/api/v1/navigation-channels/{$channel->id}/deactivate", ['version' => VersionToken::of($channel)])
+        ->assertForbidden();
+
+    expect(NavigationChannel::query()->count())->toBe(1)
+        ->and($channel->fresh()->is_active)->toBeTrue();
 })->with([Role::PortStaff, Role::MarineSafetyOfficer]);
 
 it('answers 401 to a guest and 404 for an unknown channel', function () {

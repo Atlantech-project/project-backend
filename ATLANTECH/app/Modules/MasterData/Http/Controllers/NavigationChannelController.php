@@ -4,6 +4,7 @@ namespace App\Modules\MasterData\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\MasterData\Http\Requests\NavigationChannelIndexRequest;
+use App\Modules\MasterData\Http\Requests\NavigationChannelStatusRequest;
 use App\Modules\MasterData\Http\Requests\ReplaceChannelWaypointsRequest;
 use App\Modules\MasterData\Http\Requests\StoreNavigationChannelRequest;
 use App\Modules\MasterData\Http\Requests\UpdateNavigationChannelRequest;
@@ -15,7 +16,7 @@ use Illuminate\Http\JsonResponse;
 
 /**
  * Navigation channels (P2-F1, FR-MD-02, P-26). Reads carry `ability:port-state.read`, writes `ability:port-setup.manage`.
- * There is no delete: a channel is turned off with `is_active`.
+ * There is no delete: a channel is deactivated and activated by its own endpoints.
  */
 class NavigationChannelController extends Controller
 {
@@ -40,7 +41,7 @@ class NavigationChannelController extends Controller
      */
     public function store(StoreNavigationChannelRequest $request): JsonResponse
     {
-        $channel = $this->channels->create($request->validated(), $request->user(), $request->method().' /'.$request->path());
+        $channel = $this->channels->create($request->validated(), $request->user()->id);
 
         return (new NavigationChannelResource($channel->load('channelWaypointsByChannel')))->response()->setStatusCode(201);
     }
@@ -51,7 +52,27 @@ class NavigationChannelController extends Controller
     public function update(UpdateNavigationChannelRequest $request, NavigationChannel $channel): NavigationChannelResource
     {
         $data = $request->safe()->except('version');
-        $updated = $this->channels->update($channel, $data, $request->validated('version'), $request->user(), $request->method().' /'.$request->path());
+        $updated = $this->channels->update($channel, $data, $request->validated('version'), $request->user()->id);
+
+        return new NavigationChannelResource($updated->load('channelWaypointsByChannel'));
+    }
+
+    /**
+     * POST /api/v1/navigation-channels/{channel}/deactivate: 200 (also when already inactive); 409 VERSION_CONFLICT.
+     */
+    public function deactivate(NavigationChannelStatusRequest $request, NavigationChannel $channel): NavigationChannelResource
+    {
+        $updated = $this->channels->deactivate($channel, $request->validated('version'), $request->user()->id);
+
+        return new NavigationChannelResource($updated->load('channelWaypointsByChannel'));
+    }
+
+    /**
+     * POST /api/v1/navigation-channels/{channel}/activate: 200 (also when already active); 409 VERSION_CONFLICT; 422 datum.
+     */
+    public function activate(NavigationChannelStatusRequest $request, NavigationChannel $channel): NavigationChannelResource
+    {
+        $updated = $this->channels->activate($channel, $request->validated('version'), $request->user()->id);
 
         return new NavigationChannelResource($updated->load('channelWaypointsByChannel'));
     }

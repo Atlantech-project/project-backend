@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Body of `PUT /api/v1/navigation-channels/{channel}` (P2-F1): every field optional (a field that is not sent keeps its
- * value), with the channel's `version`. A channel is never deleted; `is_active` turns it off or on.
+ * value), with the channel's `version`. `is_active` is refused (422): deactivation and activation have their own endpoints.
  */
 class UpdateNavigationChannelRequest extends FormRequest
 {
@@ -28,7 +28,7 @@ class UpdateNavigationChannelRequest extends FormRequest
         return [
             'name' => ['sometimes', 'required', 'string', 'max:100', Rule::unique('navigation_channels', 'name')->ignore($channel instanceof NavigationChannel ? $channel->id : null)],
             ...NavigationChannelRules::measurements(required: false),
-            'is_active' => ['sometimes', 'required', 'boolean'],
+            'is_active' => ['prohibited'],
             'version' => VersionToken::rules(),
         ];
     }

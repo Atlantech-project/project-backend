@@ -2,7 +2,6 @@
 
 namespace App\Modules\MasterData\Services;
 
-use App\Modules\Access\Models\User;
 use App\Modules\MasterData\Enums\PortSettingValueType;
 use App\Modules\MasterData\Models\PortSetting;
 use App\Modules\Shared\Audit\AuditService;
@@ -30,17 +29,16 @@ class PortSettingService
         ['validation_result_ttl_seconds', 'validation_timeout_seconds'],
     ];
 
-    public function __construct(private readonly AuditService $audit, private readonly RuleRefusal $refusals) {}
+    public function __construct(private readonly AuditService $audit) {}
 
     /**
      * @param  mixed  $value  The new value as sent in the JSON body.
-     * @param  string  $route  Method and path of the request, for the audit row of a refusal.
      *
-     * @throws ValidationException 422 on `value`, with an `errors.port_settings.*` key, audited.
+     * @throws ValidationException 422 on `value`, with an `errors.port_settings.*` key.
      */
-    public function update(PortSetting $setting, mixed $value, string $version, User $actor, string $route): PortSetting
+    public function update(PortSetting $setting, mixed $value, string $version, int $actorId): PortSetting
     {
-        return $this->refusals->audited(fn () => $this->audit->transaction(function () use ($setting, $value, $version, $actor): PortSetting {
+        return $this->audit->transaction(function () use ($setting, $value, $version, $actorId): PortSetting {
             $partners = $this->lockRuleGroup($setting->setting_key);
             $locked = VersionToken::lockAndAssert($setting, $version);
 
@@ -53,11 +51,11 @@ class PortSettingService
                 return $locked;
             }
 
-            $locked->fill(['setting_value' => $stored, 'updated_by' => $actor->id])->save();
-            $this->audit->recordUpdated($locked, $actor->id);
+            $locked->fill(['setting_value' => $stored, 'updated_by' => $actorId])->save();
+            $this->audit->recordUpdated($locked, $actorId);
 
             return $locked->refresh();
-        }), $actor, $route, 'port_settings', $setting->id);
+        });
     }
 
     /**

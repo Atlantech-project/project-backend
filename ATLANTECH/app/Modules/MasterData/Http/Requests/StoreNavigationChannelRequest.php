@@ -7,7 +7,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Body of `POST /api/v1/navigation-channels` (P2-F1, FR-MD-02). The port staff add as many channels as the port has;
- * `is_active` defaults to true.
+ * a new channel is active.
  */
 class StoreNavigationChannelRequest extends FormRequest
 {
@@ -24,7 +24,6 @@ class StoreNavigationChannelRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:100', Rule::unique('navigation_channels', 'name')],
             ...NavigationChannelRules::measurements(required: true),
-            'is_active' => ['sometimes', 'required', 'boolean'],
         ];
     }
 }
